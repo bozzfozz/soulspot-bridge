@@ -26,6 +26,11 @@ class IArtistRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_by_musicbrainz_id(self, musicbrainz_id: str) -> Artist | None:
+        """Get an artist by MusicBrainz ID."""
+        pass
+
+    @abstractmethod
     async def update(self, artist: Artist) -> None:
         """Update an existing artist."""
         pass
@@ -57,6 +62,11 @@ class IAlbumRepository(ABC):
     @abstractmethod
     async def get_by_artist(self, artist_id: ArtistId) -> list[Album]:
         """Get all albums by an artist."""
+        pass
+
+    @abstractmethod
+    async def get_by_musicbrainz_id(self, musicbrainz_id: str) -> Album | None:
+        """Get an album by MusicBrainz ID."""
         pass
 
     @abstractmethod
@@ -94,6 +104,11 @@ class ITrackRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_by_spotify_uri(self, spotify_uri: Any) -> Track | None:
+        """Get a track by Spotify URI."""
+        pass
+
+    @abstractmethod
     async def update(self, track: Track) -> None:
         """Update an existing track."""
         pass
@@ -118,6 +133,11 @@ class IPlaylistRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_by_spotify_uri(self, spotify_uri: Any) -> Playlist | None:
+        """Get a playlist by Spotify URI."""
+        pass
+
+    @abstractmethod
     async def update(self, playlist: Playlist) -> None:
         """Update an existing playlist."""
         pass
@@ -125,6 +145,11 @@ class IPlaylistRepository(ABC):
     @abstractmethod
     async def delete(self, playlist_id: PlaylistId) -> None:
         """Delete a playlist."""
+        pass
+
+    @abstractmethod
+    async def add_track(self, playlist_id: PlaylistId, track_id: TrackId) -> None:
+        """Add a track to a playlist."""
         pass
 
     @abstractmethod
