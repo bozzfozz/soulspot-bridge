@@ -1,7 +1,5 @@
 """Tests for settings management."""
 
-import os
-from pathlib import Path
 
 import pytest
 

@@ -1,3 +1,9 @@
 """Infrastructure layer."""
 
-__all__: list[str] = []
+from soulspot.infrastructure.integrations import MusicBrainzClient, SlskdClient, SpotifyClient
+
+__all__ = [
+    "SlskdClient",
+    "SpotifyClient",
+    "MusicBrainzClient",
+]

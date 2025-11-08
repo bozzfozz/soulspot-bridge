@@ -4,13 +4,9 @@ import pytest
 
 from soulspot.domain.exceptions import ValidationException
 from soulspot.domain.value_objects import (
-    AlbumId,
     ArtistId,
-    DownloadId,
     FilePath,
-    PlaylistId,
     SpotifyUri,
-    TrackId,
 )
 
 
