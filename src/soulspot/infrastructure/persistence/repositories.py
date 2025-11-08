@@ -1,7 +1,6 @@
 """Repository implementations for domain entities."""
 
-from typing import Generic, TypeVar
-from uuid import UUID
+from typing import TypeVar
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
