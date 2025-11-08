@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from soulspot.api.routers import api_router
 from soulspot.config import Settings, get_settings
 from soulspot.infrastructure.persistence import Database
 
@@ -51,6 +52,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Include API routers
+    app.include_router(api_router, prefix="/api/v1")
+
     # Health check endpoint
     @app.get("/health", tags=["Health"])
     async def health_check() -> dict[str, Any]:
@@ -81,6 +85,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "version": "0.1.0",
             "docs": "/docs",
             "health": "/health",
+            "api": "/api/v1",
         }
 
     return app
