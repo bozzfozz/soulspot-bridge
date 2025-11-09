@@ -1,10 +1,13 @@
 """Playlist sync worker for background playlist synchronization."""
 
+import logging
 from typing import Any
 
 from soulspot.application.use_cases import ImportSpotifyPlaylistUseCase
 from soulspot.application.workers.job_queue import Job, JobQueue, JobType
 from soulspot.domain.ports import IPlaylistRepository, ISpotifyClient, ITrackRepository
+
+logger = logging.getLogger(__name__)
 
 
 class PlaylistSyncWorker:
@@ -81,7 +84,11 @@ class PlaylistSyncWorker:
         # Check if sync had errors
         if response.tracks_failed > 0:
             # Log errors but don't fail the job
-            print(f"Playlist sync warnings: {len(response.errors)} errors")
+            logger.warning(
+                "Playlist sync completed with %d errors: %s",
+                len(response.errors),
+                response.errors,
+            )
 
         return {
             "playlist_id": str(response.playlist.id),

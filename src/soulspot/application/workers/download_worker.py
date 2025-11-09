@@ -1,12 +1,15 @@
 """Download worker for background download processing."""
 
 import asyncio
+import logging
 from typing import Any
 
 from soulspot.application.use_cases import SearchAndDownloadTrackUseCase
 from soulspot.application.workers.job_queue import Job, JobQueue, JobType
 from soulspot.domain.ports import IDownloadRepository, ISlskdClient, ITrackRepository
 from soulspot.domain.value_objects import TrackId
+
+logger = logging.getLogger(__name__)
 
 
 class DownloadWorker:
@@ -160,6 +163,6 @@ class DownloadWorker:
 
             except Exception as e:
                 # Log error but continue monitoring
-                print(f"Download monitor error: {e}")
+                logger.exception("Download monitor error: %s", e)
 
             await asyncio.sleep(poll_interval)

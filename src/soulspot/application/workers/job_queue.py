@@ -1,12 +1,15 @@
 """Job queue management for background workers."""
 
 import asyncio
+import logging
 import uuid
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class JobType(str, Enum):
@@ -243,7 +246,7 @@ class JobQueue:
                 continue
             except Exception as e:
                 # Log error but continue processing
-                print(f"Worker error: {e}")
+                logger.exception("Worker error: %s", e)
                 continue
 
     async def start(self, num_workers: int = 3) -> None:
