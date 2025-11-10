@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - PR Review Issues (2025-11-10)
+
+#### Security
+- **Docker Security**: Removed insecure default password 'changeme' from `docker-compose.yml`
+  - Changed `SLSKD_PASSWORD` default from `changeme` to empty with warning comment
+  - Prevents production deployments with known credentials
+- **Shell Injection**: Fixed shell variable quoting in `docker-entrypoint.sh`
+  - Added quotes around all variable expansions: `"$TZ"` instead of `$TZ`
+  - Changed `[ ! -z ]` to `[ -n ]` for POSIX compliance
+  - Prevents command injection via environment variables
+
+#### Performance
+- **Async Operations**: Fixed event loop blocking in auto-import service
+  - Changed `shutil.move()` to `await asyncio.to_thread(shutil.move, ...)`
+  - Prevents application freeze during large file moves (>100MB music files)
+  - Improved responsiveness during file operations
+
+#### Reliability
+- **Health Checks**: Fixed inconsistent status aggregation in `/ready` endpoint
+  - Spotify and MusicBrainz checks now correctly update `overall_status`
+  - Endpoint now returns DEGRADED when any external service is unavailable
+  - Fixed health check logic to reflect actual system state
+- **Shutdown**: Implemented graceful shutdown for auto-import service
+  - Added 5-second timeout before force-canceling background task
+  - Prevents data loss during application shutdown
+  - Eliminated race condition between `stop()` and `cancel()`
+
+#### Code Quality
+- **Import Organization**: Moved inline imports to module level (PEP 8)
+  - Fixed 8 files with inline imports: `time`, `traceback`, `contextlib`
+  - Improved code readability and performance
+  - Files: `auto_import.py`, `test_session_store.py`, `test_auto_import.py`, `test_job_queue.py`, `example_phase4.py`
+- **Test Fixes**: Corrected mock usage in tests
+  - Fixed time mock in `test_auto_import.py`: now uses `test_file.stat().st_mtime + 10`
+  - Removed unnecessary variable assignments
+  - Removed debug print statements from integration tests
+- **Logging**: Eliminated field duplication in structured logs
+  - Removed redundant `method` and `path` from log message strings
+  - Kept fields only in `extra` dict for clean JSON logs
+  - Improved log parsing and analysis
+
+#### Documentation
+- **Review Report**: Added comprehensive `REVIEW_FIXES_REPORT.md`
+  - Documents all 11 fixed issues from PRs #18, #17, #13
+  - Includes before/after code examples
+  - Provides impact analysis and recommendations
+
 ### Changed - Code Modernization (2025-11-09)
 
 #### Code Quality & Standards

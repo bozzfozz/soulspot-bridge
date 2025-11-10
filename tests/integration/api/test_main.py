@@ -46,7 +46,6 @@ class TestHealthEndpoints:
         response = client.get("/ready")
         assert response.status_code == 200
         data = response.json()
-        print(f"Readiness response: {data}")
         assert data["status"] in ["healthy", "degraded"]
         assert "checks" in data
         assert "database" in data["checks"]
