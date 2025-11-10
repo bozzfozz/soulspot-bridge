@@ -19,6 +19,7 @@
 - 🗂️ **File-Organisation:** Intelligente Datei-Struktur und Tagging
 - 🔄 **Worker-System:** Asynchrone Verarbeitung für performante Downloads
 - 🌐 **Web-UI:** Moderne Benutzeroberfläche mit HTMX und Tailwind CSS
+- 🔍 **Observability:** Strukturiertes Logging, Prometheus Metrics, OpenTelemetry Tracing
 
 ### 🏗️ Architektur
 
@@ -74,6 +75,7 @@ Aktueller Stand:
 ### Haupt-Dokumentation
 - **[Architecture Guide](docs/architecture.md)** - Detaillierte Architektur-Spezifikation
 - **[Style Guide](docs/soulspot-style-guide.md)** - Design-System und UI-Guidelines
+- **[Observability Guide](docs/observability-guide.md)** - Logging, Metrics, Tracing und Health Checks
 - **[Development Roadmap](docs/development-roadmap.md)** - Zukünftige Entwicklungsphasen und Features
 - **[CHANGELOG](CHANGELOG.md)** - Vollständige Versionshistorie
 
@@ -121,7 +123,9 @@ poetry run uvicorn soulspot.main:app --reload
 
 - **API:** http://localhost:8000
 - **API Docs:** http://localhost:8000/docs
-- **Web UI:** http://localhost:8000/ui *(geplant)*
+- **Web UI:** http://localhost:8000/ui
+- **Metrics:** http://localhost:8000/metrics
+- **Health:** http://localhost:8000/ready
 - **slskd UI:** http://localhost:5030
 
 ## 🛠️ Technologie-Stack
@@ -262,7 +266,12 @@ Siehe [.github/copilot-instructions.md](.github/copilot-instructions.md) für de
 - [x] Session Management und OAuth
 
 ### Phase 6: Production-Ready (Wochen 19-20) 🔄
-- [ ] Observability (Logging, Metrics, Tracing)
+- [x] **Observability** (Logging, Metrics, Tracing)
+  - [x] Structured logging with JSON formatting
+  - [x] Prometheus metrics collection
+  - [x] OpenTelemetry distributed tracing
+  - [x] Enhanced health checks with dependency monitoring
+  - [x] Circuit breaker patterns for external services
 - [ ] CI/CD Pipeline
 - [ ] Production-Dokumentation
 - [ ] Docker Production Setup
