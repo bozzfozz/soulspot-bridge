@@ -89,7 +89,7 @@ Edit the `.env` file and set the following **required** variables:
 ```env
 SPOTIFY_CLIENT_ID=your_spotify_client_id_here
 SPOTIFY_CLIENT_SECRET=your_spotify_client_secret_here
-SPOTIFY_REDIRECT_URI=http://127.0.0.1:8765/callback
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:8765/api/v1/auth/callback
 ```
 
 #### slskd Configuration
@@ -145,7 +145,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 | `TZ` | No | `UTC` | Timezone |
 | `SPOTIFY_CLIENT_ID` | Yes | - | Spotify OAuth Client ID |
 | `SPOTIFY_CLIENT_SECRET` | Yes | - | Spotify OAuth Client Secret |
-| `SPOTIFY_REDIRECT_URI` | No | `http://127.0.0.1:8765/callback` | OAuth redirect URI |
+| `SPOTIFY_REDIRECT_URI` | No | `http://127.0.0.1:8765/api/v1/auth/callback` | OAuth redirect URI |
 | `SLSKD_BASE_URL` | Yes | - | slskd base URL |
 | `SLSKD_API_KEY` | Yes* | - | slskd API key |
 | `SLSKD_USERNAME` | Yes* | `admin` | slskd username (if no API key) |
