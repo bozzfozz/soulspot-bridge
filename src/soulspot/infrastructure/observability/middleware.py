@@ -52,7 +52,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         # Log incoming request
         logger.info(
-            f"Request started: {method} {path}",
+            "Request started",
             extra={
                 "method": method,
                 "path": path,
@@ -70,7 +70,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             # Log response
             duration = time.time() - start_time
             logger.info(
-                f"Request completed: {method} {path} - {response.status_code}",
+                "Request completed",
                 extra={
                     "method": method,
                     "path": path,

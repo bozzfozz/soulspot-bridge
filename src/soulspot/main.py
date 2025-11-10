@@ -203,6 +203,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "status": spotify_check.status.value,
                 "message": spotify_check.message,
             }
+            # Update overall status based on Spotify check
+            if (
+                spotify_check.status == HealthStatus.UNHEALTHY
+                and overall_status != HealthStatus.UNHEALTHY
+            ):
+                overall_status = HealthStatus.UNHEALTHY
+            elif (
+                spotify_check.status == HealthStatus.DEGRADED
+                and overall_status == HealthStatus.HEALTHY
+            ):
+                overall_status = HealthStatus.DEGRADED
 
             # MusicBrainz health check
             mb_check = await check_musicbrainz_health(timeout=timeout)
@@ -210,6 +221,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "status": mb_check.status.value,
                 "message": mb_check.message,
             }
+            # Update overall status based on MusicBrainz check
+            if (
+                mb_check.status == HealthStatus.UNHEALTHY
+                and overall_status != HealthStatus.UNHEALTHY
+            ):
+                overall_status = HealthStatus.UNHEALTHY
+            elif (
+                mb_check.status == HealthStatus.DEGRADED
+                and overall_status == HealthStatus.HEALTHY
+            ):
+                overall_status = HealthStatus.DEGRADED
 
         return {
             "status": overall_status.value,
