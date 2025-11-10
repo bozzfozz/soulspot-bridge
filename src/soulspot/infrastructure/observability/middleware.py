@@ -1,4 +1,4 @@
-"""Middleware for observability: logging, metrics, and tracing."""
+"""Middleware for observability: request/response logging."""
 
 import logging
 import time
@@ -11,11 +11,6 @@ from starlette.types import ASGIApp
 from soulspot.infrastructure.observability.logging import (
     get_correlation_id,
     set_correlation_id,
-)
-from soulspot.infrastructure.observability.metrics import (
-    http_request_duration_seconds,
-    http_requests_in_progress,
-    http_requests_total,
 )
 
 logger = logging.getLogger(__name__)
@@ -103,105 +98,3 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 },
             )
             raise
-
-
-class MetricsMiddleware(BaseHTTPMiddleware):
-    """Middleware for collecting Prometheus metrics."""
-
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
-        """Collect metrics for request.
-
-        Args:
-            request: Incoming request
-            call_next: Next middleware/handler in chain
-
-        Returns:
-            Response from application
-        """
-        method = request.method
-        path = request.url.path
-
-        # Skip metrics endpoint to avoid recursion
-        if path == "/metrics":
-            return await call_next(request)
-
-        # Normalize path to avoid high cardinality
-        # Replace IDs and dynamic segments with placeholders
-        normalized_path = self._normalize_path(path)
-
-        # Track request in progress
-        http_requests_in_progress.labels(method=method, endpoint=normalized_path).inc()
-
-        # Track request duration
-        start_time = time.time()
-        try:
-            response = await call_next(request)
-            duration = time.time() - start_time
-
-            # Record metrics
-            http_requests_total.labels(
-                method=method,
-                endpoint=normalized_path,
-                status=response.status_code,
-            ).inc()
-
-            http_request_duration_seconds.labels(
-                method=method,
-                endpoint=normalized_path,
-            ).observe(duration)
-
-            return response
-
-        except Exception:
-            duration = time.time() - start_time
-
-            # Record error metrics
-            http_requests_total.labels(
-                method=method,
-                endpoint=normalized_path,
-                status=500,
-            ).inc()
-
-            http_request_duration_seconds.labels(
-                method=method,
-                endpoint=normalized_path,
-            ).observe(duration)
-
-            raise
-
-        finally:
-            # Decrement in-progress counter
-            http_requests_in_progress.labels(
-                method=method, endpoint=normalized_path
-            ).dec()
-
-    def _normalize_path(self, path: str) -> str:
-        """Normalize path to reduce cardinality.
-
-        Args:
-            path: Request path
-
-        Returns:
-            Normalized path with dynamic segments replaced
-        """
-        # Split path into segments
-        segments = path.split("/")
-
-        # Replace numeric segments and UUIDs with placeholders
-        normalized = []
-        for segment in segments:
-            if not segment:
-                continue
-
-            # Check if segment is numeric (likely an ID)
-            if segment.isdigit():
-                normalized.append("{id}")
-            # Check if segment looks like a UUID
-            elif len(segment) == 36 and segment.count("-") == 4:
-                normalized.append("{uuid}")
-            else:
-                normalized.append(segment)
-
-        return "/" + "/".join(normalized) if normalized else path

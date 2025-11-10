@@ -16,8 +16,6 @@ def test_settings():
         database={"url": "sqlite+aiosqlite:///:memory:"},
         observability={
             "enable_dependency_health_checks": False,
-            "enable_metrics": False,
-            "enable_tracing": False,
         },
     )
 

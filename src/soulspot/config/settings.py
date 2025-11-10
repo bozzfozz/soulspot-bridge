@@ -180,26 +180,6 @@ class ObservabilitySettings(BaseSettings):
         description="Use JSON format for logs (recommended for production)",
     )
 
-    # Metrics
-    enable_metrics: bool = Field(
-        default=True,
-        description="Enable Prometheus metrics collection",
-    )
-
-    # Tracing
-    enable_tracing: bool = Field(
-        default=False,
-        description="Enable OpenTelemetry tracing",
-    )
-    otlp_endpoint: str | None = Field(
-        default=None,
-        description="OTLP exporter endpoint (e.g., http://localhost:4317)",
-    )
-    enable_console_trace_exporter: bool = Field(
-        default=False,
-        description="Enable console trace exporter for debugging",
-    )
-
     # Health checks
     enable_dependency_health_checks: bool = Field(
         default=True,

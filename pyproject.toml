@@ -44,13 +44,7 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 # Utilities
 python-dotenv = "^1.0.0"
 # Observability & Monitoring
-prometheus-client = "^0.21.0"
 python-json-logger = "^3.2.0"
-opentelemetry-api = "^1.30.0"
-opentelemetry-sdk = "^1.30.0"
-opentelemetry-instrumentation-fastapi = "^0.51b0"
-opentelemetry-instrumentation-httpx = "^0.51b0"
-opentelemetry-exporter-otlp-proto-grpc = "^1.30.0"
 
 [tool.poetry.group.dev.dependencies]
 # Testing
@@ -134,8 +128,6 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = [
     "pythonjsonlogger.*",
-    "opentelemetry.*",
-    "prometheus_client.*",
 ]
 ignore_missing_imports = true
 

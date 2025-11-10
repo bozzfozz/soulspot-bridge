@@ -6,17 +6,13 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from soulspot.api.routers import api_router, ui
 from soulspot.config import Settings, get_settings
-from soulspot.infrastructure.observability import (
-    configure_logging,
-    configure_tracing,
-    init_metrics,
-)
+from soulspot.infrastructure.observability import configure_logging
 from soulspot.infrastructure.observability.health import (
     HealthStatus,
     check_database_health,
@@ -24,15 +20,7 @@ from soulspot.infrastructure.observability.health import (
     check_slskd_health,
     check_spotify_health,
 )
-from soulspot.infrastructure.observability.metrics import get_latest_metrics
-from soulspot.infrastructure.observability.middleware import (
-    MetricsMiddleware,
-    RequestLoggingMiddleware,
-)
-from soulspot.infrastructure.observability.tracing import (
-    instrument_fastapi,
-    instrument_httpx,
-)
+from soulspot.infrastructure.observability.middleware import RequestLoggingMiddleware
 from soulspot.infrastructure.persistence import Database
 
 logger = logging.getLogger(__name__)
@@ -44,8 +32,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     Handles startup and shutdown tasks including:
     - Logging configuration
-    - Metrics initialization
-    - Tracing setup
     - Directory creation
     - Database initialization
     - Resource cleanup
@@ -59,22 +45,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app_name=settings.app_name,
     )
     logger.info("Starting application: %s", settings.app_name)
-
-    # Initialize metrics
-    if settings.observability.enable_metrics:
-        init_metrics()
-        logger.info("Metrics initialized")
-
-    # Configure tracing
-    if settings.observability.enable_tracing:
-        configure_tracing(
-            service_name=settings.app_name,
-            environment=settings.app_env,
-            otlp_endpoint=settings.observability.otlp_endpoint,
-            enable_console_exporter=settings.observability.enable_console_trace_exporter,
-        )
-        instrument_httpx()
-        logger.info("Tracing configured")
 
     # Startup
     try:
@@ -116,10 +86,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
 
-    # Add observability middleware
-    if settings.observability.enable_metrics:
-        app.add_middleware(MetricsMiddleware)
-
     # Request logging middleware
     app.add_middleware(RequestLoggingMiddleware)
 
@@ -131,10 +97,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    # Instrument with OpenTelemetry if enabled
-    if settings.observability.enable_tracing:
-        instrument_fastapi(app)
 
     # Mount static files if directory exists
     static_dir = Path(__file__).parent / "static"
@@ -229,18 +191,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def liveness_check() -> dict[str, str]:
         """Liveness check endpoint - returns OK if application is running."""
         return {"status": "alive"}
-
-    # Metrics endpoint
-    if settings.observability.enable_metrics:
-
-        @app.get("/metrics", tags=["Observability"])
-        async def metrics() -> Response:
-            """Prometheus metrics endpoint."""
-            metrics_data = get_latest_metrics()
-            return Response(
-                content=metrics_data,
-                media_type="text/plain; version=0.0.4; charset=utf-8",
-            )
 
     # Root endpoint
     @app.get("/", tags=["Root"])
