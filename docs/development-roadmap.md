@@ -2,7 +2,7 @@
 
 > **Letzte Aktualisierung:** 2025-11-11  
 > **Version:** 0.1.0 (Alpha)  
-> **Status:** Phase 6 In Progress - Production Readiness + v2.0 Planning Complete + v3.0 Roadmap Defined
+> **Status:** Phase 6 In Progress - Production Readiness + v2.0 GridStack Page-Builder Roadmap Complete + v3.0 Roadmap Defined
 
 ---
 
@@ -14,6 +14,9 @@
 4. [Entwicklungsphasen](#-entwicklungsphasen)
 5. [v3.0 — Production Hardening & Enterprise Deployment](#-version-30--production-hardening--enterprise-deployment-geplant)
 6. [v2.0 — Dynamic Views & Widget-Palette](#-v20--dynamic-views--widget-palette-geplant)
+   - [GridStack Page-Builder — Detaillierte Entwicklungs-Roadmap](#-gridstack-page-builder--detaillierte-entwicklungs-roadmap)
+   - [Phases P1-P11: Grid-Based Page Builder](#2-phase-p1--basis-layout--gridstack-integration)
+   - [Live-Widgets & Echtzeit-Status (Phases L1-L4)](#-live-widgets--echtzeit-status)
 7. [Feature-Kategorien](#-feature-kategorien)
 8. [Prioritäts-Matrix](#-prioritäts-matrix)
 9. [Release-Plan](#-release-plan)
@@ -3098,6 +3101,64 @@ Diese Features sollten mit Users/Contributors diskutiert werden:
 ---
 
 ## 📝 Changelog
+
+### 2025-11-11: GridStack Page-Builder Detailed Roadmap Addition
+
+**Durchgeführt von:** Copilot Agent
+
+**Änderungen:**
+
+- ✅ **GridStack Page-Builder Roadmap erweitert** – Detaillierte Phasen P1-P11 und L1-L4 hinzugefügt
+- ✅ **Phase P1-P11: Grid-Based Page Builder** vollständig dokumentiert:
+  - P1: Basis-Layout & GridStack-Integration (Grid canvas, drag & drop)
+  - P2: Widget-System Backend (Registry, instances, rendering)
+  - P3: Page-Management (Multiple dashboards, CRUD)
+  - P4: Layout-Speicherung & Synchronisation (Persistent storage)
+  - P5: Widget-Katalog & Hinzufügen (Drag from catalog)
+  - P6: Bearbeitungs- und Ansichtsmodi (Edit/View toggle)
+  - P7: Widget-Konfiguration & Einstellungen (Settings modal)
+  - P8: UI-Komfort & Feinschliff (Visual helpers)
+  - P9: Layout-Templates & Wiederverwendbarkeit (Predefined dashboards)
+  - P10: Sicherheit, Stabilität & Fehlerfall-Strategien (Validation, permissions)
+  - P11: Performance & Optimierung (Lazy loading, caching)
+- ✅ **Phase L1-L4: Live-Widgets & Echtzeit-Status** vollständig dokumentiert:
+  - L1: MVP Live-Widgets mit Polling (Download status, now playing, health)
+  - L2: User-Control & Performance-Feintuning (Configurable refresh)
+  - L3: Push-Modus (SSE / WebSockets) (Optional real-time)
+  - L4: Observability & Stabilität (Logging, metrics, fallbacks)
+- ✅ **Datenquellen für Live-Widgets** spezifiziert:
+  - slskd API für Download-Status
+  - Spotify/Playback-Backend für Now-Playing
+  - System-/Health-Endpunkte für Service-Status
+- ✅ **Aktualisierungsstrategien** definiert:
+  - Polling (MVP, HTMX-freundlich) als erste Stufe
+  - Push (SSE/WebSockets) als spätere Ausbaustufe
+- ✅ **Nutzererlebnis-Konzepte** beschrieben:
+  - Download-Status Widget mit Interaktionen
+  - Fehlerbehandlung und visuelle Rückmeldung
+- ✅ **Inhaltsverzeichnis aktualisiert** – Links zu neuen Sections hinzugefügt
+- ✅ **Status-Header aktualisiert** – "GridStack Page-Builder Roadmap Complete"
+
+**Impact:**
+
+- Umfassende technische Spezifikation für GridStack Page-Builder
+- Klare Phasenaufteilung für schrittweise Implementierung
+- Basis für Issue-Erstellung und Sprint-Planung
+- Integration von Live-Widgets in Page-Builder-Architektur
+- Vollständige Roadmap für v2.0 Feature-Set
+- Ready for implementation start
+
+**Struktur:**
+
+- Neue Section "GridStack Page-Builder — Detaillierte Entwicklungs-Roadmap" nach MVP-Scope
+- Alle 11 Grid-Phasen (P1-P11) vollständig dokumentiert
+- Alle 4 Live-Widget-Phasen (L1-L4) vollständig dokumentiert
+- Inhaltsverzeichnis erweitert mit Subsections
+- ~508 neue Zeilen Dokumentation
+
+**Zeilen:** ~2692 (vorher) → ~3200 (nachher) – +~508 Zeilen für GridStack Details
+
+---
 
 ### 2025-11-11: v2.0 Dynamic Views & Widget-Palette Planning
 
