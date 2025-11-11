@@ -1963,7 +1963,6 @@ Implementiere optionale View-Sharing-Features.
 | Add integration tests for all endpoints | HIGH | Phase 7 |
 | Performance profiling & optimization | MEDIUM | Phase 6-7 |
 | MusicBrainz rate-limit handling | HIGH | Phase 7 |
-| Circuit breaker for external services | MEDIUM | Phase 6-7 |
 | Safe atomic file operations | HIGH | Phase 7 |
 
 ### Code Quality
