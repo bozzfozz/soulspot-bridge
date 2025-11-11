@@ -14,10 +14,21 @@ class Database:
     def __init__(self, settings: Settings) -> None:
         """Initialize database with settings."""
         self.settings = settings
+        
+        # Configure connection pool for PostgreSQL
+        engine_kwargs = {
+            "echo": settings.database.echo,
+            "pool_pre_ping": True,
+        }
+        
+        # Only apply pool settings for PostgreSQL
+        if "postgresql" in settings.database.url:
+            engine_kwargs["pool_size"] = settings.database.pool_size
+            engine_kwargs["max_overflow"] = settings.database.max_overflow
+        
         self._engine = create_async_engine(
             settings.database.url,
-            echo=settings.database.echo,
-            pool_pre_ping=True,
+            **engine_kwargs,
         )
         self._session_factory = async_sessionmaker(
             self._engine,
