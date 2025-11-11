@@ -171,6 +171,33 @@ class APISettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="API_")
 
 
+class CircuitBreakerSettings(BaseSettings):
+    """Circuit breaker configuration for external services."""
+
+    failure_threshold: int = Field(
+        default=5,
+        description="Number of failures before opening circuit",
+        ge=1,
+    )
+    success_threshold: int = Field(
+        default=2,
+        description="Number of successes in HALF_OPEN before closing circuit",
+        ge=1,
+    )
+    timeout: float = Field(
+        default=60.0,
+        description="Seconds to wait in OPEN state before trying HALF_OPEN",
+        ge=1.0,
+    )
+    reset_timeout: float = Field(
+        default=300.0,
+        description="Seconds to wait before resetting failure counter in CLOSED state",
+        ge=1.0,
+    )
+
+    model_config = SettingsConfigDict(env_prefix="CIRCUIT_BREAKER_")
+
+
 class ObservabilitySettings(BaseSettings):
     """Observability and monitoring configuration."""
 
@@ -190,6 +217,12 @@ class ObservabilitySettings(BaseSettings):
         description="Timeout for dependency health checks in seconds",
         ge=1.0,
         le=30.0,
+    )
+
+    # Circuit breaker
+    circuit_breaker: CircuitBreakerSettings = Field(
+        default_factory=CircuitBreakerSettings,
+        description="Circuit breaker configuration",
     )
 
     model_config = SettingsConfigDict(env_prefix="OBSERVABILITY_")
