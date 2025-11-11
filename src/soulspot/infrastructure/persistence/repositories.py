@@ -2,8 +2,9 @@
 
 from typing import TypeVar
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from soulspot.domain.entities import (
     Album,
@@ -477,8 +478,17 @@ class TrackRepository(ITrackRepository):
         ]
 
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[Track]:
-        """List all tracks with pagination."""
-        stmt = select(TrackModel).order_by(TrackModel.title).limit(limit).offset(offset)
+        """List all tracks with pagination and eager loading of relationships."""
+        stmt = (
+            select(TrackModel)
+            .options(
+                selectinload(TrackModel.artist),
+                selectinload(TrackModel.album),
+            )
+            .order_by(TrackModel.title)
+            .limit(limit)
+            .offset(offset)
+        )
         result = await self.session.execute(stmt)
         models = result.scalars().all()
 
@@ -506,6 +516,12 @@ class TrackRepository(ITrackRepository):
             )
             for model in models
         ]
+
+    async def count_all(self) -> int:
+        """Count total number of tracks."""
+        stmt = select(func.count(TrackModel.id))
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
 
 
 class PlaylistRepository(IPlaylistRepository):
@@ -820,12 +836,15 @@ class DownloadRepository(IDownloadRepository):
             updated_at=model.updated_at,
         )
 
-    async def list_by_status(self, status: str) -> list[Download]:
-        """List all downloads with a specific status."""
+    async def list_by_status(self, status: str, limit: int = 100, offset: int = 0) -> list[Download]:
+        """List downloads with a specific status, with pagination and eager loading."""
         stmt = (
             select(DownloadModel)
+            .options(selectinload(DownloadModel.track))
             .where(DownloadModel.status == status)
-            .order_by(DownloadModel.created_at)
+            .order_by(DownloadModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
         )
         result = await self.session.execute(stmt)
         models = result.scalars().all()
@@ -849,10 +868,11 @@ class DownloadRepository(IDownloadRepository):
             for model in models
         ]
 
-    async def list_active(self) -> list[Download]:
-        """List all active downloads (not finished)."""
+    async def list_active(self, limit: int = 100, offset: int = 0) -> list[Download]:
+        """List all active downloads (not finished), with pagination and eager loading."""
         stmt = (
             select(DownloadModel)
+            .options(selectinload(DownloadModel.track))
             .where(
                 DownloadModel.status.in_(
                     [
@@ -861,7 +881,9 @@ class DownloadRepository(IDownloadRepository):
                     ]
                 )
             )
-            .order_by(DownloadModel.created_at)
+            .order_by(DownloadModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
         )
         result = await self.session.execute(stmt)
         models = result.scalars().all()
@@ -884,3 +906,22 @@ class DownloadRepository(IDownloadRepository):
             )
             for model in models
         ]
+
+    async def count_by_status(self, status: str) -> int:
+        """Count downloads by status."""
+        stmt = select(func.count(DownloadModel.id)).where(DownloadModel.status == status)
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    async def count_active(self) -> int:
+        """Count active downloads."""
+        stmt = select(func.count(DownloadModel.id)).where(
+            DownloadModel.status.in_(
+                [
+                    DownloadStatus.QUEUED.value,
+                    DownloadStatus.DOWNLOADING.value,
+                ]
+            )
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0

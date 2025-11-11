@@ -9,6 +9,7 @@ from typing import Any
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from soulspot.api.routers import api_router, ui
@@ -110,11 +111,47 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(
         title=settings.app_name,
-        description="Intelligente Musik-Download-Anwendung mit Spotify-Playlist-Synchronisation und Soulseek-Integration",
+        description="""
+        ## SoulSpot Bridge API
+        
+        Intelligente Musik-Download-Anwendung mit Spotify-Playlist-Synchronisation und Soulseek-Integration.
+        
+        ### Features
+        - 🎵 **Spotify Integration**: OAuth PKCE authentication and playlist management
+        - ⬇️ **Automated Downloads**: Soulseek downloads via slskd
+        - 📊 **Metadata Enrichment**: MusicBrainz and CoverArtArchive integration
+        - 🗂️ **File Organization**: Automatic file management and tagging
+        - 🔄 **Worker System**: Asynchronous job processing
+        
+        ### Authentication
+        Most endpoints require Spotify OAuth authentication. Use the `/auth/spotify/login` endpoint to start the OAuth flow.
+        
+        ### Rate Limiting
+        - MusicBrainz: 1 request per second (enforced by circuit breaker)
+        - Spotify: API-dependent (handled with exponential backoff)
+        
+        ### Error Handling
+        All errors include a `correlation_id` for debugging. Check logs with this ID for detailed information.
+        
+        ### Documentation
+        - [GitHub Repository](https://github.com/bozzfozz/soulspot-bridge)
+        - [Setup Guide](https://github.com/bozzfozz/soulspot-bridge/blob/main/docs/setup-guide.md)
+        - [Troubleshooting](https://github.com/bozzfozz/soulspot-bridge/blob/main/docs/troubleshooting-guide.md)
+        """,
         version="0.1.0",
         debug=settings.debug,
         lifespan=lifespan,
+        contact={
+            "name": "SoulSpot Bridge",
+            "url": "https://github.com/bozzfozz/soulspot-bridge",
+        },
+        license_info={
+            "name": "TBD",
+        },
     )
+
+    # Response compression middleware (must be first)
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
 
     # Request logging middleware
     app.add_middleware(RequestLoggingMiddleware)
@@ -143,9 +180,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(ui.router, prefix="/ui", tags=["UI"])
 
     # Health check endpoint
-    @app.get("/health", tags=["Health"])
+    @app.get(
+        "/health",
+        tags=["Health"],
+        summary="Basic health check",
+        description="Returns basic application health status. Use /ready for detailed dependency checks.",
+        response_description="Application health status",
+    )
     async def health_check() -> dict[str, Any]:
-        """Health check endpoint."""
+        """Health check endpoint.
+        
+        Returns:
+            dict: Health status including app name, environment, and profile.
+            
+        Example response:
+            {
+                "status": "healthy",
+                "app_name": "SoulSpot Bridge",
+                "environment": "production",
+                "profile": "simple"
+            }
+        """
         return {
             "status": "healthy",
             "app_name": settings.app_name,
@@ -154,9 +209,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         }
 
     # Readiness check endpoint with dependency checks
-    @app.get("/ready", tags=["Health"])
+    @app.get(
+        "/ready",
+        tags=["Health"],
+        summary="Readiness check with dependencies",
+        description="Returns detailed readiness status including database and external service health.",
+        response_description="Readiness status with dependency health checks",
+    )
     async def readiness_check() -> dict[str, Any]:
-        """Readiness check endpoint with database and dependency connectivity checks."""
+        """Readiness check endpoint with database and dependency connectivity checks.
+        
+        Returns:
+            dict: Readiness status with detailed health checks for all dependencies.
+            
+        Example response:
+            {
+                "status": "ready",
+                "checks": {
+                    "database": {"status": "healthy", "message": "Connected"},
+                    "slskd": {"status": "healthy", "message": "Connected"},
+                    "spotify": {"status": "degraded", "message": "No credentials"},
+                    "musicbrainz": {"status": "healthy", "message": "Available"},
+                    "circuit_breakers": {
+                        "spotify": "CLOSED",
+                        "musicbrainz": "CLOSED",
+                        "slskd": "CLOSED"
+                    }
+                }
+            }
+        """
         checks = {}
         overall_status = HealthStatus.HEALTHY
 
