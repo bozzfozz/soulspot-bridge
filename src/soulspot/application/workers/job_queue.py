@@ -288,7 +288,7 @@ class JobQueue:
                 # Wait for available slot
                 while len(self._running_jobs) >= self._max_concurrent and not self._shutdown:
                     await asyncio.sleep(0.1)
-                
+
                 if self._shutdown:
                     break
 
