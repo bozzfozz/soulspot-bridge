@@ -94,6 +94,7 @@ async def downloads(
             "id": str(download.id.value),
             "track_id": str(download.track_id.value),
             "status": download.status.value,
+            "priority": download.priority,
             "progress_percent": download.progress_percent,
             "error_message": download.error_message,
             "started_at": download.started_at.isoformat()
