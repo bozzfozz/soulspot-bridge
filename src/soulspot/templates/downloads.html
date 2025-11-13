@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "includes/_skeleton.html" import list_skeleton, spinner %}
 
 {% block title %}Downloads - SoulSpot Bridge{% endblock %}
 
@@ -9,30 +10,35 @@
         <h1 class="text-3xl font-bold text-gray-900 leading-tight mb-4">Downloads</h1>
         
         <!-- Filters -->
-        <div class="flex flex-wrap gap-2">
-            <button class="btn btn-secondary btn-sm" 
+        <div class="flex flex-wrap gap-2" role="group" aria-label="Filter downloads">
+            <button class="btn btn-secondary btn-sm focus-ring" 
                     hx-get="/api/v1/downloads?status=all"
-                    hx-target="#downloads-list">
+                    hx-target="#downloads-list"
+                    aria-label="Show all downloads">
                 All
             </button>
-            <button class="btn btn-secondary btn-sm" 
+            <button class="btn btn-secondary btn-sm focus-ring" 
                     hx-get="/api/v1/downloads?status=queued"
-                    hx-target="#downloads-list">
+                    hx-target="#downloads-list"
+                    aria-label="Show queued downloads">
                 Queued
             </button>
-            <button class="btn btn-secondary btn-sm" 
+            <button class="btn btn-secondary btn-sm focus-ring" 
                     hx-get="/api/v1/downloads?status=downloading"
-                    hx-target="#downloads-list">
+                    hx-target="#downloads-list"
+                    aria-label="Show downloading">
                 Downloading
             </button>
-            <button class="btn btn-secondary btn-sm" 
+            <button class="btn btn-secondary btn-sm focus-ring" 
                     hx-get="/api/v1/downloads?status=completed"
-                    hx-target="#downloads-list">
+                    hx-target="#downloads-list"
+                    aria-label="Show completed downloads">
                 Completed
             </button>
-            <button class="btn btn-secondary btn-sm" 
+            <button class="btn btn-secondary btn-sm focus-ring" 
                     hx-get="/api/v1/downloads?status=failed"
-                    hx-target="#downloads-list">
+                    hx-target="#downloads-list"
+                    aria-label="Show failed downloads">
                 Failed
             </button>
         </div>
@@ -42,22 +48,27 @@
     <div class="space-y-4" id="downloads-list">
         {% if downloads %}
             {% for download in downloads %}
-            <div class="card">
+            <div class="card hover:shadow-md transition-shadow">
                 <div class="flex justify-between items-start gap-4">
                     <div class="flex-1">
                         <div class="flex items-center gap-3 mb-2">
                             <h3 class="text-lg font-medium text-gray-900">
                                 Track ID: {{ download.track_id }}
                             </h3>
-                            <span class="status-{{ download.status }}">
+                            <span class="status-{{ download.status }}" role="status" aria-label="Status: {{ download.status }}">
                                 {{ download.status }}
                             </span>
                         </div>
                         
                         {% if download.error_message %}
-                        <p class="text-sm text-error-600 mb-2">
-                            Error: {{ download.error_message }}
-                        </p>
+                        <div class="alert alert-error text-sm mb-2" role="alert">
+                            <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div class="alert-content">
+                                <strong>Error:</strong> {{ download.error_message }}
+                            </div>
+                        </div>
                         {% endif %}
                         
                         <div class="text-xs text-gray-500 space-y-1">
@@ -69,7 +80,11 @@
                     <div class="flex flex-col items-end gap-3">
                         <!-- Progress Bar -->
                         <div class="w-48">
-                            <div class="progress-bar mb-1">
+                            <div class="progress-bar mb-1" role="progressbar" 
+                                 aria-valuenow="{{ download.progress_percent or 0 }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100"
+                                 aria-label="Download progress">
                                 <div class="progress-fill" style="width: {{ download.progress_percent or 0 }}%"></div>
                             </div>
                             <span class="text-xs text-gray-600">{{ download.progress_percent or 0 }}%</span>
@@ -78,16 +93,18 @@
                         <!-- Actions -->
                         <div class="flex gap-2">
                             {% if download.status == 'failed' %}
-                            <button class="btn btn-secondary btn-sm" 
+                            <button class="btn btn-secondary btn-sm focus-ring" 
                                     hx-post="/api/v1/downloads/{{ download.id }}/retry"
-                                    hx-swap="outerHTML">
+                                    hx-swap="outerHTML"
+                                    aria-label="Retry download">
                                 Retry
                             </button>
                             {% endif %}
                             {% if download.status in ['queued', 'downloading', 'pending'] %}
-                            <button class="btn btn-danger btn-sm" 
+                            <button class="btn btn-danger btn-sm focus-ring" 
                                     hx-post="/api/v1/downloads/{{ download.id }}/cancel"
-                                    hx-swap="outerHTML">
+                                    hx-swap="outerHTML"
+                                    aria-label="Cancel download">
                                 Cancel
                             </button>
                             {% endif %}
@@ -96,10 +113,14 @@
                 </div>
             </div>
             {% endfor %}
+        {% elif downloads is none %}
+            {# Loading state #}
+            {{ list_skeleton(5) }}
         {% else %}
+            {# Empty state #}
             <div class="card text-center py-12">
                 <div class="card-body">
-                    <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                     </svg>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">No downloads yet</h3>

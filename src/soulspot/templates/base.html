@@ -10,29 +10,39 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans">
+    <!-- Skip to main content for keyboard navigation -->
+    <a href="#main-content" class="skip-to-content focus-ring">
+        Skip to main content
+    </a>
+
     <!-- Navigation -->
-    <nav class="bg-gray-900 border-b border-gray-800">
+    <nav class="bg-gray-900 border-b border-gray-800" role="navigation" aria-label="Main navigation">
         <div class="container mx-auto px-4">
             <div class="flex justify-between items-center py-4">
                 <!-- Logo -->
-                <a href="/ui/" class="text-2xl font-bold text-primary-500 hover:text-primary-400 transition-colors">
+                <a href="/ui/" class="text-2xl font-bold text-primary-500 hover:text-primary-400 transition-colors focus-ring">
                     🎵 SoulSpot Bridge
                 </a>
                 
                 <!-- Navigation Menu -->
                 <ul class="flex gap-6 list-none">
                     <li>
-                        <a href="/ui/playlists" class="text-gray-300 hover:text-white transition-colors text-sm font-medium">
+                        <a href="/ui/search" class="text-gray-300 hover:text-white transition-colors text-sm font-medium focus-ring">
+                            Search
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/ui/playlists" class="text-gray-300 hover:text-white transition-colors text-sm font-medium focus-ring">
                             Playlists
                         </a>
                     </li>
                     <li>
-                        <a href="/ui/downloads" class="text-gray-300 hover:text-white transition-colors text-sm font-medium">
+                        <a href="/ui/downloads" class="text-gray-300 hover:text-white transition-colors text-sm font-medium focus-ring">
                             Downloads
                         </a>
                     </li>
                     <li>
-                        <a href="/ui/auth" class="text-gray-300 hover:text-white transition-colors text-sm font-medium">
+                        <a href="/ui/auth" class="text-gray-300 hover:text-white transition-colors text-sm font-medium focus-ring">
                             Auth
                         </a>
                     </li>
@@ -42,17 +52,17 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8 min-h-screen">
+    <main id="main-content" class="container mx-auto px-4 py-8 min-h-screen" role="main">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 border-t border-gray-800 mt-12">
+    <footer class="bg-gray-900 border-t border-gray-800 mt-12" role="contentinfo">
         <div class="container mx-auto px-4 py-6 text-center">
             <p class="text-gray-400 text-sm">
                 &copy; 2025 SoulSpot Bridge | 
-                <a href="/docs" class="text-primary-500 hover:text-primary-400 transition-colors">API Docs</a> | 
-                <a href="/health" class="text-primary-500 hover:text-primary-400 transition-colors">Health</a>
+                <a href="/docs" class="text-primary-500 hover:text-primary-400 transition-colors focus-ring">API Docs</a> | 
+                <a href="/health" class="text-primary-500 hover:text-primary-400 transition-colors focus-ring">Health</a>
             </p>
         </div>
     </footer>

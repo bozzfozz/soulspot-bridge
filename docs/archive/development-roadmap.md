@@ -1,16 +1,14 @@
 # SoulSpot Bridge – Development Roadmap (Index)
 
-> **Last Updated:** 2025-11-13  
+> **Last Updated:** 2025-11-12  
 > **Version:** 0.1.0 (Alpha)  
-> **Status:** Phase 7 In Progress - UI/UX Enhancements Complete
+> **Status:** Roadmap Split Complete - Now Organized by Domain
 
 ---
 
 ## 📋 Overview
 
 The SoulSpot Bridge development roadmap has been restructured for better clarity and maintainability. Instead of a single monolithic roadmap, we now maintain separate, focused roadmaps for each major concern area.
-
-> **Note:** The previous unified roadmap has been archived to `docs/archive/development-roadmap.md` for reference.
 
 ### Why Split the Roadmap?
 
@@ -19,28 +17,6 @@ The SoulSpot Bridge development roadmap has been restructured for better clarity
 - **Clearer Ownership** – Explicit owners per roadmap
 - **Easier Maintenance** – Update only the relevant section
 - **Improved Navigation** – Find what you need faster
-
----
-
-## 🎉 Recent Milestones (November 2025)
-
-### ✅ Phase 7 UI/UX Enhancements - COMPLETE
-- **Loading States** - Skeleton screens, spinners, button loading
-- **Toast Notifications** - 4 types with auto-dismiss
-- **Keyboard Navigation** - Full WCAG 2.1 AA compliance
-- **Accessibility** - ARIA labels, focus management, screen reader support
-
-### ✅ Phase 7 Advanced Search Interface - COMPLETE
-- **Advanced Filters** - Quality, artist, album, duration filtering
-- **Autocomplete** - Debounced Spotify API suggestions
-- **Bulk Actions** - Multi-select and batch downloads
-- **Search History** - Client-side storage with localStorage
-
-**Documentation Added:**
-- `docs/keyboard-navigation.md`
-- `docs/ui-ux-visual-guide.md`
-- `docs/ui-ux-testing-report.md`
-- `docs/advanced-search-guide.md`
 
 ---
 
@@ -77,14 +53,8 @@ The SoulSpot Bridge development roadmap has been restructured for better clarity
 - Accessibility (WCAG AA)
 - v2.0 Dynamic Views & Widget-Palette
 
-**Current Phase:** Phase 7 – UI/UX Enhancements & Advanced Search (Complete)  
+**Current Phase:** v2.0 Planning – Dynamic Views & Widget-Palette  
 **Owner:** Frontend Team
-
-**Recent Completions:**
-- ✅ Loading states & skeleton screens
-- ✅ Toast notification system
-- ✅ Keyboard navigation & accessibility
-- ✅ Advanced search with filters & autocomplete
 
 [📖 Read Frontend Roadmap →](frontend-development-roadmap.md)
 
@@ -103,7 +73,7 @@ The SoulSpot Bridge development roadmap has been restructured for better clarity
 - Deployment automation
 - v3.0 Production Hardening
 
-**Current Phase:** Phase 7 – Feature Enhancements In Progress  
+**Current Phase:** v3.0 Planning – Production Hardening  
 **Owner:** DevOps & Platform Team
 
 [📖 Read Cross-Cutting Roadmap →](roadmap-crosscutting.md)
