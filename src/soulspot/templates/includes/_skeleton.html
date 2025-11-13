@@ -1,0 +1,82 @@
+{# 
+  Skeleton Loading Components
+  
+  Reusable skeleton screens for loading states
+#}
+
+{# Card Skeleton - for playlist/download cards #}
+{% macro card_skeleton(count=3) %}
+{% for i in range(count) %}
+<div class="skeleton-card">
+    <div class="skeleton-title mb-3"></div>
+    <div class="skeleton-text mb-2"></div>
+    <div class="skeleton-text-sm"></div>
+</div>
+{% endfor %}
+{% endmacro %}
+
+{# List Skeleton - for simple lists #}
+{% macro list_skeleton(count=5) %}
+{% for i in range(count) %}
+<div class="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 mb-3">
+    <div class="skeleton-avatar"></div>
+    <div class="flex-1 space-y-2">
+        <div class="skeleton-text"></div>
+        <div class="skeleton-text-sm"></div>
+    </div>
+</div>
+{% endfor %}
+{% endmacro %}
+
+{# Stats Skeleton - for dashboard statistics #}
+{% macro stats_skeleton() %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {% for i in range(4) %}
+    <div class="card">
+        <div class="skeleton-text-sm mb-3 w-1/3"></div>
+        <div class="skeleton-title mb-4 w-1/2 h-12"></div>
+    </div>
+    {% endfor %}
+</div>
+{% endmacro %}
+
+{# Table Skeleton - for data tables #}
+{% macro table_skeleton(rows=5) %}
+<div class="overflow-x-auto">
+    <table class="table">
+        <thead>
+            <tr>
+                {% for i in range(4) %}
+                <th><div class="skeleton-text-sm w-20"></div></th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in range(rows) %}
+            <tr>
+                {% for j in range(4) %}
+                <td><div class="skeleton-text"></div></td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}
+
+{# Spinner - inline loading spinner #}
+{% macro spinner(size='md', text='Loading...') %}
+<div class="flex items-center gap-2">
+    <span class="spinner {% if size == 'sm' %}spinner-sm{% elif size == 'lg' %}spinner-lg{% endif %} text-primary-500"></span>
+    {% if text %}
+    <span class="text-gray-600 text-sm">{{ text }}</span>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# Loading Overlay - full element overlay #}
+{% macro loading_overlay() %}
+<div class="loading-overlay">
+    <span class="spinner spinner-lg text-primary-500"></span>
+</div>
+{% endmacro %}
