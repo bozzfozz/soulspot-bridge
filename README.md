@@ -22,6 +22,8 @@
 - 🗂️ **File-Organisation:** Intelligente Datei-Struktur und Tagging
 - 🔄 **Worker-System:** Asynchrone Verarbeitung für performante Downloads
 - 🌐 **Web-UI:** Moderne Benutzeroberfläche mit HTMX und Tailwind CSS
+- ✨ **Enhanced UX:** Loading states, toast notifications, full keyboard navigation
+- ♿ **Accessibility:** WCAG 2.1 AA compliant with screen reader support
 - 🔍 **Observability:** Strukturiertes Logging mit Correlation IDs und Health Checks
 - 🐳 **Docker-Ready:** Vollständige Docker-Unterstützung mit Compose-Setup
 
@@ -82,6 +84,7 @@ Aktueller Stand:
 ### Haupt-Dokumentation
 - **[Architecture Guide](docs/architecture.md)** - Detaillierte Architektur-Spezifikation
 - **[Style Guide](docs/soulspot-style-guide.md)** - Design-System und UI-Guidelines
+- **[Keyboard Navigation Guide](docs/keyboard-navigation.md)** - Keyboard shortcuts and accessibility features ⭐
 - **[Observability Guide](docs/observability-guide.md)** - Strukturiertes Logging und Health Checks
 - **[CI/CD Guide](docs/ci-cd.md)** - Continuous Integration und Automated Releases
 - **[Development Roadmap](docs/development-roadmap.md)** - Zukünftige Entwicklungsphasen und Features
