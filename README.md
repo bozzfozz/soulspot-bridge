@@ -15,6 +15,7 @@
 ### 🎯 Kernfeatures
 
 - 🎵 **Spotify-Integration:** Import von Playlists und Tracks via OAuth PKCE
+- 🔍 **Advanced Search:** Smart search with autocomplete, filters, and bulk actions
 - ⬇️ **Automatisierte Downloads:** Soulseek-Downloads über [slskd](https://github.com/slskd/slskd)
 - 🔄 **Auto Music Import:** Automatisches Verschieben fertiger Downloads in die Musikbibliothek
 - 📊 **Metadata-Enrichment:** Anreicherung mit MusicBrainz und CoverArtArchive
@@ -84,6 +85,7 @@ Aktueller Stand:
 ### Haupt-Dokumentation
 - **[Architecture Guide](docs/architecture.md)** - Detaillierte Architektur-Spezifikation
 - **[Style Guide](docs/soulspot-style-guide.md)** - Design-System und UI-Guidelines
+- **[Advanced Search Guide](docs/advanced-search-guide.md)** - Complete search interface documentation ⭐
 - **[Keyboard Navigation Guide](docs/keyboard-navigation.md)** - Keyboard shortcuts and accessibility features ⭐
 - **[Observability Guide](docs/observability-guide.md)** - Strukturiertes Logging und Health Checks
 - **[CI/CD Guide](docs/ci-cd.md)** - Continuous Integration und Automated Releases
