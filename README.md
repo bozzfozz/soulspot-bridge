@@ -9,7 +9,7 @@
 ## Was ist SoulSpot Bridge?
 SoulSpot Bridge verknüpft deine Spotify-Playlists mit dem Soulseek-Netzwerk. Die Anwendung lädt Titel automatisch herunter, reichert sie mit Metadaten an und legt sie strukturiert in deiner Musikbibliothek ab – komplett über eine moderne Weboberfläche.
 
-## Highlights für Anwender:innen
+## Highlights für Anwender
 - **Playlist-Synchronisation:** Importiere Spotify-Playlists per OAuth und halte sie aktuell.
 - **Automatisierte Downloads:** Lädt Songs über den Soulseek-Dienst [slskd](https://github.com/slskd/slskd).
 - **Bibliotheksverwaltung:** Verschiebt fertige Downloads automatisch in deine Musikbibliothek.
