@@ -126,3 +126,9 @@ async def search(request: Request) -> Any:
 async def theme_sample(request: Request) -> Any:
     """Harmony theme sample page with component showcase."""
     return templates.TemplateResponse("theme-sample.html", {"request": request})
+
+
+@router.get("/settings", response_class=HTMLResponse)
+async def settings(request: Request) -> Any:
+    """Settings configuration page."""
+    return templates.TemplateResponse("settings.html", {"request": request})
