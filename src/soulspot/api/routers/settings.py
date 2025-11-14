@@ -30,7 +30,9 @@ class IntegrationSettings(BaseModel):
     slskd_url: str = Field(description="slskd URL")
     slskd_username: str = Field(description="slskd username")
     slskd_password: str = Field(description="slskd password")
-    slskd_api_key: str | None = Field(default=None, description="slskd API key (optional)")
+    slskd_api_key: str | None = Field(
+        default=None, description="slskd API key (optional)"
+    )
 
     # MusicBrainz
     musicbrainz_app_name: str = Field(description="MusicBrainz app name")
