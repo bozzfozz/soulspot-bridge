@@ -51,14 +51,29 @@ class RenamingService:
         Returns:
             Generated filename (including path components)
         """
-        # Prepare template variables
+        # Prepare template variables with both old and new naming conventions
         variables = {
+            # Legacy variables (for backward compatibility)
             "artist": artist.name,
             "title": track.title,
             "album": album.title if album else "Unknown Album",
             "track_number": track.track_number or 0,
             "disc_number": track.disc_number,
             "year": album.release_year if album else "",
+            # New standardized variables
+            "Artist CleanName": self._clean_name(artist.name),
+            "Artist Disambiguation": "",  # TODO: Add disambiguation support
+            "Track CleanTitle": self._clean_name(track.title),
+            "Album CleanTitle": self._clean_name(album.title)
+            if album
+            else "Unknown Album",
+            "Album Disambiguation": "",  # TODO: Add disambiguation support
+            "Album Type": "Album",  # TODO: Add album type detection
+            "Release Year": str(album.release_year)
+            if album and album.release_year
+            else "",
+            "medium": track.disc_number,
+            "track": track.track_number or 0,
         }
 
         # Format template
@@ -76,6 +91,40 @@ class RenamingService:
         filename = self._sanitize_filename(filename)
 
         return filename
+
+    def _clean_name(self, name: str) -> str:
+        """Clean a name for use in filenames.
+
+        Removes or replaces characters that are problematic in filenames
+        while keeping the name readable.
+
+        Args:
+            name: Name to clean
+
+        Returns:
+            Cleaned name
+        """
+        # Replace problematic characters with safe alternatives
+        cleaned = name.replace("/", "-")
+        cleaned = cleaned.replace("\\", "-")
+        cleaned = cleaned.replace(":", " -")
+        cleaned = cleaned.replace("?", "")
+        cleaned = cleaned.replace("*", "")
+        cleaned = cleaned.replace('"', "'")
+        cleaned = cleaned.replace("<", "(")
+        cleaned = cleaned.replace(">", ")")
+        cleaned = cleaned.replace("|", "-")
+
+        # Remove control characters
+        cleaned = re.sub(r"[\x00-\x1f]", "", cleaned)
+
+        # Collapse multiple spaces
+        cleaned = re.sub(r"\s+", " ", cleaned)
+
+        # Trim whitespace
+        cleaned = cleaned.strip()
+
+        return cleaned
 
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize filename for filesystem compatibility.
@@ -190,17 +239,29 @@ class RenamingService:
                 if field_name is not None
             ]
 
+            # Supported variables (both old and new naming conventions)
             supported = {
+                # Legacy variables
                 "artist",
                 "title",
                 "album",
                 "track_number",
                 "disc_number",
                 "year",
+                # New standardized variables
+                "Artist CleanName",
+                "Artist Disambiguation",
+                "Track CleanTitle",
+                "Album CleanTitle",
+                "Album Disambiguation",
+                "Album Type",
+                "Release Year",
+                "medium",
+                "track",
             }
 
             for field in field_names:
-                # Handle format specs (e.g., track_number:02d)
+                # Handle format specs (e.g., track:02d)
                 field_base = field.split(":")[0]
                 if field_base not in supported:
                     logger.warning("Unsupported template variable: %s", field_base)

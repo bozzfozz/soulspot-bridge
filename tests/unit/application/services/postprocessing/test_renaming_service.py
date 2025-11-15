@@ -191,9 +191,74 @@ def test_validate_template_valid(renaming_service: RenamingService) -> None:
     """Test template validation with valid template."""
     assert renaming_service.validate_template("{artist}/{title}")
     assert renaming_service.validate_template("{artist}/{album}/{track_number:02d}")
+    # New template format
+    assert renaming_service.validate_template(
+        "{Artist CleanName} - {Album Type} - {Release Year} - {Album CleanTitle}/{medium:02d}{track:02d} - {Track CleanTitle}"
+    )
 
 
 def test_validate_template_invalid(renaming_service: RenamingService) -> None:
     """Test template validation with invalid variables."""
     assert not renaming_service.validate_template("{artist}/{invalid_field}")
     assert not renaming_service.validate_template("{unknown}/{title}")
+
+
+def test_generate_filename_new_format(tmp_path: Path) -> None:
+    """Test filename generation with new format."""
+    settings = Settings()
+    settings.storage = StorageSettings(
+        download_path=tmp_path / "downloads",
+        music_path=tmp_path / "music",
+        artwork_path=tmp_path / "artwork",
+        temp_path=tmp_path / "tmp",
+    )
+    settings.postprocessing = PostProcessingSettings(
+        file_naming_template="{Artist CleanName} - {Album Type} - {Release Year} - {Album CleanTitle}/{medium:02d}{track:02d} - {Track CleanTitle}",
+    )
+    service = RenamingService(settings)
+
+    track = Track(
+        id=TrackId.generate(),
+        title="Test Track",
+        artist_id=ArtistId.generate(),
+        track_number=5,
+        disc_number=1,
+        duration_ms=180000,
+    )
+    artist = Artist(id=ArtistId.generate(), name="Test Artist")
+    album = Album(
+        id=AlbumId.generate(),
+        title="Test Album",
+        artist_id=ArtistId.generate(),
+        release_year=2024,
+    )
+
+    filename = service.generate_filename(track, artist, album, ".mp3")
+
+    assert "Test Artist - Album - 2024 - Test Album" in filename
+    assert "0105 - Test Track.mp3" in filename
+
+
+def test_clean_name_method(tmp_path: Path) -> None:
+    """Test the _clean_name method."""
+    settings = Settings()
+    settings.storage = StorageSettings(
+        download_path=tmp_path / "downloads",
+        music_path=tmp_path / "music",
+        artwork_path=tmp_path / "artwork",
+        temp_path=tmp_path / "tmp",
+    )
+    service = RenamingService(settings)
+
+    # Test cleaning problematic characters
+    assert service._clean_name("Test/Name") == "Test-Name"
+    assert service._clean_name("Test:Name") == "Test -Name"
+    assert service._clean_name("Test?Name") == "TestName"
+    assert service._clean_name("Test*Name") == "TestName"
+    assert service._clean_name('Test"Name') == "Test'Name"
+    assert service._clean_name("Test<Name>") == "Test(Name)"
+    assert service._clean_name("Test|Name") == "Test-Name"
+
+    # Test whitespace handling
+    assert service._clean_name("  Test  Name  ") == "Test Name"
+    assert service._clean_name("Test   Name") == "Test Name"

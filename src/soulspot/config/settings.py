@@ -315,7 +315,7 @@ class PostProcessingSettings(BaseSettings):
         description="Enable file renaming based on templates",
     )
     file_naming_template: str = Field(
-        default="{artist}/{album}/{track_number:02d} - {title}",
+        default="{Artist CleanName} - {Album Type} - {Release Year} - {Album CleanTitle}/{medium:02d}{track:02d} - {Track CleanTitle}",
         description="File naming template",
     )
 
