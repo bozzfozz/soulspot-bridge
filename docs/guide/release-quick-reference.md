@@ -118,7 +118,7 @@ docker build -t test .
 
 ## Resources
 
-- [Full CI/CD Guide](../docs/ci-cd.md)
+- [Full CI/CD Guide](../ci-cd.md)
 - [Semantic Versioning](https://semver.org/)
 - [Keep a Changelog](https://keepachangelog.com/)
 

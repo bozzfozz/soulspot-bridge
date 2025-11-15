@@ -15,8 +15,9 @@
 4. [Now (Next 4-8 Weeks)](#-now-next-4-8-weeks)
 5. [Next (2-3 Months)](#-next-2-3-months)
 6. [Later (>3 Months)](#-later-3-months)
-7. [Dependencies & Risks](#-dependencies--risks)
-8. [Links & References](#-links--references)
+7. [Cross-Cutting Concerns](#-cross-cutting-concerns)
+8. [Dependencies & Risks](#-dependencies--risks)
+9. [Links & References](#-links--references)
 
 ---
 
@@ -342,6 +343,100 @@ The backend of SoulSpot Bridge is responsible for:
 
 ---
 
+## 🔄 Cross-Cutting Concerns
+
+Cross-cutting concerns affect both backend and frontend, ensuring:
+
+- 🔐 **Security** – Authentication, authorization, secrets management, OWASP compliance
+- 🔄 **CI/CD** – Automated testing, building, deployment pipelines
+- 📊 **Observability** – Logging, monitoring, health checks, tracing
+- 🚀 **Deployment** – Docker, Kubernetes, multi-environment setup
+- 🎯 **Release Management** – Versioning, changelogs, rollback procedures
+- ⚡ **Performance** – Caching, compression, optimization strategies
+
+### ✅ Completed Cross-Cutting Features (Phase 6)
+
+| Area | Status | Key Features |
+|------|--------|--------------|
+| **Observability** | ✅ Complete | Structured Logging, Correlation IDs, Health Checks |
+| **CI/CD** | ✅ Complete | GitHub Actions, Automated Testing, Code Quality |
+| **Docker** | ✅ Complete | Multi-stage Build, Security Hardening, Compose Setup |
+| **Security** | 🔄 Basic | OAuth PKCE, Input Validation, Basic Hardening |
+| **Performance** | ✅ Complete | Connection Pooling, Compression, Query Optimization |
+
+**Implemented:**
+- ✅ JSON structured logging with correlation IDs
+- ✅ Health check endpoints (liveness, readiness, dependencies)
+- ✅ GitHub Actions CI/CD pipeline
+- ✅ Automated testing (unit, integration)
+- ✅ Code quality checks (ruff, mypy, bandit)
+- ✅ Docker production setup
+- ✅ Docker Compose configuration
+- ✅ Deployment automation (dev, staging, prod)
+- ✅ Response compression (GZip)
+- ✅ Database connection pooling
+
+### 🚀 Planned Cross-Cutting Enhancements
+
+#### Authentication & Authorization Enhancements
+**Priority:** P1 | **Effort:** Medium (2-3 weeks)
+
+| Task | Description | Priority | Status |
+|------|-------------|----------|--------|
+| **Session Management** | Improve session handling | P1 | 📋 Planned |
+| **Token Encryption** | Encrypt tokens at rest | P1 | 📋 Planned |
+| **Token Revocation** | Proper logout with API call | P1 | 📋 Planned |
+| **Session Monitoring** | Activity-based timeout | P2 | 📋 Planned |
+
+#### Enhanced Observability
+**Priority:** P1 | **Effort:** Medium (2 weeks)
+
+| Task | Description | Priority | Status |
+|------|-------------|----------|--------|
+| **Metrics Endpoint** | Basic metrics (counts, timings) | P1 | 📋 Planned |
+| **Structured Errors** | Consistent error logging | P1 | 📋 Planned |
+| **Request Tracing** | Correlation ID propagation | P1 | ✅ Done |
+| **Performance Profiling** | Identify bottlenecks | P1 | 📋 Planned |
+| **Health Check Details** | Detailed dependency status | P1 | 📋 Planned |
+
+#### CI/CD Enhancements
+**Priority:** P1 | **Effort:** Small (1 week)
+
+| Task | Description | Priority | Status |
+|------|-------------|----------|--------|
+| **Faster Builds** | Cache optimization | P1 | 📋 Planned |
+| **Parallel Testing** | Run tests in parallel | P1 | 📋 Planned |
+| **E2E Tests** | End-to-end test suite | P1 | 📋 Planned |
+| **Deployment Rollback** | Automated rollback on failure | P1 | 📋 Planned |
+| **Preview Deployments** | PR preview environments | P2 | 📋 Planned |
+
+#### Security Hardening (Phase 7)
+**Priority:** P1 | **Effort:** Large (3-4 weeks)
+
+| Task | Description | Priority | Status |
+|------|-------------|----------|--------|
+| **Input Validation** | Comprehensive validation | P1 | 📋 Planned |
+| **Rate Limiting** | API rate limiting | P1 | 📋 Planned |
+| **CORS Hardening** | Strict CORS policies | P1 | 📋 Planned |
+| **Security Headers** | CSP, HSTS, X-Frame-Options | P1 | 📋 Planned |
+| **Secrets Rotation** | Automated secret rotation | P2 | 📋 Planned |
+| **Audit Logging** | Comprehensive audit trail | P1 | 📋 Planned |
+
+#### Operational Excellence (v3.0)
+**Priority:** P1 (v3.0) | **Effort:** Medium (2-3 weeks)
+
+| Task | Description | Priority | Status |
+|------|-------------|----------|--------|
+| **Backup & Recovery** | Automated backup procedures | P0 | 📋 v3.0 |
+| **Disaster Recovery** | Full system recovery plan | P1 | 📋 v3.0 |
+| **Rollback Procedures** | Database and app rollback | P0 | 📋 v3.0 |
+| **Incident Response** | Runbook for common issues | P1 | ✅ Done |
+| **Capacity Planning** | Resource usage projections | P1 | 📋 v3.0 |
+
+> **Note:** PostgreSQL, Redis, nginx und Kubernetes wurden entfernt (lokal-only Betrieb mit SQLite).
+
+---
+
 ## ⚠️ Dependencies & Risks
 
 ### External Dependencies
@@ -390,13 +485,12 @@ v3.0 (Production Hardening)
 - [Architecture Documentation](architecture.md)
 - [API Documentation](../src/api/README.md)
 - [Database Schema](../alembic/README.md)
-- [Testing Guide](testing-guide.md)
+- [Testing Guide](guide/testing-guide.md)
 
 ### Related Roadmaps
 
 - [Frontend Development Roadmap](frontend-development-roadmap.md)
-- [Cross-Cutting Concerns Roadmap](roadmap-crosscutting.md)
-- [Full Development Roadmap (Index)](development-roadmap.md)
+- [Full Development Roadmap (Index)](archived/development-roadmap.md)
 
 ### External Resources
 
@@ -408,6 +502,12 @@ v3.0 (Production Hardening)
 ---
 
 ## 📝 Changelog
+
+### 2025-11-15: Merged Cross-Cutting Concerns
+
+**Changes:**
+- ✅ Integrated cross-cutting concerns (CI/CD, security, observability) into backend roadmap
+- ✅ Added dedicated section for infrastructure and DevOps concerns
 
 ### 2025-11-12: Backend Roadmap Created
 
