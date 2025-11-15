@@ -509,7 +509,7 @@ ToastManager.success('Saved successfully!');
 ## 📚 Related Documentation
 
 - [Keyboard Navigation Guide](keyboard-navigation.md) - Detailed keyboard shortcuts
-- [Testing Report](ui-ux-testing-report.md) - Comprehensive test results
+- [Testing Report](../archived/ui-ux-testing-report.md) - Comprehensive test results
 - [Style Guide](soulspot-style-guide.md) - Design system documentation
 
 ---

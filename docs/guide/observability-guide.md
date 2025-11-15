@@ -135,7 +135,7 @@ Circuit breakers emit structured logs with state transitions:
 }
 ```
 
-**📖 For detailed information, see [Circuit Breaker Documentation](features/circuit-breaker.md)**
+**📖 For detailed information, see [Circuit Breaker Documentation](../features/circuit-breaker.md)**
 
 ## Health Checks
 
@@ -303,7 +303,7 @@ CIRCUIT_BREAKER_RESET_TIMEOUT=300.0
 ---
 
 For more information about the application architecture and deployment, see:
-- [Architecture Guide](architecture.md)
-- [Circuit Breaker Pattern](features/circuit-breaker.md)
+- [Architecture Guide](../architecture.md)
+- [Circuit Breaker Pattern](../features/circuit-breaker.md)
 - [Setup Guide](setup-guide.md)
-- [Development Roadmap](development-roadmap.md)
+- [Backend Development Roadmap](../backend-development-roadmap.md)

@@ -288,7 +288,6 @@ The search interface uses **localStorage** to save:
 
 - [Keyboard Navigation Guide](keyboard-navigation.md) - Full keyboard shortcuts
 - [UI/UX Visual Guide](ui-ux-visual-guide.md) - Component showcase
-- [Downloads Guide](downloads.md) - Managing your downloads
 
 ---
 

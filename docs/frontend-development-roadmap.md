@@ -6,7 +6,7 @@
 > **Owner:** Frontend Team  
 > **Next:** V2.0 Dashboard Builder (HTMX-Only, 12-18 days)
 
-> **📌 Hinweis:** Für eine detaillierte **Version 1.0 Roadmap** mit Feature-Freeze-Kriterien, Meilensteinen und Qualitätssicherung, siehe [Frontend Development Roadmap v1.0](frontend-development-roadmap-v1.0.md).
+> **📌 Hinweis:** Für eine detaillierte **Version 1.0 Roadmap** mit Feature-Freeze-Kriterien, Meilensteinen und Qualitätssicherung, siehe [Frontend Development Roadmap v1.0](archived/frontend-development-roadmap-v1.0.md).
 
 ---
 
@@ -292,9 +292,9 @@ templates/
 - ✅ Focus ring indicators on all interactive elements
 
 **Documentation:**
-- `docs/keyboard-navigation.md` - Keyboard shortcuts guide
-- `docs/ui-ux-visual-guide.md` - Component showcase
-- `docs/ui-ux-testing-report.md` - Test coverage (12/12 pass)
+- `docs/guide/keyboard-navigation.md` - Keyboard shortcuts guide
+- `docs/guide/ui-ux-visual-guide.md` - Component showcase
+- `docs/archived/ui-ux-testing-report.md` - Test coverage (12/12 pass)
 
 ---
 
@@ -334,7 +334,7 @@ templates/
 - ✅ Full keyboard navigation support
 
 **Documentation:**
-- `docs/advanced-search-guide.md` - Complete user guide with examples and troubleshooting
+- `docs/guide/advanced-search-guide.md` - Complete user guide with examples and troubleshooting
 
 ---
 
@@ -402,7 +402,7 @@ templates/
 
 > **Architecture Decision:** Pure HTMX approach with button-based layout controls instead of GridStack drag-and-drop.  
 > **Rationale:** Superior accessibility, faster development (12-18 days vs 25-35), zero custom JS, mobile-friendly.  
-> **See:** `docs/frontend-roadmap-htmx-evaluation.md` for complete evaluation.
+> **See:** `docs/archived/frontend-roadmap-htmx-evaluation.md` for complete evaluation.
 
 | Phase | Description | Priority | Effort | Status |
 |-------|-------------|----------|--------|--------|
@@ -664,8 +664,8 @@ CREATE TABLE widget_instances (
 **Documentation:**
 
 **For Developers:**
-- [x] `docs/frontend-htmx-inventory.md` – Current HTMX usage inventory
-- [x] `docs/frontend-roadmap-htmx-evaluation.md` – Complete evaluation & design (1000+ lines)
+- [x] `docs/archived/frontend-htmx-inventory.md` – Current HTMX usage inventory
+- [x] `docs/archived/frontend-roadmap-htmx-evaluation.md` – Complete evaluation & design (1000+ lines)
 - [ ] API documentation (OpenAPI/Swagger)
 - [ ] Widget development guide
 
@@ -677,9 +677,9 @@ CREATE TABLE widget_instances (
 ---
 
 **References:**
-- See: `docs/frontend-roadmap-htmx-evaluation.md` for complete architecture analysis
-- See: `docs/frontend-htmx-inventory.md` for current state inventory
-- See: `docs/frontend-development-roadmap-archived-gridstack.md` for original GridStack plan
+- See: `docs/archived/frontend-roadmap-htmx-evaluation.md` for complete architecture analysis
+- See: `docs/archived/frontend-htmx-inventory.md` for current state inventory
+- See: `docs/archived/frontend-development-roadmap-archived-gridstack.md` for original GridStack plan
 
 ---
 
@@ -817,16 +817,15 @@ Phase 8 (Advanced Features)
 
 ### Documentation
 
-- [Design Guidelines](design-guidelines.md)
-- [Style Guide](soulspot-style-guide.md)
-- [UI Screenshots](ui-screenshots.md)
+- [Design Guidelines](guide/design-guidelines.md)
+- [Style Guide](guide/soulspot-style-guide.md)
+- [UI Screenshots](archived/ui-screenshots.md)
 - [Accessibility Guide](contributing.md#accessibility)
 
 ### Related Roadmaps
 
 - [Backend Development Roadmap](backend-development-roadmap.md)
-- [Cross-Cutting Concerns Roadmap](roadmap-crosscutting.md)
-- [Full Development Roadmap (Index)](development-roadmap.md)
+- [Full Development Roadmap (Index)](archived/development-roadmap.md)
 
 ### External Resources
 
@@ -846,10 +845,10 @@ Phase 8 (Advanced Features)
 
 **Major Changes:**
 - ✅ **Architecture Decision:** HTMX-Only with button-based layout (NO GridStack)
-- ✅ Created comprehensive evaluation: `docs/frontend-roadmap-htmx-evaluation.md` (1000+ lines)
-- ✅ Created inventory report: `docs/frontend-htmx-inventory.md` (567 lines)
+- ✅ Created comprehensive evaluation: `docs/archived/frontend-roadmap-htmx-evaluation.md` (1000+ lines)
+- ✅ Created inventory report: `docs/archived/frontend-htmx-inventory.md` (567 lines)
 - ✅ Updated v2.0 section with complete HTMX-only implementation plan
-- ✅ Archived original GridStack plan: `docs/frontend-development-roadmap-archived-gridstack.md`
+- ✅ Archived original GridStack plan: `docs/archived/frontend-development-roadmap-archived-gridstack.md`
 - ✅ Reduced development effort: 12-18 days (vs 25-35 for GridStack)
 - ✅ Eliminated GridStack.js dependency and integration complexity
 - ✅ Improved accessibility (WCAG 2.1 AA native compliance)
@@ -868,9 +867,9 @@ Pure HTMX with button-based layout controls delivers superior accessibility, fas
 - Effort estimate: 12-18 days across 4 phases
 
 **Documentation:**
-- `docs/frontend-roadmap-htmx-evaluation.md` - Complete evaluation with research, architecture options, API specs, code examples (26KB, 1001 lines)
-- `docs/frontend-htmx-inventory.md` - Current HTMX usage inventory with readiness assessment (16KB, 567 lines)
-- `docs/frontend-development-roadmap-archived-gridstack.md` - Original GridStack plan (archived for reference)
+- `docs/archived/frontend-roadmap-htmx-evaluation.md` - Complete evaluation with research, architecture options, API specs, code examples (26KB, 1001 lines)
+- `docs/archived/frontend-htmx-inventory.md` - Current HTMX usage inventory with readiness assessment (16KB, 567 lines)
+- `docs/archived/frontend-development-roadmap-archived-gridstack.md` - Original GridStack plan (archived for reference)
 
 ### 2025-11-12: Frontend Roadmap Created
 
@@ -882,7 +881,7 @@ Pure HTMX with button-based layout controls delivers superior accessibility, fas
 - ✅ Dependencies and risks documented
 - ✅ Now/Next/Later structure implemented
 
-**Source:** Original `development-roadmap.md` (archived)
+**Source:** Original `docs/archived/development-roadmap.md`
 
 ---
 
