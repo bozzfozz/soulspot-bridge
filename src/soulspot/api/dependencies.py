@@ -15,6 +15,8 @@ from soulspot.application.use_cases.import_spotify_playlist import (
 from soulspot.application.use_cases.search_and_download import (
     SearchAndDownloadTrackUseCase,
 )
+from soulspot.application.workers.download_worker import DownloadWorker
+from soulspot.application.workers.job_queue import JobQueue
 from soulspot.config import Settings, get_settings
 from soulspot.infrastructure.integrations.musicbrainz_client import MusicBrainzClient
 from soulspot.infrastructure.integrations.slskd_client import SlskdClient
@@ -228,3 +230,43 @@ def get_enrich_metadata_use_case(
         artist_repository=artist_repository,
         album_repository=album_repository,
     )
+
+
+def get_job_queue(request: Request) -> JobQueue:
+    """Get job queue instance from app state.
+
+    Args:
+        request: FastAPI request
+
+    Returns:
+        JobQueue instance
+
+    Raises:
+        HTTPException: If job queue not initialized
+    """
+    if not hasattr(request.app.state, "job_queue"):
+        raise HTTPException(
+            status_code=503,
+            detail="Job queue not initialized",
+        )
+    return cast(JobQueue, request.app.state.job_queue)
+
+
+def get_download_worker(request: Request) -> DownloadWorker:
+    """Get download worker instance from app state.
+
+    Args:
+        request: FastAPI request
+
+    Returns:
+        DownloadWorker instance
+
+    Raises:
+        HTTPException: If download worker not initialized
+    """
+    if not hasattr(request.app.state, "download_worker"):
+        raise HTTPException(
+            status_code=503,
+            detail="Download worker not initialized",
+        )
+    return cast(DownloadWorker, request.app.state.download_worker)

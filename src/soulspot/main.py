@@ -36,6 +36,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     - Logging configuration
     - Directory creation
     - Database initialization
+    - Job queue and download worker startup
     - Auto-import service startup
     - Resource cleanup
     """
@@ -51,6 +52,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Startup
     auto_import_task = None
+    job_queue = None
     try:
         # Ensure storage directories exist
         settings.ensure_directories()
@@ -60,6 +62,45 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         db = Database(settings)
         app.state.db = db
         logger.info("Database initialized: %s", settings.database.url)
+
+        # Initialize job queue with configured max concurrent downloads
+        from soulspot.application.workers.download_worker import DownloadWorker
+        from soulspot.application.workers.job_queue import JobQueue
+        from soulspot.infrastructure.integrations.slskd_client import SlskdClient
+        from soulspot.infrastructure.persistence.repositories import (
+            DownloadRepository,
+            TrackRepository,
+        )
+
+        job_queue = JobQueue(
+            max_concurrent_jobs=settings.download.max_concurrent_downloads
+        )
+        app.state.job_queue = job_queue
+
+        # Initialize download worker with repositories
+        # Note: These will be created per-request in real usage, but we need instances for worker
+        async for session in db.get_session():
+            slskd_client = SlskdClient(settings.slskd)
+            track_repository = TrackRepository(session)
+            download_repository = DownloadRepository(session)
+
+            download_worker = DownloadWorker(
+                job_queue=job_queue,
+                slskd_client=slskd_client,
+                track_repository=track_repository,
+                download_repository=download_repository,
+            )
+            download_worker.register()
+            app.state.download_worker = download_worker
+            break
+
+        # Start job queue workers
+        await job_queue.start(num_workers=3)
+        logger.info(
+            "Job queue started with %d workers, max concurrent downloads: %d",
+            3,
+            settings.download.max_concurrent_downloads,
+        )
 
         # Start auto-import service in the background
         from soulspot.application.services import AutoImportService
@@ -77,6 +118,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     finally:
         # Shutdown - always attempt cleanup
         logger.info("Shutting down application")
+
+        # Stop job queue
+        if job_queue is not None:
+            try:
+                logger.info("Stopping job queue...")
+                await job_queue.stop()
+                logger.info("Job queue stopped")
+            except Exception as e:
+                logger.exception("Error stopping job queue: %s", e)
 
         # Stop auto-import service
         if auto_import_task is not None:
