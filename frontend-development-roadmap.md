@@ -1,9 +1,9 @@
 # SoulSpot Bridge – Detaillierte Frontend-Development-Roadmap Version 1.0
 
-> **Version:** 1.0.0  
-> **Letzte Aktualisierung:** 2025-11-15  
-> **Status:** Planung & Vorbereitung  
-> **Verantwortlich:** Frontend Team  
+> **Version:** 1.0.0
+> **Letzte Aktualisierung:** 2025-11-15
+> **Status:** Planung & Vorbereitung
+> **Verantwortlich:** Frontend Team
 > **Ziel:** Produktionsreife Web-Oberfläche mit vollständiger Feature-Parität
 
 ---
@@ -351,7 +351,7 @@ Version 1.0 von SoulSpot Bridge stellt eine vollständige, produktionsreife Web-
 ## Meilensteine & Zeitplan
 
 ### Meilenstein 1: Alpha-Phase ✅ **ABGESCHLOSSEN**
-**Zeitraum:** 2025-09 bis 2025-11  
+**Zeitraum:** 2025-09 bis 2025-11
 **Status:** ✅ Complete
 
 **Deliverables:**
@@ -370,7 +370,7 @@ Version 1.0 von SoulSpot Bridge stellt eine vollständige, produktionsreife Web-
 ---
 
 ### Meilenstein 2: Beta-Phase 1 – UI/UX Improvements ✅ **ABGESCHLOSSEN**
-**Zeitraum:** 2025-11-01 bis 2025-11-13  
+**Zeitraum:** 2025-11-01 bis 2025-11-13
 **Status:** ✅ Complete
 
 **Deliverables:**
@@ -390,7 +390,7 @@ Version 1.0 von SoulSpot Bridge stellt eine vollständige, produktionsreife Web-
 ---
 
 ### Meilenstein 3: Beta-Phase 2 – Queue & Playlist Management 🔄 **IN ARBEIT**
-**Zeitraum:** 2025-11-15 bis 2025-12-15 (4 Wochen)  
+**Zeitraum:** 2025-11-15 bis 2025-12-15 (4 Wochen)
 **Status:** 📋 Geplant
 
 **Deliverables:**
@@ -419,7 +419,7 @@ Version 1.0 von SoulSpot Bridge stellt eine vollständige, produktionsreife Web-
 ---
 
 ### Meilenstein 4: Beta-Phase 3 – Library & Metadata 📋 **GEPLANT**
-**Zeitraum:** 2025-12-16 bis 2026-01-15 (4 Wochen)  
+**Zeitraum:** 2025-12-16 bis 2026-01-15 (4 Wochen)
 **Status:** 📋 Geplant
 
 **Deliverables:**
@@ -446,7 +446,7 @@ Version 1.0 von SoulSpot Bridge stellt eine vollständige, produktionsreife Web-
 ---
 
 ### Meilenstein 5: Release Candidate (RC1) 📋 **GEPLANT**
-**Zeitraum:** 2026-01-16 bis 2026-01-31 (2 Wochen)  
+**Zeitraum:** 2026-01-16 bis 2026-01-31 (2 Wochen)
 **Status:** 📋 Geplant
 
 **Deliverables:**
@@ -467,7 +467,7 @@ Version 1.0 von SoulSpot Bridge stellt eine vollständige, produktionsreife Web-
 ---
 
 ### Meilenstein 6: Version 1.0 Launch 🎯 **ZIEL**
-**Geplantes Datum:** 2026-02-01  
+**Geplantes Datum:** 2026-02-01
 **Status:** 📋 Geplant
 
 **Deliverables:**
@@ -712,8 +712,8 @@ src/soulspot/templates/
 
 #### Pattern 1: Dynamic Content Loading
 ```html
-<div hx-get="/api/jobs" 
-     hx-trigger="load" 
+<div hx-get="/api/jobs"
+     hx-trigger="load"
      hx-swap="innerHTML">
   <div class="ui-loading-spinner"></div>
 </div>
@@ -721,8 +721,8 @@ src/soulspot/templates/
 
 #### Pattern 2: Form Submissions
 ```html
-<form hx-post="/api/downloads" 
-      hx-target="#queue" 
+<form hx-post="/api/downloads"
+      hx-target="#queue"
       hx-swap="beforeend"
       hx-on::after-request="showToast('Download added!')">
   <!-- Form fields -->
@@ -734,8 +734,8 @@ src/soulspot/templates/
 
 #### Pattern 3: Polling für Live-Updates
 ```html
-<div hx-get="/api/jobs/active" 
-     hx-trigger="every 5s" 
+<div hx-get="/api/jobs/active"
+     hx-trigger="every 5s"
      hx-swap="outerHTML">
   <!-- Job list -->
 </div>
@@ -758,7 +758,7 @@ src/soulspot/templates/
 
 ### Phase 1: Foundation (Alpha) ✅ **ABGESCHLOSSEN**
 
-**Dauer:** 8 Wochen  
+**Dauer:** 8 Wochen
 **Status:** ✅ Complete
 
 **Deliverables:**
@@ -773,7 +773,7 @@ src/soulspot/templates/
 
 ### Phase 2: UI/UX Enhancement (Beta 1) ✅ **ABGESCHLOSSEN**
 
-**Dauer:** 2 Wochen  
+**Dauer:** 2 Wochen
 **Status:** ✅ Complete
 
 **Deliverables:**
@@ -789,8 +789,8 @@ src/soulspot/templates/
 
 ### Phase 3: Queue & Playlist Management (Beta 2) 🔄 **LAUFEND**
 
-**Dauer:** 4 Wochen  
-**Geplanter Start:** 2025-11-15  
+**Dauer:** 4 Wochen
+**Geplanter Start:** 2025-11-15
 **Status:** 📋 In Planung
 
 **Woche 1-2: Enhanced Queue UI**
@@ -844,8 +844,8 @@ src/soulspot/templates/
 
 ### Phase 4: Library & Metadata (Beta 3) 📋 **GEPLANT**
 
-**Dauer:** 4 Wochen  
-**Geplanter Start:** 2025-12-16  
+**Dauer:** 4 Wochen
+**Geplanter Start:** 2025-12-16
 **Status:** 📋 Geplant
 
 **Woche 1-2: Library Browser**
@@ -902,8 +902,8 @@ src/soulspot/templates/
 
 ### Phase 5: Release Candidate (RC) 📋 **GEPLANT**
 
-**Dauer:** 2 Wochen  
-**Geplanter Start:** 2026-01-16  
+**Dauer:** 2 Wochen
+**Geplanter Start:** 2026-01-16
 **Status:** 📋 Geplant
 
 **Woche 1: Testing & Bugfixes**
@@ -958,7 +958,7 @@ src/soulspot/templates/
 
 ### Phase 6: Launch & Post-Launch 🎯 **ZIEL**
 
-**Launch-Datum:** 2026-02-01  
+**Launch-Datum:** 2026-02-01
 **Status:** 📋 Geplant
 
 **Launch-Tag:**
@@ -986,7 +986,7 @@ src/soulspot/templates/
 ### Testing-Strategie
 
 #### 1. Unit Tests
-**Tool:** Pytest  
+**Tool:** Pytest
 **Target Coverage:** >80%
 
 **Scope:**
@@ -1007,7 +1007,7 @@ def test_playlist_card_rendering():
 ---
 
 #### 2. Integration Tests
-**Tool:** Pytest + httpx  
+**Tool:** Pytest + httpx
 **Scope:**
 - API Endpoints mit HTMX-Requests
 - Database Interactions
@@ -1028,7 +1028,7 @@ async def test_add_to_queue(client):
 ---
 
 #### 3. End-to-End Tests
-**Tool:** Playwright  
+**Tool:** Playwright
 **Scope:**
 - Critical User Journeys
 - Cross-Browser Testing
@@ -1039,16 +1039,16 @@ async def test_add_to_queue(client):
 async def test_playlist_import_flow(page):
     # Navigate to playlists
     await page.goto("/ui/playlists")
-    
+
     # Click import button
     await page.click("button:has-text('Import')")
-    
+
     # Select a playlist
     await page.click("[data-playlist-id='123']")
-    
+
     # Confirm import
     await page.click("button:has-text('Import Selected')")
-    
+
     # Verify success message
     await expect(page.locator(".ui-toast-success")).to_be_visible()
 ```
@@ -1056,7 +1056,7 @@ async def test_playlist_import_flow(page):
 ---
 
 #### 4. Accessibility Tests
-**Tool:** axe-core (via Playwright)  
+**Tool:** axe-core (via Playwright)
 **Standard:** WCAG 2.1 AA
 
 **Automated Tests:**
@@ -1077,7 +1077,7 @@ async def test_home_page_accessibility(page):
 ---
 
 #### 5. Performance Tests
-**Tool:** Lighthouse CLI  
+**Tool:** Lighthouse CLI
 **Target Scores:**
 - Performance: >90
 - Accessibility: 100
@@ -1103,7 +1103,7 @@ lighthouse http://localhost:8765/ui/ \
 ### Code-Quality-Standards
 
 #### 1. Linting & Formatting
-**Tool:** Ruff  
+**Tool:** Ruff
 **Config:** `pyproject.toml`
 
 **Pre-Commit Hook:**
@@ -1121,7 +1121,7 @@ repos:
 ---
 
 #### 2. Type Checking
-**Tool:** MyPy  
+**Tool:** MyPy
 **Mode:** Strict
 
 **Config:**
@@ -1235,7 +1235,7 @@ trivy image ghcr.io/bozzfozz/soulspot-bridge:latest
 ### Maintenance-Plan
 
 #### Patch-Releases (1.0.x)
-**Frequenz:** Nach Bedarf (bei kritischen Bugs)  
+**Frequenz:** Nach Bedarf (bei kritischen Bugs)
 **Scope:**
 - Sicherheitsupdates
 - Kritische Bugfixes
@@ -1243,7 +1243,7 @@ trivy image ghcr.io/bozzfozz/soulspot-bridge:latest
 - Dependency-Updates
 
 #### Minor-Releases (1.x.0)
-**Frequenz:** Alle 3-6 Monate  
+**Frequenz:** Alle 3-6 Monate
 **Scope:**
 - Neue Features (P2)
 - UI/UX Improvements
@@ -1251,7 +1251,7 @@ trivy image ghcr.io/bozzfozz/soulspot-bridge:latest
 - Nicht-kritische Bugfixes
 
 #### Major-Releases (2.0.0)
-**Geplant:** Q3 2026  
+**Geplant:** Q3 2026
 **Scope:**
 - Breaking Changes
 - Große Architektur-Änderungen
@@ -1308,8 +1308,8 @@ trivy image ghcr.io/bozzfozz/soulspot-bridge:latest
 
 **Ende der Frontend-Development-Roadmap Version 1.0**
 
-**Status:** 📋 Planung Complete | 🔄 Implementierung läuft  
-**Nächster Review:** 2025-12-01  
+**Status:** 📋 Planung Complete | 🔄 Implementierung läuft
+**Nächster Review:** 2025-12-01
 **Verantwortlich:** Frontend Team
 
 ---

@@ -1,8 +1,8 @@
 # UI 1.0 Design System
 
-> **Version:** 1.0.0  
-> **Status:** Production Ready  
-> **Lokation:** `/docs/ui/` (SoulSpot Bridge Repository)  
+> **Version:** 1.0.0
+> **Status:** Production Ready
+> **Lokation:** `/docs/ui/` (SoulSpot Bridge Repository)
 > **Letzte Aktualisierung:** 2025-11-15
 
 A neutral, reusable UI design system based on the visual design language from the [Wizarr](https://github.com/wizarrrr/wizarr) project (MIT License).
@@ -110,13 +110,13 @@ cp -r docs/ui/ /path/to/your/project/ui/
         <!-- Header content -->
       </div>
     </header>
-    
+
     <main class="ui-page-content">
       <div class="ui-container">
         <!-- Main content -->
       </div>
     </main>
-    
+
     <footer class="ui-page-footer">
       <div class="ui-container">
         <!-- Footer content -->
@@ -182,12 +182,12 @@ cp -r docs/ui/ /path/to/your/project/ui/
     <input type="text" class="ui-input" placeholder="Enter username">
     <div class="ui-form-help">Choose a unique username</div>
   </div>
-  
+
   <div class="ui-form-group">
     <label class="ui-label">Description</label>
     <textarea class="ui-textarea" placeholder="Enter description"></textarea>
   </div>
-  
+
   <button type="submit" class="ui-btn ui-btn-primary">Submit</button>
 </form>
 ```
@@ -224,7 +224,7 @@ Build on top of the base classes:
   /* Inherit base button styles */
   @extend .ui-btn;
   @extend .ui-btn-primary;
-  
+
   /* Add custom styles */
   border-radius: var(--ui-radius-full);
   text-transform: uppercase;
@@ -241,14 +241,14 @@ Dark mode is automatic based on system preferences. You can also manually toggle
 <script>
   function toggleDarkMode() {
     document.documentElement.classList.toggle('dark');
-    localStorage.setItem('theme', 
+    localStorage.setItem('theme',
       document.documentElement.classList.contains('dark') ? 'dark' : 'light'
     );
   }
-  
+
   // Load saved theme on page load
-  if (localStorage.getItem('theme') === 'dark' || 
-      (!localStorage.getItem('theme') && 
+  if (localStorage.getItem('theme') === 'dark' ||
+      (!localStorage.getItem('theme') &&
        window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark');
   }
@@ -260,7 +260,7 @@ Dark mode is automatic based on system preferences. You can also manually toggle
 The system uses mobile-first responsive breakpoints:
 
 - **sm**: 640px
-- **md**: 768px  
+- **md**: 768px
 - **lg**: 1024px
 - **xl**: 1280px
 - **2xl**: 1536px
@@ -311,9 +311,9 @@ Built-in accessibility features:
 
 This design system is derived from the visual design of [Wizarr](https://github.com/wizarrrr/wizarr), which is licensed under the MIT License.
 
-**Original Project**: Wizarr  
-**Copyright**: © Wizarr Team  
-**License**: MIT License  
+**Original Project**: Wizarr
+**Copyright**: © Wizarr Team
+**License**: MIT License
 **Repository**: https://github.com/wizarrrr/wizarr
 
 ### Changes Made
@@ -410,8 +410,8 @@ This is a neutral design system extraction. For questions about:
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2025-11-15  
-**Status**: Production Ready  
-**Lokation**: `/docs/ui/` (SoulSpot Bridge)  
+**Version**: 1.0.0
+**Last Updated**: 2025-11-15
+**Status**: Production Ready
+**Lokation**: `/docs/ui/` (SoulSpot Bridge)
 **Lizenz**: MIT (basierend auf Wizarr)
