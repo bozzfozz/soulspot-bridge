@@ -183,15 +183,23 @@ class ID3TaggingService:
     def _create_text_frame(self, frame_id: str, data: bytes) -> Any:
         """Create a text frame for ID3 tag.
 
+        This is a placeholder for creating custom ID3 frames.
+        Currently not fully implemented - would use mutagen's specific frame
+        classes like TXXX (user-defined text), UFID (unique file identifier), etc.
+
         Args:
-            frame_id: Frame ID
-            data: Frame data
+            frame_id: ID3 frame identifier (e.g., 'TXXX', 'UFID')
+            data: Raw frame data bytes
 
         Returns:
-            ID3 frame object
+            ID3 frame object (implementation pending)
+
+        Note:
+            For MusicBrainz IDs, use mutagen's UFID frame directly.
+            For custom text fields, use TXXX frames.
         """
-        # This is a placeholder for creating custom frames
-        # In practice, we'd use mutagen's frame classes
+        # TODO: Implement custom frame creation using mutagen's frame classes
+        # Example: TXXX(encoding=3, desc='custom_field', text=['value'])
         pass
 
     async def read_tags(self, file_path: Path) -> dict[str, Any]:

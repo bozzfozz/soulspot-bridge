@@ -19,7 +19,15 @@ class NotificationService:
     """
 
     def __init__(self) -> None:
-        """Initialize notification service."""
+        """Initialize notification service.
+
+        Sets up the notification service with a logging-based backend.
+        In production, this would be extended to support:
+        - Email notifications via SMTP
+        - Webhook notifications to external services
+        - Push notifications via FCM/APNS
+        - In-app notification queue for UI display
+        """
         pass
 
     async def send_new_release_notification(

@@ -172,6 +172,19 @@ class SearchAndDownloadTrackUseCase(
         # Sort by bitrate (higher is better) and file size
         # Prefer FLAC > 320kbps MP3 > lower quality
         def quality_score(file: dict[str, Any]) -> tuple[int, int, int]:
+            """Calculate quality score for ranking search results.
+
+            Scoring hierarchy:
+            1. Format bonus: FLAC gets 1000 bonus points
+            2. Bitrate: Higher bitrate is better
+            3. File size: Larger files often indicate better quality
+
+            Args:
+                file: Search result file dict with filename, bitrate, size
+
+            Returns:
+                Tuple of (format_bonus, bitrate, size) for sorting
+            """
             filename = file.get("filename", "").lower()
             bitrate = file.get("bitrate", 0)
             size = file.get("size", 0)

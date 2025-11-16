@@ -21,7 +21,11 @@ def utc_now() -> datetime:
 
 
 class Base(DeclarativeBase):
-    """Base class for all ORM models."""
+    """Base class for all ORM models.
+
+    Provides common declarative base for SQLAlchemy models.
+    All models inherit from this to use the same metadata registry.
+    """
 
     pass
 

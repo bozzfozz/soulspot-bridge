@@ -137,12 +137,14 @@ class ArtworkService:
             return None
 
         try:
-            # Extract album ID from URI (spotify:album:XXXXX)
+            # Extract album ID from URI format: spotify:album:XXXXX or https://open.spotify.com/album/XXXXX
             # album_id = str(album_uri).split(":")[-1]
 
             # This would require access token - stub for now
-            # In production, this would call spotify_client.get_album()
-            # and extract image URL from response
+            # In production, this would:
+            # 1. Call spotify_client.get_album(album_id, access_token)
+            # 2. Extract image URLs from response['images'] (largest available)
+            # 3. Download and process the image
             logger.debug(
                 "Spotify artwork download not yet implemented for: %s", album_uri
             )
