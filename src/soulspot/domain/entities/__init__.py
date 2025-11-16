@@ -277,3 +277,113 @@ class Download:
             DownloadStatus.FAILED,
             DownloadStatus.CANCELLED,
         )
+
+
+class ScanStatus(str, Enum):
+    """Status of a library scan."""
+
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+@dataclass
+class LibraryScan:
+    """Library scan entity representing a library scanning operation."""
+
+    id: str
+    status: ScanStatus
+    scan_path: str
+    total_files: int = 0
+    scanned_files: int = 0
+    new_files: int = 0
+    updated_files: int = 0
+    broken_files: int = 0
+    duplicate_files: int = 0
+    error_message: str | None = None
+    started_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    completed_at: datetime | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    def start(self) -> None:
+        """Mark scan as started."""
+        if self.status != ScanStatus.PENDING:
+            raise ValueError(f"Cannot start scan in status {self.status}")
+        self.status = ScanStatus.RUNNING
+        self.started_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
+
+    def update_progress(
+        self,
+        scanned_files: int,
+        new_files: int = 0,
+        updated_files: int = 0,
+        broken_files: int = 0,
+        duplicate_files: int = 0,
+    ) -> None:
+        """Update scan progress."""
+        self.scanned_files = scanned_files
+        self.new_files += new_files
+        self.updated_files += updated_files
+        self.broken_files += broken_files
+        self.duplicate_files += duplicate_files
+        self.updated_at = datetime.now(UTC)
+
+    def complete(self) -> None:
+        """Mark scan as completed."""
+        if self.status != ScanStatus.RUNNING:
+            raise ValueError(f"Cannot complete scan in status {self.status}")
+        self.status = ScanStatus.COMPLETED
+        self.completed_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
+
+    def fail(self, error_message: str) -> None:
+        """Mark scan as failed."""
+        self.status = ScanStatus.FAILED
+        self.error_message = error_message
+        self.completed_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
+
+    def cancel(self) -> None:
+        """Cancel the scan."""
+        if self.status not in (ScanStatus.PENDING, ScanStatus.RUNNING):
+            raise ValueError(f"Cannot cancel scan in status {self.status}")
+        self.status = ScanStatus.CANCELLED
+        self.completed_at = datetime.now(UTC)
+        self.updated_at = datetime.now(UTC)
+
+    def get_progress_percent(self) -> float:
+        """Calculate scan progress percentage."""
+        if self.total_files == 0:
+            return 0.0
+        return (self.scanned_files / self.total_files) * 100.0
+
+
+@dataclass
+class FileDuplicate:
+    """File duplicate entity representing duplicate file tracking."""
+
+    id: str
+    file_hash: str
+    file_hash_algorithm: str
+    primary_track_id: TrackId | None = None
+    duplicate_count: int = 1
+    total_size_bytes: int = 0
+    resolved: bool = False
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+    def mark_resolved(self, primary_track_id: TrackId) -> None:
+        """Mark duplicate as resolved with a primary track."""
+        self.resolved = True
+        self.primary_track_id = primary_track_id
+        self.updated_at = datetime.now(UTC)
+
+    def add_duplicate(self, file_size: int) -> None:
+        """Add a duplicate file."""
+        self.duplicate_count += 1
+        self.total_size_bytes += file_size
+        self.updated_at = datetime.now(UTC)

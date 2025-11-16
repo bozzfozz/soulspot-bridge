@@ -119,6 +119,17 @@ class TrackModel(Base):
         String(12), nullable=True, unique=True, index=True
     )
     file_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+    # File integrity and library management fields
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    file_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    file_hash_algorithm: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    last_scanned_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    is_broken: Mapped[bool] = mapped_column(default=False, nullable=False, index=True)
+    audio_bitrate: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    audio_format: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    audio_sample_rate: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=utc_now, onupdate=utc_now, nullable=False
@@ -228,4 +239,64 @@ class DownloadModel(Base):
     __table_args__ = (
         Index("ix_downloads_status_created", "status", "created_at"),
         Index("ix_downloads_priority_created", "priority", "created_at"),
+    )
+
+
+class LibraryScanModel(Base):
+    """SQLAlchemy model for Library Scan tracking."""
+
+    __tablename__ = "library_scans"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    status: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    scan_path: Mapped[str] = mapped_column(String(512), nullable=False)
+    total_files: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    scanned_files: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    new_files: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    updated_files: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    broken_files: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    duplicate_files: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_library_scans_status", "status"),
+        Index("ix_library_scans_started_at", "started_at"),
+    )
+
+
+class FileDuplicateModel(Base):
+    """SQLAlchemy model for File Duplicate tracking."""
+
+    __tablename__ = "file_duplicates"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    file_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    file_hash_algorithm: Mapped[str] = mapped_column(String(20), nullable=False)
+    primary_track_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("tracks.id", ondelete="CASCADE"), nullable=True
+    )
+    duplicate_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    total_size_bytes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    resolved: Mapped[bool] = mapped_column(default=False, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+    # Relationships
+    primary_track: Mapped["TrackModel | None"] = relationship("TrackModel")
+
+    __table_args__ = (
+        Index("ix_file_duplicates_hash", "file_hash"),
+        Index("ix_file_duplicates_resolved", "resolved"),
     )
