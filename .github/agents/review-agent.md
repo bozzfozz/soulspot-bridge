@@ -1,5 +1,5 @@
 ---
-name: qa-test-automation
+name: review-agent
 model: 
 color: cyan
 description: QA & Test Automation Specialist für FastAPI + HTMX + SQLAlchemy + SQLite Anwendungen
