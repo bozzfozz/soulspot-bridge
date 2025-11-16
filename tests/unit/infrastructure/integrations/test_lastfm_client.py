@@ -1,6 +1,5 @@
 """Tests for Last.fm client."""
 
-
 import pytest
 from pytest_httpx import HTTPXMock
 

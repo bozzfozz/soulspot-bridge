@@ -258,9 +258,7 @@ class TestLibraryScannerService:
         assert "samehash" in result
         assert len(result["samehash"]) == 2
 
-    def test_analyze_broken_files(
-        self, scanner_service: LibraryScannerService
-    ) -> None:
+    def test_analyze_broken_files(self, scanner_service: LibraryScannerService) -> None:
         """Test analyzing broken files."""
         file1 = FileInfo(
             path=Path("/path/file1.mp3"),

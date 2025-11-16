@@ -460,7 +460,9 @@ class ArtistWatchlist:
             return False
         if self.last_checked_at is None:
             return True
-        hours_since_check = (datetime.now(UTC) - self.last_checked_at).total_seconds() / 3600
+        hours_since_check = (
+            datetime.now(UTC) - self.last_checked_at
+        ).total_seconds() / 3600
         return hours_since_check >= self.check_frequency_hours
 
 

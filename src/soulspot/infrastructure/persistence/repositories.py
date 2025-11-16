@@ -525,10 +525,10 @@ class TrackRepository(ITrackRepository):
 
     async def add_batch(self, tracks: list[Track]) -> None:
         """Add multiple tracks in a single batch operation.
-        
+
         This is more efficient than calling add() multiple times as it reduces
         the number of round trips to the database.
-        
+
         Args:
             tracks: List of Track entities to add
         """
@@ -554,10 +554,10 @@ class TrackRepository(ITrackRepository):
 
     async def update_batch(self, tracks: list[Track]) -> None:
         """Update multiple tracks in a single batch operation.
-        
+
         This is more efficient than calling update() multiple times.
         Note: This loads all tracks into memory first, then updates them.
-        
+
         Args:
             tracks: List of Track entities to update
         """
@@ -565,7 +565,7 @@ class TrackRepository(ITrackRepository):
         stmt = select(TrackModel).where(TrackModel.id.in_(track_ids))
         result = await self.session.execute(stmt)
         models = {model.id: model for model in result.scalars().all()}
-        
+
         for track in tracks:
             model = models.get(str(track.id.value))
             if model:
@@ -575,7 +575,9 @@ class TrackRepository(ITrackRepository):
                 model.duration_ms = track.duration_ms
                 model.track_number = track.track_number
                 model.disc_number = track.disc_number
-                model.spotify_uri = str(track.spotify_uri) if track.spotify_uri else None
+                model.spotify_uri = (
+                    str(track.spotify_uri) if track.spotify_uri else None
+                )
                 model.musicbrainz_id = track.musicbrainz_id
                 model.isrc = track.isrc
                 model.file_path = str(track.file_path) if track.file_path else None
@@ -1492,7 +1494,9 @@ class AutomationRuleRepository:
 
         stmt = (
             select(AutomationRuleModel)
-            .order_by(AutomationRuleModel.priority.desc(), AutomationRuleModel.created_at)
+            .order_by(
+                AutomationRuleModel.priority.desc(), AutomationRuleModel.created_at
+            )
             .limit(limit)
             .offset(offset)
         )
@@ -1534,7 +1538,9 @@ class AutomationRuleRepository:
         stmt = (
             select(AutomationRuleModel)
             .where(AutomationRuleModel.trigger == trigger)
-            .order_by(AutomationRuleModel.priority.desc(), AutomationRuleModel.created_at)
+            .order_by(
+                AutomationRuleModel.priority.desc(), AutomationRuleModel.created_at
+            )
         )
         result = await self.session.execute(stmt)
         models = result.scalars().all()
@@ -1574,7 +1580,9 @@ class AutomationRuleRepository:
         stmt = (
             select(AutomationRuleModel)
             .where(AutomationRuleModel.enabled == True)  # noqa: E712
-            .order_by(AutomationRuleModel.priority.desc(), AutomationRuleModel.created_at)
+            .order_by(
+                AutomationRuleModel.priority.desc(), AutomationRuleModel.created_at
+            )
         )
         result = await self.session.execute(stmt)
         models = result.scalars().all()
@@ -1662,7 +1670,9 @@ class QualityUpgradeCandidateRepository:
             improvement_score=candidate.improvement_score,
             detected_at=candidate.detected_at,
             processed=candidate.processed,
-            download_id=str(candidate.download_id.value) if candidate.download_id else None,
+            download_id=str(candidate.download_id.value)
+            if candidate.download_id
+            else None,
             created_at=candidate.created_at,
             updated_at=candidate.updated_at,
         )
@@ -1693,7 +1703,9 @@ class QualityUpgradeCandidateRepository:
             improvement_score=model.improvement_score,
             detected_at=model.detected_at,
             processed=model.processed,
-            download_id=DownloadId.from_string(model.download_id) if model.download_id else None,
+            download_id=DownloadId.from_string(model.download_id)
+            if model.download_id
+            else None,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -1723,7 +1735,9 @@ class QualityUpgradeCandidateRepository:
             improvement_score=model.improvement_score,
             detected_at=model.detected_at,
             processed=model.processed,
-            download_id=DownloadId.from_string(model.download_id) if model.download_id else None,
+            download_id=DownloadId.from_string(model.download_id)
+            if model.download_id
+            else None,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -1757,7 +1771,9 @@ class QualityUpgradeCandidateRepository:
                 improvement_score=model.improvement_score,
                 detected_at=model.detected_at,
                 processed=model.processed,
-                download_id=DownloadId.from_string(model.download_id) if model.download_id else None,
+                download_id=DownloadId.from_string(model.download_id)
+                if model.download_id
+                else None,
                 created_at=model.created_at,
                 updated_at=model.updated_at,
             )
@@ -1798,7 +1814,9 @@ class QualityUpgradeCandidateRepository:
                 improvement_score=model.improvement_score,
                 detected_at=model.detected_at,
                 processed=model.processed,
-                download_id=DownloadId.from_string(model.download_id) if model.download_id else None,
+                download_id=DownloadId.from_string(model.download_id)
+                if model.download_id
+                else None,
                 created_at=model.created_at,
                 updated_at=model.updated_at,
             )

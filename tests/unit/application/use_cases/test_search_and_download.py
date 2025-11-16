@@ -205,7 +205,9 @@ class TestSearchAndDownloadTrackUseCase:
         )
 
         # Act
-        selected = use_case._select_best_file_legacy(results, request.quality_preference)
+        selected = use_case._select_best_file_legacy(
+            results, request.quality_preference
+        )
 
         # Assert
         assert selected is not None
@@ -224,7 +226,9 @@ class TestSearchAndDownloadTrackUseCase:
         )
 
         # Act
-        selected = use_case._select_best_file_legacy(results, request.quality_preference)
+        selected = use_case._select_best_file_legacy(
+            results, request.quality_preference
+        )
 
         # Assert
         assert selected is not None
@@ -239,11 +243,15 @@ class TestSearchAndDownloadTrackUseCase:
         ]
 
         request = SearchAndDownloadTrackRequest(
-            track_id=TrackId.generate(), quality_preference="good", use_advanced_search=False
+            track_id=TrackId.generate(),
+            quality_preference="good",
+            use_advanced_search=False,
         )
 
         # Act
-        selected = use_case._select_best_file_legacy(results, request.quality_preference)
+        selected = use_case._select_best_file_legacy(
+            results, request.quality_preference
+        )
 
         # Assert
         assert selected is not None
@@ -274,7 +282,9 @@ class TestSearchAndDownloadTrackUseCase:
         )
 
         # Act
-        selected = use_case._select_best_file_legacy(results, request.quality_preference)
+        selected = use_case._select_best_file_legacy(
+            results, request.quality_preference
+        )
 
         # Assert
         assert selected is None

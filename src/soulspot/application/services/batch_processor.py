@@ -22,7 +22,7 @@ R = TypeVar("R")
 @dataclass
 class BatchResult(Generic[R]):
     """Result of a batch operation.
-    
+
     Attributes:
         successful: List of successful results
         failed: List of items that failed with their errors
@@ -33,22 +33,22 @@ class BatchResult(Generic[R]):
 
     successful: list[R] = field(default_factory=list)
     failed: list[tuple[Any, Exception]] = field(default_factory=list)
-    
+
     @property
     def total_items(self) -> int:
         """Total number of items processed."""
         return len(self.successful) + len(self.failed)
-    
+
     @property
     def success_count(self) -> int:
         """Number of successful operations."""
         return len(self.successful)
-    
+
     @property
     def failure_count(self) -> int:
         """Number of failed operations."""
         return len(self.failed)
-    
+
     @property
     def success_rate(self) -> float:
         """Success rate as a percentage."""
@@ -59,25 +59,25 @@ class BatchResult(Generic[R]):
 
 class BatchProcessor(Generic[T, R]):
     """Generic batch processor for API operations.
-    
+
     This class accumulates items and processes them in batches to reduce
     the number of API calls and improve overall performance.
-    
+
     Example:
         async def fetch_tracks(track_ids: list[str]) -> list[Track]:
             # API call to fetch multiple tracks
             ...
-        
+
         processor = BatchProcessor(
             batch_size=50,
             processor_func=fetch_tracks,
             max_wait_time=5.0
         )
-        
+
         # Add items one by one
         for track_id in track_ids:
             await processor.add(track_id)
-        
+
         # Process remaining items
         result = await processor.flush()
     """
@@ -90,7 +90,7 @@ class BatchProcessor(Generic[T, R]):
         auto_flush: bool = True,
     ) -> None:
         """Initialize batch processor.
-        
+
         Args:
             batch_size: Maximum number of items per batch
             processor_func: Async function that processes a batch of items
@@ -101,58 +101,58 @@ class BatchProcessor(Generic[T, R]):
         self._processor_func = processor_func
         self._max_wait_time = max_wait_time
         self._auto_flush = auto_flush
-        
+
         self._pending: list[T] = []
         self._lock = asyncio.Lock()
         self._last_flush_time = asyncio.get_event_loop().time()
 
     async def add(self, item: T) -> BatchResult[R] | None:
         """Add an item to the batch.
-        
+
         If auto_flush is enabled and the batch is full, it will be processed
         automatically and the result returned.
-        
+
         Args:
             item: Item to add to the batch
-            
+
         Returns:
             BatchResult if batch was auto-flushed, None otherwise
         """
         async with self._lock:
             self._pending.append(item)
-            
+
             if self._auto_flush and len(self._pending) >= self._batch_size:
                 return await self._flush_internal()
-            
+
         return None
 
     async def add_batch(self, items: list[T]) -> list[BatchResult[R]]:
         """Add multiple items at once.
-        
+
         This will automatically split items into multiple batches if needed.
-        
+
         Args:
             items: List of items to add
-            
+
         Returns:
             List of BatchResults, one for each batch processed
         """
         results = []
-        
+
         async with self._lock:
             self._pending.extend(items)
-            
+
             if self._auto_flush:
                 while len(self._pending) >= self._batch_size:
                     result = await self._flush_internal()
                     if result:
                         results.append(result)
-        
+
         return results
 
     async def flush(self) -> BatchResult[R]:
         """Manually flush all pending items.
-        
+
         Returns:
             BatchResult with the results of processing the batch
         """
@@ -163,16 +163,16 @@ class BatchProcessor(Generic[T, R]):
         """Internal flush implementation (must be called within lock)."""
         if not self._pending:
             return BatchResult()
-        
+
         if not self._processor_func:
             raise ValueError("No processor function configured")
-        
+
         batch = self._pending[: self._batch_size]
         self._pending = self._pending[self._batch_size :]
         self._last_flush_time = asyncio.get_event_loop().time()
-        
+
         result = BatchResult[R]()
-        
+
         try:
             # Process the batch
             results = await self._processor_func(batch)
@@ -181,12 +181,12 @@ class BatchProcessor(Generic[T, R]):
             # If batch processing fails completely, mark all as failed
             for item in batch:
                 result.failed.append((item, e))
-        
+
         return result
 
     async def flush_if_needed(self) -> BatchResult[R] | None:
         """Flush pending items if max wait time has been exceeded.
-        
+
         Returns:
             BatchResult if flushed, None otherwise
         """
@@ -201,7 +201,7 @@ class BatchProcessor(Generic[T, R]):
 
     def get_pending_count(self) -> int:
         """Get the number of pending items.
-        
+
         Returns:
             Number of items waiting to be processed
         """
@@ -209,7 +209,7 @@ class BatchProcessor(Generic[T, R]):
 
     async def close(self) -> BatchResult[R]:
         """Close the batch processor and flush remaining items.
-        
+
         Returns:
             BatchResult with the final batch results
         """
@@ -218,14 +218,14 @@ class BatchProcessor(Generic[T, R]):
 
 class SpotifyBatchProcessor:
     """Specialized batch processor for Spotify API calls.
-    
+
     Spotify API allows fetching multiple tracks, albums, or artists in a single
     request (up to 50 items). This processor optimizes those calls.
     """
 
     def __init__(self, spotify_client: Any) -> None:  # SpotifyClient
         """Initialize Spotify batch processor.
-        
+
         Args:
             spotify_client: Instance of SpotifyClient
         """
@@ -245,10 +245,10 @@ class SpotifyBatchProcessor:
 
     async def _fetch_tracks_batch(self, track_ids: list[str]) -> list[Any]:
         """Fetch multiple tracks from Spotify API.
-        
+
         Args:
             track_ids: List of Spotify track IDs
-            
+
         Returns:
             List of track data from Spotify
         """
@@ -259,10 +259,10 @@ class SpotifyBatchProcessor:
 
     async def _fetch_albums_batch(self, album_ids: list[str]) -> list[Any]:
         """Fetch multiple albums from Spotify API.
-        
+
         Args:
             album_ids: List of Spotify album IDs
-            
+
         Returns:
             List of album data from Spotify
         """
@@ -271,10 +271,10 @@ class SpotifyBatchProcessor:
 
     async def _fetch_artists_batch(self, artist_ids: list[str]) -> list[Any]:
         """Fetch multiple artists from Spotify API.
-        
+
         Args:
             artist_ids: List of Spotify artist IDs
-            
+
         Returns:
             List of artist data from Spotify
         """
@@ -283,10 +283,10 @@ class SpotifyBatchProcessor:
 
     async def add_track(self, track_id: str) -> BatchResult[Any] | None:
         """Add a track to the batch queue.
-        
+
         Args:
             track_id: Spotify track ID
-            
+
         Returns:
             BatchResult if batch was processed, None otherwise
         """
@@ -294,10 +294,10 @@ class SpotifyBatchProcessor:
 
     async def add_album(self, album_id: str) -> BatchResult[Any] | None:
         """Add an album to the batch queue.
-        
+
         Args:
             album_id: Spotify album ID
-            
+
         Returns:
             BatchResult if batch was processed, None otherwise
         """
@@ -305,10 +305,10 @@ class SpotifyBatchProcessor:
 
     async def add_artist(self, artist_id: str) -> BatchResult[Any] | None:
         """Add an artist to the batch queue.
-        
+
         Args:
             artist_id: Spotify artist ID
-            
+
         Returns:
             BatchResult if batch was processed, None otherwise
         """
@@ -316,7 +316,7 @@ class SpotifyBatchProcessor:
 
     async def flush_all(self) -> dict[str, BatchResult[Any]]:
         """Flush all pending batches.
-        
+
         Returns:
             Dictionary with batch results for each entity type
         """

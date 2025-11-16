@@ -130,20 +130,30 @@ class FilterService:
         filters.sort(key=lambda f: f.priority, reverse=True)
 
         # Separate whitelist and blacklist filters
-        whitelist_filters = [f for f in filters if f.filter_type == FilterType.WHITELIST]
-        blacklist_filters = [f for f in filters if f.filter_type == FilterType.BLACKLIST]
+        whitelist_filters = [
+            f for f in filters if f.filter_type == FilterType.WHITELIST
+        ]
+        blacklist_filters = [
+            f for f in filters if f.filter_type == FilterType.BLACKLIST
+        ]
 
         filtered_results = []
 
         for result in search_results:
             # Apply blacklist filters first
             if self._is_blacklisted(result, blacklist_filters):
-                logger.debug(f"Filtered out by blacklist: {result.get('filename', 'unknown')}")
+                logger.debug(
+                    f"Filtered out by blacklist: {result.get('filename', 'unknown')}"
+                )
                 continue
 
             # Apply whitelist filters (if any exist, result must match at least one)
-            if whitelist_filters and not self._is_whitelisted(result, whitelist_filters):
-                logger.debug(f"Filtered out by whitelist: {result.get('filename', 'unknown')}")
+            if whitelist_filters and not self._is_whitelisted(
+                result, whitelist_filters
+            ):
+                logger.debug(
+                    f"Filtered out by whitelist: {result.get('filename', 'unknown')}"
+                )
                 continue
 
             filtered_results.append(result)

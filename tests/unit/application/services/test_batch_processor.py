@@ -156,6 +156,7 @@ class TestBatchProcessor:
     @pytest.mark.asyncio
     async def test_pending_count(self) -> None:
         """Test tracking pending items count."""
+
         async def processor(items: list[int]) -> list[int]:
             return items
 
@@ -180,6 +181,7 @@ class TestBatchProcessor:
     @pytest.mark.asyncio
     async def test_empty_flush(self) -> None:
         """Test flushing when no items are pending."""
+
         async def processor(items: list[int]) -> list[int]:
             return items
 
@@ -221,7 +223,7 @@ class TestBatchProcessor:
     async def test_processor_error_handling(self) -> None:
         """Test error handling when processor fails."""
         call_count = 0
-        
+
         async def failing_processor(items: list[int]) -> list[int]:
             nonlocal call_count
             call_count += 1
@@ -290,6 +292,7 @@ class TestBatchProcessor:
     @pytest.mark.asyncio
     async def test_flush_if_needed_no_flush(self) -> None:
         """Test flush_if_needed returns None when not needed."""
+
         async def processor(items: list[int]) -> list[int]:
             return items
 

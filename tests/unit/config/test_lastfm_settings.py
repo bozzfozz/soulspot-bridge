@@ -1,6 +1,5 @@
 """Test for Last.fm configuration check."""
 
-
 from soulspot.config.settings import LastfmSettings
 
 

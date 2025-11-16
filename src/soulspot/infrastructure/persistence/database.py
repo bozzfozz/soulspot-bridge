@@ -24,12 +24,14 @@ class Database:
 
         # Only apply pool settings for PostgreSQL
         if "postgresql" in settings.database.url:
-            engine_kwargs.update({
-                "pool_size": settings.database.pool_size,
-                "max_overflow": settings.database.max_overflow,
-                "pool_timeout": settings.database.pool_timeout,
-                "pool_recycle": settings.database.pool_recycle,
-            })
+            engine_kwargs.update(
+                {
+                    "pool_size": settings.database.pool_size,
+                    "max_overflow": settings.database.max_overflow,
+                    "pool_timeout": settings.database.pool_timeout,
+                    "pool_recycle": settings.database.pool_recycle,
+                }
+            )
 
         self._engine = create_async_engine(
             settings.database.url,
@@ -86,15 +88,18 @@ class Database:
 
     def get_pool_stats(self) -> dict[str, Any]:
         """Get connection pool statistics for monitoring.
-        
+
         Returns:
             Dictionary with pool statistics including size, checked out connections, etc.
             Returns empty dict for SQLite as it doesn't use connection pooling.
         """
         # Pool stats only available for databases that use connection pooling
         if "sqlite" in self.settings.database.url:
-            return {"pool_type": "sqlite", "note": "SQLite does not use connection pooling"}
-        
+            return {
+                "pool_type": "sqlite",
+                "note": "SQLite does not use connection pooling",
+            }
+
         pool = self._engine.pool
         # Note: Pool statistics methods may not be available on all pool types
         # Using getattr with defaults to handle this safely

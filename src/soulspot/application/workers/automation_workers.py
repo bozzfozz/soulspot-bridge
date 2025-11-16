@@ -96,7 +96,9 @@ class WatchlistWorker:
                     # Get access token (this should be obtained from the session or config)
                     # For now, we'll skip if no spotify_client is available
                     if not self.spotify_client:
-                        logger.warning("Spotify client not available, skipping release check")
+                        logger.warning(
+                            "Spotify client not available, skipping release check"
+                        )
                         watchlist.update_check(releases_found=0, downloads_triggered=0)
                         await self.watchlist_service.repository.update(watchlist)
                         await self.session.commit()

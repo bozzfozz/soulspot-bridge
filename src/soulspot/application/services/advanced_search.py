@@ -13,7 +13,9 @@ class SearchFilters:
 
     min_bitrate: int | None = None  # Minimum bitrate in kbps (e.g., 320)
     formats: list[str] | None = None  # Allowed formats (e.g., ["flac", "mp3"])
-    exclusion_keywords: list[str] | None = None  # Keywords to exclude (e.g., ["live", "remix"])
+    exclusion_keywords: list[str] | None = (
+        None  # Keywords to exclude (e.g., ["live", "remix"])
+    )
     fuzzy_threshold: int = 80  # Minimum fuzzy match score (0-100)
 
 

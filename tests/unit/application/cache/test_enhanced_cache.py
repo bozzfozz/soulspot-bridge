@@ -58,12 +58,14 @@ class TestLRUCacheEntry:
     def test_entry_not_expired_initially(self) -> None:
         """Test entry is not expired initially."""
         import time
+
         entry = LRUCacheEntry(value="test", created_at=time.time(), ttl_seconds=3600)
         assert not entry.is_expired()
 
     def test_entry_expiration(self) -> None:
         """Test entry expiration after TTL."""
         import time
+
         entry = LRUCacheEntry(
             value="test",
             created_at=time.time() - 3700,
@@ -74,6 +76,7 @@ class TestLRUCacheEntry:
     def test_entry_touch(self) -> None:
         """Test entry touch updates access metadata."""
         import time
+
         entry = LRUCacheEntry(value="test", created_at=time.time(), ttl_seconds=3600)
         initial_count = entry.access_count
 

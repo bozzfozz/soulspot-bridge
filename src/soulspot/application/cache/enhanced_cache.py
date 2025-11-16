@@ -25,7 +25,7 @@ class CacheMetrics:
     misses: int = 0
     evictions: int = 0
     writes: int = 0
-    
+
     @property
     def hit_rate(self) -> float:
         """Calculate cache hit rate as percentage."""
@@ -33,7 +33,7 @@ class CacheMetrics:
         if total == 0:
             return 0.0
         return (self.hits / total) * 100
-    
+
     def reset(self) -> None:
         """Reset all metrics to zero."""
         self.hits = 0
@@ -55,7 +55,7 @@ class LRUCacheEntry(Generic[V]):
     def is_expired(self) -> bool:
         """Check if cache entry is expired."""
         return time.time() > (self.created_at + self.ttl_seconds)
-    
+
     def touch(self) -> None:
         """Update access metadata."""
         self.access_count += 1
@@ -64,11 +64,11 @@ class LRUCacheEntry(Generic[V]):
 
 class LRUCache(Generic[K, V]):
     """LRU (Least Recently Used) cache implementation with metrics.
-    
+
     This cache automatically evicts the least recently used items when
     the maximum size is reached. It also tracks cache performance metrics
     for monitoring and optimization.
-    
+
     Features:
     - Automatic LRU eviction when max_size is reached
     - TTL-based expiration
@@ -79,7 +79,7 @@ class LRUCache(Generic[K, V]):
 
     def __init__(self, max_size: int = 1000) -> None:
         """Initialize LRU cache.
-        
+
         Args:
             max_size: Maximum number of entries before LRU eviction starts
         """
@@ -90,10 +90,10 @@ class LRUCache(Generic[K, V]):
 
     async def get(self, key: K) -> V | None:
         """Get value from cache with LRU tracking.
-        
+
         Args:
             key: Cache key
-            
+
         Returns:
             Cached value if found and not expired, None otherwise
         """
@@ -116,7 +116,7 @@ class LRUCache(Generic[K, V]):
 
     async def set(self, key: K, value: V, ttl_seconds: int = 3600) -> None:
         """Set value in cache with LRU eviction if needed.
-        
+
         Args:
             key: Cache key
             value: Value to cache
@@ -126,13 +126,13 @@ class LRUCache(Generic[K, V]):
             # If key exists, remove it first to update position
             if key in self._cache:
                 del self._cache[key]
-            
+
             # Evict LRU entry if at max size
             if len(self._cache) >= self._max_size:
                 # Remove the first item (least recently used)
                 self._cache.popitem(last=False)
                 self._metrics.evictions += 1
-            
+
             self._cache[key] = LRUCacheEntry(
                 value=value,
                 created_at=time.time(),
@@ -142,7 +142,7 @@ class LRUCache(Generic[K, V]):
 
     async def set_batch(self, items: dict[K, V], ttl_seconds: int = 3600) -> None:
         """Set multiple values in cache efficiently.
-        
+
         Args:
             items: Dictionary of key-value pairs to cache
             ttl_seconds: Time to live in seconds for all items
@@ -153,12 +153,12 @@ class LRUCache(Generic[K, V]):
                 # If key exists, remove it first
                 if key in self._cache:
                     del self._cache[key]
-                
+
                 # Evict LRU entry if at max size
                 if len(self._cache) >= self._max_size:
                     self._cache.popitem(last=False)
                     self._metrics.evictions += 1
-                
+
                 self._cache[key] = LRUCacheEntry(
                     value=value,
                     created_at=current_time,
@@ -168,10 +168,10 @@ class LRUCache(Generic[K, V]):
 
     async def delete(self, key: K) -> bool:
         """Delete value from cache.
-        
+
         Args:
             key: Cache key
-            
+
         Returns:
             True if deleted, False if not found
         """
@@ -188,10 +188,10 @@ class LRUCache(Generic[K, V]):
 
     async def exists(self, key: K) -> bool:
         """Check if key exists in cache.
-        
+
         Args:
             key: Cache key
-            
+
         Returns:
             True if key exists and not expired
         """
@@ -200,7 +200,7 @@ class LRUCache(Generic[K, V]):
 
     async def cleanup_expired(self) -> int:
         """Remove expired entries from cache.
-        
+
         Returns:
             Number of entries removed
         """
@@ -214,19 +214,19 @@ class LRUCache(Generic[K, V]):
 
     def get_metrics(self) -> CacheMetrics:
         """Get cache performance metrics.
-        
+
         Returns:
             CacheMetrics object with current metrics
         """
         return self._metrics
-    
+
     def reset_metrics(self) -> None:
         """Reset all performance metrics."""
         self._metrics.reset()
 
     def get_stats(self) -> dict[str, Any]:
         """Get comprehensive cache statistics.
-        
+
         Returns:
             Dictionary with cache statistics including metrics
         """
@@ -251,7 +251,7 @@ class LRUCache(Generic[K, V]):
 
 class CacheWarmer(Generic[K, V]):
     """Utility for pre-warming caches with hot path data.
-    
+
     This class helps populate caches proactively during application startup
     or periodic maintenance windows to improve cache hit rates for frequently
     accessed data.
@@ -259,7 +259,7 @@ class CacheWarmer(Generic[K, V]):
 
     def __init__(self, cache: LRUCache[K, V]) -> None:
         """Initialize cache warmer.
-        
+
         Args:
             cache: The cache instance to warm
         """
@@ -272,27 +272,27 @@ class CacheWarmer(Generic[K, V]):
         ttl_seconds: int = 3600,
     ) -> int:
         """Warm cache by loading values for given keys.
-        
+
         Args:
             keys: List of cache keys to warm
             loader: Async function that loads a value for a key
             ttl_seconds: TTL for cached values
-            
+
         Returns:
             Number of entries successfully warmed
         """
         warmed_count = 0
         items = {}
-        
+
         for key in keys:
             value = await loader(key)
             if value is not None:
                 items[key] = value
                 warmed_count += 1
-        
+
         if items:
             await self._cache.set_batch(items, ttl_seconds=ttl_seconds)
-        
+
         return warmed_count
 
     async def warm_from_dict(
@@ -301,11 +301,11 @@ class CacheWarmer(Generic[K, V]):
         ttl_seconds: int = 3600,
     ) -> int:
         """Warm cache with pre-loaded data.
-        
+
         Args:
             items: Dictionary of key-value pairs to cache
             ttl_seconds: TTL for cached values
-            
+
         Returns:
             Number of entries warmed
         """

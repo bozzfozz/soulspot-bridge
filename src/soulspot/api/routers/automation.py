@@ -287,9 +287,7 @@ async def check_discography(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to check discography: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to check discography: {e}")
 
 
 @router.get("/discography/missing")
@@ -355,9 +353,7 @@ async def identify_quality_upgrades(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to identify upgrades: {e}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to identify upgrades: {e}")
 
 
 @router.get("/quality-upgrades/unprocessed")
