@@ -273,7 +273,9 @@ class AutomationRuleId:
         try:
             return cls(value=UUID(value))
         except ValueError as e:
-            raise ValidationException(f"Invalid AutomationRuleId format: {value}") from e
+            raise ValidationException(
+                f"Invalid AutomationRuleId format: {value}"
+            ) from e
 
     def __str__(self) -> str:
         return str(self.value)

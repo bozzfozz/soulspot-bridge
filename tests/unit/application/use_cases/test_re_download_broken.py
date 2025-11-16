@@ -18,17 +18,17 @@ class TestReDownloadBrokenFilesUseCase:
         session = AsyncMock()
         session.commit = AsyncMock()
         session.add = MagicMock()
-        
+
         # Setup mock result that returns empty list
         mock_scalars = MagicMock()
         mock_scalars.all.return_value = []
-        
+
         mock_result = MagicMock()
         mock_result.scalars.return_value = mock_scalars
         mock_result.scalar_one_or_none.return_value = None
-        
+
         session.execute = AsyncMock(return_value=mock_result)
-        
+
         return session
 
     def test_init(self, mock_session: AsyncMock) -> None:

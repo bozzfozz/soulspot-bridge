@@ -55,7 +55,11 @@ class NotificationService:
         Returns:
             True if notification was sent successfully
         """
-        completeness = ((total_count - missing_count) / total_count * 100) if total_count > 0 else 0
+        completeness = (
+            ((total_count - missing_count) / total_count * 100)
+            if total_count > 0
+            else 0
+        )
         message = (
             f"Discography incomplete for {artist_name}: "
             f"{missing_count} of {total_count} albums missing "
@@ -98,7 +102,7 @@ class NotificationService:
         """
         timestamp = datetime.now(UTC).isoformat()
         message = f"Automation triggered: {trigger} at {timestamp}"
-        
+
         # Add relevant context details
         if "artist_id" in context:
             message += f" | Artist: {context['artist_id']}"

@@ -100,7 +100,9 @@ class DiscographyService:
         stmt = select(AlbumModel).where(AlbumModel.artist_id == str(artist_id.value))
         result = await self.session.execute(stmt)
         owned_albums = result.scalars().all()
-        owned_spotify_uris = {album.spotify_uri for album in owned_albums if album.spotify_uri}
+        owned_spotify_uris = {
+            album.spotify_uri for album in owned_albums if album.spotify_uri
+        }
 
         # Get all albums from Spotify
         if not self.spotify_client:
@@ -115,7 +117,9 @@ class DiscographyService:
 
         try:
             # Get artist's albums from Spotify
-            spotify_artist_id = artist.spotify_uri.split(":")[-1] if artist.spotify_uri else None
+            spotify_artist_id = (
+                artist.spotify_uri.split(":")[-1] if artist.spotify_uri else None
+            )
             if not spotify_artist_id:
                 logger.warning(f"Artist {artist_id} has no Spotify URI")
                 return DiscographyInfo(
@@ -135,13 +139,15 @@ class DiscographyService:
             for album in all_albums:
                 album_uri = album.get("uri", "")
                 if album_uri not in owned_spotify_uris:
-                    missing_albums.append({
-                        "name": album.get("name", ""),
-                        "spotify_uri": album_uri,
-                        "release_date": album.get("release_date", ""),
-                        "total_tracks": album.get("total_tracks", 0),
-                        "album_type": album.get("album_type", ""),
-                    })
+                    missing_albums.append(
+                        {
+                            "name": album.get("name", ""),
+                            "spotify_uri": album_uri,
+                            "release_date": album.get("release_date", ""),
+                            "total_tracks": album.get("total_tracks", 0),
+                            "album_type": album.get("album_type", ""),
+                        }
+                    )
 
             logger.info(
                 f"Discography check for {artist.name}: {len(owned_albums)}/{len(all_albums)} albums"

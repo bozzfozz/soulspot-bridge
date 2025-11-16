@@ -8,7 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from soulspot.domain.entities import QualityUpgradeCandidate
 from soulspot.domain.value_objects import DownloadId, TrackId
-from soulspot.infrastructure.persistence.models import QualityUpgradeCandidateModel, TrackModel
+from soulspot.infrastructure.persistence.models import (
+    QualityUpgradeCandidateModel,
+    TrackModel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +54,9 @@ class QualityUpgradeService:
             Improvement score (0.0 to 1.0)
         """
         # Bitrate improvement (40% weight)
-        bitrate_ratio = min(target_bitrate / current_bitrate, 2.0) if current_bitrate > 0 else 1.0
+        bitrate_ratio = (
+            min(target_bitrate / current_bitrate, 2.0) if current_bitrate > 0 else 1.0
+        )
         bitrate_score = (bitrate_ratio - 1.0) * 0.4
 
         # Format improvement (60% weight)
@@ -72,7 +77,10 @@ class QualityUpgradeService:
         return round(total_score, 3)
 
     async def identify_upgrade_candidates(
-        self, quality_profile: str = "high", min_improvement_score: float = 0.3, limit: int = 100
+        self,
+        quality_profile: str = "high",
+        min_improvement_score: float = 0.3,
+        limit: int = 100,
     ) -> list[dict[str, Any]]:
         """Identify tracks that could be upgraded to better quality.
 
@@ -117,15 +125,17 @@ class QualityUpgradeService:
             )
 
             if improvement_score >= min_improvement_score:
-                candidates.append({
-                    "track_id": track.id,
-                    "title": track.title,
-                    "current_bitrate": current_bitrate,
-                    "current_format": current_format,
-                    "target_bitrate": target_bitrate,
-                    "target_format": target_format,
-                    "improvement_score": improvement_score,
-                })
+                candidates.append(
+                    {
+                        "track_id": track.id,
+                        "title": track.title,
+                        "current_bitrate": current_bitrate,
+                        "current_format": current_format,
+                        "target_bitrate": target_bitrate,
+                        "target_format": target_format,
+                        "improvement_score": improvement_score,
+                    }
+                )
 
         logger.info(f"Found {len(candidates)} quality upgrade candidates")
         return candidates
@@ -174,7 +184,9 @@ class QualityUpgradeService:
             improvement_score=candidate.improvement_score,
             detected_at=candidate.detected_at,
             processed=candidate.processed,
-            download_id=str(candidate.download_id.value) if candidate.download_id else None,
+            download_id=str(candidate.download_id.value)
+            if candidate.download_id
+            else None,
             created_at=candidate.created_at,
             updated_at=candidate.updated_at,
         )
@@ -183,7 +195,9 @@ class QualityUpgradeService:
         logger.info(f"Created quality upgrade candidate for track {track_id}")
         return candidate
 
-    async def get_unprocessed_candidates(self, limit: int = 100) -> list[dict[str, Any]]:
+    async def get_unprocessed_candidates(
+        self, limit: int = 100
+    ) -> list[dict[str, Any]]:
         """Get unprocessed quality upgrade candidates.
 
         Args:

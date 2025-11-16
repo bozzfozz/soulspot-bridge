@@ -63,7 +63,9 @@ class TestFuzzyMatching:
     def test_apply_fuzzy_matching_exact_match(self, search_service, sample_results):
         """Test fuzzy matching with exact query match."""
         query = "Artist Song Name"
-        results = search_service.apply_fuzzy_matching(query, sample_results, threshold=80)
+        results = search_service.apply_fuzzy_matching(
+            query, sample_results, threshold=80
+        )
 
         # Should match most results except the very different one
         assert len(results) >= 3
@@ -107,18 +109,12 @@ class TestFuzzyMatching:
 
     def test_extract_base_filename(self, search_service):
         """Test filename extraction."""
-        assert (
-            search_service._extract_base_filename("/path/to/song.mp3")
-            == "song"
-        )
+        assert search_service._extract_base_filename("/path/to/song.mp3") == "song"
         assert (
             search_service._extract_base_filename("C:\\Music\\Artist - Title.flac")
             == "Artist - Title"
         )
-        assert (
-            search_service._extract_base_filename("song")
-            == "song"
-        )
+        assert search_service._extract_base_filename("song") == "song"
 
 
 class TestQualityFilters:

@@ -73,11 +73,15 @@ class WatchlistService:
         """Get watchlist for an artist."""
         return await self.repository.get_by_artist_id(artist_id)
 
-    async def list_all(self, limit: int = 100, offset: int = 0) -> list[ArtistWatchlist]:
+    async def list_all(
+        self, limit: int = 100, offset: int = 0
+    ) -> list[ArtistWatchlist]:
         """List all watchlists."""
         return await self.repository.list_all(limit, offset)
 
-    async def list_active(self, limit: int = 100, offset: int = 0) -> list[ArtistWatchlist]:
+    async def list_active(
+        self, limit: int = 100, offset: int = 0
+    ) -> list[ArtistWatchlist]:
         """List active watchlists."""
         return await self.repository.list_active(limit, offset)
 
@@ -145,7 +149,10 @@ class WatchlistService:
                     )
 
                     # Check if this is a new release
-                    if watchlist.last_release_date is None or release_date > watchlist.last_release_date:
+                    if (
+                        watchlist.last_release_date is None
+                        or release_date > watchlist.last_release_date
+                    ):
                         new_releases.append(album)
                         if (
                             watchlist.last_release_date is None

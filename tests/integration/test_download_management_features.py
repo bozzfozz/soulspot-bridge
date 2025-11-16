@@ -396,17 +396,11 @@ class TestIntegrationScenarios:
         job_queue.register_handler(JobType.DOWNLOAD, handler)
 
         # Enqueue low priority jobs first
-        await job_queue.enqueue(
-            JobType.DOWNLOAD, {"track_id": "track-1"}, priority=0
-        )
-        await job_queue.enqueue(
-            JobType.DOWNLOAD, {"track_id": "track-2"}, priority=0
-        )
+        await job_queue.enqueue(JobType.DOWNLOAD, {"track_id": "track-1"}, priority=0)
+        await job_queue.enqueue(JobType.DOWNLOAD, {"track_id": "track-2"}, priority=0)
 
         # Then enqueue high priority job
-        await job_queue.enqueue(
-            JobType.DOWNLOAD, {"track_id": "track-3"}, priority=10
-        )
+        await job_queue.enqueue(JobType.DOWNLOAD, {"track_id": "track-3"}, priority=10)
 
         await job_queue.start(num_workers=1)
         await asyncio.sleep(0.5)

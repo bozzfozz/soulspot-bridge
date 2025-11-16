@@ -311,7 +311,10 @@ class ArtistWatchlistModel(Base):
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     artist_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("artists.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("artists.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="active", index=True
@@ -325,8 +328,12 @@ class ArtistWatchlistModel(Base):
     )
     last_checked_at: Mapped[datetime | None] = mapped_column(nullable=True)
     last_release_date: Mapped[datetime | None] = mapped_column(nullable=True)
-    total_releases_found: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    total_downloads_triggered: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_releases_found: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
+    total_downloads_triggered: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=utc_now, onupdate=utc_now, nullable=False
@@ -360,7 +367,9 @@ class FilterRuleModel(Base):
     pattern: Mapped[str] = mapped_column(Text, nullable=False)
     is_regex: Mapped[bool] = mapped_column(default=False, nullable=False)
     enabled: Mapped[bool] = mapped_column(default=True, nullable=False, index=True)
-    priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False, index=True)
+    priority: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False, index=True
+    )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -389,7 +398,9 @@ class AutomationRuleModel(Base):
         String(50), nullable=False
     )  # search_and_download, notify_only, add_to_queue
     enabled: Mapped[bool] = mapped_column(default=True, nullable=False, index=True)
-    priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False, index=True)
+    priority: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False, index=True
+    )
     quality_profile: Mapped[str] = mapped_column(
         String(20), default="high", nullable=False
     )
@@ -398,7 +409,9 @@ class AutomationRuleModel(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_triggered_at: Mapped[datetime | None] = mapped_column(nullable=True)
     total_executions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    successful_executions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    successful_executions: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
     failed_executions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -420,7 +433,10 @@ class QualityUpgradeCandidateModel(Base):
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     track_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("tracks.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("tracks.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     current_bitrate: Mapped[int] = mapped_column(Integer, nullable=False)
     current_format: Mapped[str] = mapped_column(String(20), nullable=False)

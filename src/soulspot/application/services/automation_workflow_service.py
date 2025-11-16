@@ -22,7 +22,7 @@ class AutomationWorkflowService:
     """Service for orchestrating automated workflows (Detect→Search→Download→Process)."""
 
     def __init__(
-        self, 
+        self,
         session: AsyncSession,
         notification_service: NotificationService | None = None,
     ) -> None:
@@ -78,7 +78,9 @@ class AutomationWorkflowService:
             failed_executions=0,
         )
         await self.repository.add(rule)
-        logger.info(f"Created automation rule: {name} ({trigger.value} → {action.value})")
+        logger.info(
+            f"Created automation rule: {name} ({trigger.value} → {action.value})"
+        )
         return rule
 
     async def get_rule(self, rule_id: AutomationRuleId) -> AutomationRule | None:
@@ -308,7 +310,9 @@ class AutomationWorkflowService:
         logger.info(f"Adding to queue with quality profile: {rule.quality_profile}")
 
         # Extract information from context
-        item_name = context.get("album_name") or context.get("track_title", "Unknown Item")
+        item_name = context.get("album_name") or context.get(
+            "track_title", "Unknown Item"
+        )
 
         # Log that item would be added to queue
         # In a full implementation, this would create a download job with pending status
@@ -358,15 +362,15 @@ class AutomationWorkflowService:
         results = []
         for rule in enabled_rules:
             result = await self.execute_rule(rule.id, context)
-            results.append({
-                "rule_id": str(rule.id.value),
-                "rule_name": rule.name,
-                "result": result,
-            })
+            results.append(
+                {
+                    "rule_id": str(rule.id.value),
+                    "rule_name": rule.name,
+                    "result": result,
+                }
+            )
 
-        logger.info(
-            f"Executed {len(enabled_rules)} rules for trigger: {trigger.value}"
-        )
+        logger.info(f"Executed {len(enabled_rules)} rules for trigger: {trigger.value}")
         return results
 
     async def create_default_rules(self) -> list[AutomationRule]:
