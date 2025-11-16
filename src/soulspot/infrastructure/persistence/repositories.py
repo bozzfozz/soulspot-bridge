@@ -1165,7 +1165,6 @@ class ArtistWatchlistRepository:
 
     async def list_due_for_check(self, limit: int = 100) -> list[Any]:
         """List watchlists that are due for checking."""
-        from datetime import UTC, datetime
 
         from soulspot.domain.entities import ArtistWatchlist, WatchlistStatus
         from soulspot.domain.value_objects import WatchlistId
