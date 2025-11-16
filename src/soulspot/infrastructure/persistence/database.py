@@ -19,13 +19,17 @@ class Database:
         # Configure connection pool for PostgreSQL
         engine_kwargs: dict[str, Any] = {
             "echo": settings.database.echo,
-            "pool_pre_ping": True,
+            "pool_pre_ping": settings.database.pool_pre_ping,
         }
 
         # Only apply pool settings for PostgreSQL
         if "postgresql" in settings.database.url:
-            engine_kwargs["pool_size"] = settings.database.pool_size
-            engine_kwargs["max_overflow"] = settings.database.max_overflow
+            engine_kwargs.update({
+                "pool_size": settings.database.pool_size,
+                "max_overflow": settings.database.max_overflow,
+                "pool_timeout": settings.database.pool_timeout,
+                "pool_recycle": settings.database.pool_recycle,
+            })
 
         self._engine = create_async_engine(
             settings.database.url,
@@ -79,3 +83,27 @@ class Database:
 
         async with self._engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
+
+    def get_pool_stats(self) -> dict[str, Any]:
+        """Get connection pool statistics for monitoring.
+        
+        Returns:
+            Dictionary with pool statistics including size, checked out connections, etc.
+            Returns empty dict for SQLite as it doesn't use connection pooling.
+        """
+        # Pool stats only available for databases that use connection pooling
+        if "sqlite" in self.settings.database.url:
+            return {"pool_type": "sqlite", "note": "SQLite does not use connection pooling"}
+        
+        pool = self._engine.pool
+        # Note: Pool statistics methods may not be available on all pool types
+        # Using getattr with defaults to handle this safely
+        return {
+            "pool_size": getattr(pool, "size", lambda: 0)(),
+            "checked_out": getattr(pool, "checkedout", lambda: 0)(),
+            "overflow": getattr(pool, "overflow", lambda: 0)(),
+            "checked_in": getattr(pool, "checkedin", lambda: 0)(),
+            "pool_timeout": self.settings.database.pool_timeout,
+            "pool_recycle": self.settings.database.pool_recycle,
+            "max_overflow": self.settings.database.max_overflow,
+        }

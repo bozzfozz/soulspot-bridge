@@ -523,6 +523,64 @@ class TrackRepository(ITrackRepository):
         result = await self.session.execute(stmt)
         return result.scalar() or 0
 
+    async def add_batch(self, tracks: list[Track]) -> None:
+        """Add multiple tracks in a single batch operation.
+        
+        This is more efficient than calling add() multiple times as it reduces
+        the number of round trips to the database.
+        
+        Args:
+            tracks: List of Track entities to add
+        """
+        models = [
+            TrackModel(
+                id=str(track.id.value),
+                title=track.title,
+                artist_id=str(track.artist_id.value),
+                album_id=str(track.album_id.value) if track.album_id else None,
+                duration_ms=track.duration_ms,
+                track_number=track.track_number,
+                disc_number=track.disc_number,
+                spotify_uri=str(track.spotify_uri) if track.spotify_uri else None,
+                musicbrainz_id=track.musicbrainz_id,
+                isrc=track.isrc,
+                file_path=str(track.file_path) if track.file_path else None,
+                created_at=track.created_at,
+                updated_at=track.updated_at,
+            )
+            for track in tracks
+        ]
+        self.session.add_all(models)
+
+    async def update_batch(self, tracks: list[Track]) -> None:
+        """Update multiple tracks in a single batch operation.
+        
+        This is more efficient than calling update() multiple times.
+        Note: This loads all tracks into memory first, then updates them.
+        
+        Args:
+            tracks: List of Track entities to update
+        """
+        track_ids = [str(track.id.value) for track in tracks]
+        stmt = select(TrackModel).where(TrackModel.id.in_(track_ids))
+        result = await self.session.execute(stmt)
+        models = {model.id: model for model in result.scalars().all()}
+        
+        for track in tracks:
+            model = models.get(str(track.id.value))
+            if model:
+                model.title = track.title
+                model.artist_id = str(track.artist_id.value)
+                model.album_id = str(track.album_id.value) if track.album_id else None
+                model.duration_ms = track.duration_ms
+                model.track_number = track.track_number
+                model.disc_number = track.disc_number
+                model.spotify_uri = str(track.spotify_uri) if track.spotify_uri else None
+                model.musicbrainz_id = track.musicbrainz_id
+                model.isrc = track.isrc
+                model.file_path = str(track.file_path) if track.file_path else None
+                model.updated_at = track.updated_at
+
 
 class PlaylistRepository(IPlaylistRepository):
     """SQLAlchemy implementation of Playlist repository."""
@@ -590,8 +648,12 @@ class PlaylistRepository(IPlaylistRepository):
             raise EntityNotFoundException("Playlist", playlist_id.value)
 
     async def get_by_id(self, playlist_id: PlaylistId) -> Playlist | None:
-        """Get a playlist by ID."""
-        stmt = select(PlaylistModel).where(PlaylistModel.id == str(playlist_id.value))
+        """Get a playlist by ID with eager loading of tracks."""
+        stmt = (
+            select(PlaylistModel)
+            .where(PlaylistModel.id == str(playlist_id.value))
+            .options(selectinload(PlaylistModel.playlist_tracks))
+        )
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
 
@@ -623,9 +685,11 @@ class PlaylistRepository(IPlaylistRepository):
         )
 
     async def get_by_spotify_uri(self, spotify_uri: SpotifyUri) -> Playlist | None:
-        """Get a playlist by Spotify URI."""
-        stmt = select(PlaylistModel).where(
-            PlaylistModel.spotify_uri == str(spotify_uri)
+        """Get a playlist by Spotify URI with eager loading of tracks."""
+        stmt = (
+            select(PlaylistModel)
+            .where(PlaylistModel.spotify_uri == str(spotify_uri))
+            .options(selectinload(PlaylistModel.playlist_tracks))
         )
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
@@ -677,9 +741,10 @@ class PlaylistRepository(IPlaylistRepository):
         self.session.add(playlist_track)
 
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[Playlist]:
-        """List all playlists with pagination."""
+        """List all playlists with pagination and eager loading of tracks."""
         stmt = (
             select(PlaylistModel)
+            .options(selectinload(PlaylistModel.playlist_tracks))
             .order_by(PlaylistModel.name)
             .limit(limit)
             .offset(offset)
@@ -771,8 +836,12 @@ class DownloadRepository(IDownloadRepository):
             raise EntityNotFoundException("Download", download_id.value)
 
     async def get_by_id(self, download_id: DownloadId) -> Download | None:
-        """Get a download by ID."""
-        stmt = select(DownloadModel).where(DownloadModel.id == str(download_id.value))
+        """Get a download by ID with eager loading of track."""
+        stmt = (
+            select(DownloadModel)
+            .where(DownloadModel.id == str(download_id.value))
+            .options(selectinload(DownloadModel.track))
+        )
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()
 
@@ -805,9 +874,11 @@ class DownloadRepository(IDownloadRepository):
         )
 
     async def get_by_track(self, track_id: TrackId) -> Download | None:
-        """Get a download by track ID."""
-        stmt = select(DownloadModel).where(
-            DownloadModel.track_id == str(track_id.value)
+        """Get a download by track ID with eager loading."""
+        stmt = (
+            select(DownloadModel)
+            .where(DownloadModel.track_id == str(track_id.value))
+            .options(selectinload(DownloadModel.track))
         )
         result = await self.session.execute(stmt)
         model = result.scalar_one_or_none()

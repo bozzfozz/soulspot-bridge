@@ -17,7 +17,7 @@ class Profile(str, Enum):
 
 
 class DatabaseSettings(BaseSettings):
-    """Database configuration."""
+    """Database configuration with enhanced connection pool tuning."""
 
     url: str = Field(
         default="sqlite+aiosqlite:///./soulspot.db",
@@ -30,10 +30,30 @@ class DatabaseSettings(BaseSettings):
     pool_size: int = Field(
         default=5,
         description="Database connection pool size (PostgreSQL only)",
+        ge=1,
+        le=50,
     )
     max_overflow: int = Field(
         default=10,
         description="Maximum connection pool overflow (PostgreSQL only)",
+        ge=0,
+        le=50,
+    )
+    pool_timeout: float = Field(
+        default=30.0,
+        description="Connection pool timeout in seconds",
+        ge=1.0,
+        le=300.0,
+    )
+    pool_recycle: int = Field(
+        default=3600,
+        description="Connection recycle time in seconds (prevents stale connections)",
+        ge=300,
+        le=7200,
+    )
+    pool_pre_ping: bool = Field(
+        default=True,
+        description="Test connections before checkout to ensure they're alive",
     )
 
     model_config = SettingsConfigDict(env_prefix="DATABASE_")
