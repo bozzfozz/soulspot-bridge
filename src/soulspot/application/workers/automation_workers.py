@@ -222,10 +222,22 @@ class DiscographyWorker:
             await asyncio.sleep(self.check_interval_seconds)
 
     async def _check_discographies(self) -> None:
-        """Check discography completeness for all artists."""
+        """Check discography completeness for all artists.
+
+        Implementation needed to:
+        1. Query all artists with watchlists or auto-download enabled
+        2. For each artist, fetch complete discography from Spotify
+        3. Compare with local library to identify missing albums
+        4. Trigger automation workflows for missing albums
+        """
         try:
             # TODO: Get list of artists to check
-            # For now, this is a placeholder
+            # Implementation steps:
+            # 1. Query watchlist repository for active artists
+            # 2. For each artist:
+            #    - missing_albums = await self.discography_service.check_discography(artist_id, access_token)
+            #    - if missing_albums and auto_download enabled:
+            #        await self._trigger_automation(artist, missing_albums)
             logger.info("Checking artist discographies")
 
             # artists = await self._get_artists_to_check()
@@ -294,11 +306,25 @@ class QualityUpgradeWorker:
             await asyncio.sleep(self.check_interval_seconds)
 
     async def _identify_upgrades(self) -> None:
-        """Identify quality upgrade opportunities."""
+        """Identify quality upgrade opportunities.
+
+        Implementation needed to:
+        1. Scan library for tracks with lower quality files
+        2. Search slskd for higher quality alternatives
+        3. Calculate improvement score based on bitrate/format
+        4. Create upgrade candidates for tracks meeting threshold
+        5. Trigger automation workflows for approved upgrades
+        """
         try:
             logger.info("Identifying quality upgrade opportunities")
 
             # TODO: Implement actual upgrade identification
+            # Implementation steps:
+            # 1. Get tracks from library with quality below target
+            # 2. For each track:
+            #    - candidates = await self.quality_service.identify_upgrade_opportunities(track_id)
+            #    - if candidates meet improvement threshold:
+            #        await self._trigger_automation(candidate)
             # candidates = await self.quality_service.identify_upgrade_opportunities(...)
             # for candidate in candidates:
             #     await self._trigger_automation(candidate)

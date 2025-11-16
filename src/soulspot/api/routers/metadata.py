@@ -106,7 +106,7 @@ async def enrich_metadata(
             use_spotify=request.use_spotify,
             use_musicbrainz=request.use_musicbrainz,
             use_lastfm=request.use_lastfm,
-            spotify_access_token=None,  # TODO: Get from auth context
+            spotify_access_token=None,  # TODO: Get from auth context - requires session/JWT token extraction
             manual_overrides=request.manual_overrides,
         )
 
@@ -122,7 +122,7 @@ async def enrich_metadata(
             track_id=request.track_id,
             enriched_fields=response.enriched_fields,
             sources_used=response.sources_used,
-            conflicts=[],  # TODO: Implement conflict detection
+            conflicts=[],  # TODO: Implement conflict detection - compare values across sources to identify discrepancies
             errors=response.errors,
         )
 

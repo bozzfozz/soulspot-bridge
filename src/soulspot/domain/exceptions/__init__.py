@@ -21,13 +21,21 @@ class EntityNotFoundException(DomainException):
 
 
 class ValidationException(DomainException):
-    """Raised when validation fails."""
+    """Raised when entity validation fails.
+
+    Used to signal that an entity's invariants or business rules
+    have been violated (e.g., invalid email format, negative price).
+    """
 
     pass
 
 
 class InvalidStateException(DomainException):
-    """Raised when an entity is in an invalid state."""
+    """Raised when an entity is in an invalid state for the requested operation.
+
+    Example: Attempting to cancel a download that's already completed,
+    or trying to publish a draft that hasn't been reviewed.
+    """
 
     pass
 

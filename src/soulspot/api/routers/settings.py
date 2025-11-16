@@ -128,15 +128,26 @@ async def update_settings(settings_update: AllSettings) -> dict[str, Any]:
     """Update application settings.
 
     Note: This endpoint currently returns the settings but doesn't persist them.
-    In a full implementation, this would write to environment variables or a config file.
+    In a full implementation, this would:
+    - Write to .env file (requires dotenv manipulation library)
+    - Store in database (config table)
+    - Apply hot-reload for non-critical settings
+    - Require restart for critical settings (ports, auth keys)
 
     Args:
         settings_update: New settings values
 
     Returns:
         Success message
+
+    Raises:
+        HTTPException: If settings validation fails
     """
-    # TODO: Implement actual persistence to .env file or database
+    # TODO: Implement actual persistence
+    # Options:
+    # 1. Write to .env file using python-dotenv set_key()
+    # 2. Store in database config table with key-value pairs
+    # 3. Use external config service (Consul, etcd)
     # For now, just validate and return success
     # Settings validation is done by Pydantic automatically
     _ = settings_update  # Mark as used for linting
@@ -150,10 +161,26 @@ async def update_settings(settings_update: AllSettings) -> dict[str, Any]:
 async def reset_settings() -> dict[str, Any]:
     """Reset all settings to defaults.
 
+    Returns settings to factory defaults by reloading from default Settings() instances.
+    
+    Implementation needed:
+    - Clear any database-stored settings
+    - Remove custom .env overrides
+    - Reset in-memory configuration
+    - Trigger configuration reload
+
     Returns:
         Success message with default settings
+
+    Raises:
+        HTTPException: If reset operation fails
     """
     # TODO: Implement reset functionality
+    # Steps:
+    # 1. Delete custom settings from database/file
+    # 2. Reload Settings() with defaults
+    # 3. Clear any cached configuration
+    # 4. Return default settings object
     return {
         "message": "Settings reset to defaults",
         "note": "Please restart the application for changes to take effect",

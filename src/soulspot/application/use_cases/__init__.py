@@ -13,7 +13,21 @@ class UseCase(ABC, Generic[TRequest, TResponse]):
 
     @abstractmethod
     async def execute(self, request: TRequest) -> TResponse:
-        """Execute the use case with the given request."""
+        """Execute the use case with the given request.
+
+        Orchestrates the business logic by coordinating repositories,
+        domain services, and external integrations to fulfill the request.
+
+        Args:
+            request: Use case input containing all required parameters
+
+        Returns:
+            Response object containing results and status information
+
+        Raises:
+            DomainException: For business rule violations
+            ValidationException: For invalid input data
+        """
         pass
 
 

@@ -62,13 +62,13 @@ class RenamingService:
             "year": album.release_year if album else "",
             # New standardized variables
             "Artist CleanName": self._clean_name(artist.name),
-            "Artist Disambiguation": "",  # TODO: Add disambiguation support
+            "Artist Disambiguation": "",  # TODO: Add disambiguation support - e.g., "The Band (US)" vs "The Band (UK)"
             "Track CleanTitle": self._clean_name(track.title),
             "Album CleanTitle": self._clean_name(album.title)
             if album
             else "Unknown Album",
-            "Album Disambiguation": "",  # TODO: Add disambiguation support
-            "Album Type": "Album",  # TODO: Add album type detection
+            "Album Disambiguation": "",  # TODO: Add disambiguation support - use MusicBrainz release disambiguation
+            "Album Type": "Album",  # TODO: Add album type detection - Album/Single/EP/Compilation from MusicBrainz
             "Release Year": str(album.release_year)
             if album and album.release_year
             else "",

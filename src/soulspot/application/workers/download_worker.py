@@ -160,8 +160,12 @@ class DownloadWorker:
                         job.result.get("slskd_download_id") if job.result else None
                     )
                     if slskd_download_id:
-                        # Query slskd for status
-                        # (This would be implemented in production)
+                        # Query slskd for download status and update job accordingly
+                        # Implementation needed:
+                        # 1. status = await slskd_client.get_download_status(slskd_download_id)
+                        # 2. if status['state'] == 'completed': mark job as completed
+                        # 3. if status['state'] == 'failed': mark job as failed and retry
+                        # 4. Update job progress with bytes_downloaded / total_bytes
                         pass
 
             except Exception as e:

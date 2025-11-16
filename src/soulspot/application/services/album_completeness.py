@@ -89,7 +89,8 @@ class AlbumCompletenessService:
             return None
 
         try:
-            # Extract album ID from URI (spotify:album:XXXX)
+            # Extract album ID from Spotify URI
+            # Handles both URI format (spotify:album:XXXX) and ID string
             album_id = spotify_uri.split(":")[-1] if ":" in spotify_uri else spotify_uri
 
             # Get album details from Spotify API

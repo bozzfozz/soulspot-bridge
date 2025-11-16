@@ -332,12 +332,25 @@ def circuit_breaker(
     breaker = CircuitBreaker(name, config)
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        """Decorator function that wraps the target function with circuit breaker logic.
+
+        Args:
+            func: Function to wrap with circuit breaker
+
+        Returns:
+            Wrapped function with circuit breaker protection
+        """
         @wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> T:
+            """Async wrapper for circuit breaker call."""
             return cast(T, await breaker.call(func, *args, **kwargs))
 
         @wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> T:
+            """Sync wrapper for circuit breaker call.
+
+            Runs the circuit breaker in an event loop for synchronous functions.
+            """
             # For sync functions, we need to run in event loop
             loop = asyncio.get_event_loop()
             return cast(T, loop.run_until_complete(breaker.call(func, *args, **kwargs)))
