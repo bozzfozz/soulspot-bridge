@@ -1,8 +1,8 @@
 """Unit tests for filter service."""
 
-import pytest
-import re
 from unittest.mock import AsyncMock
+
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from soulspot.application.services.filter_service import FilterService
@@ -18,7 +18,7 @@ class TestFilterService:
         """Test creating a new filter rule."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         filter_rule = await service.create_filter(
             name="Test Filter",
             filter_type=FilterType.WHITELIST,
@@ -28,7 +28,7 @@ class TestFilterService:
             priority=1,
             description="Test filter rule",
         )
-        
+
         assert filter_rule.name == "Test Filter"
         assert filter_rule.filter_type == FilterType.WHITELIST
         assert filter_rule.target == FilterTarget.KEYWORD
@@ -42,7 +42,7 @@ class TestFilterService:
         """Test getting a filter by ID."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         filter_id = FilterRuleId.generate()
         mock_filter = FilterRule(
             id=filter_id,
@@ -54,9 +54,9 @@ class TestFilterService:
             enabled=True,
             priority=1,
         )
-        
+
         service.repository.get_by_id = AsyncMock(return_value=mock_filter)
-        
+
         result = await service.get_filter(filter_id)
         assert result == mock_filter
         service.repository.get_by_id.assert_called_once_with(filter_id)
@@ -66,7 +66,7 @@ class TestFilterService:
         """Test listing filters by type."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         mock_filters = [
             FilterRule(
                 id=FilterRuleId.generate(),
@@ -89,9 +89,9 @@ class TestFilterService:
                 priority=2,
             ),
         ]
-        
+
         service.repository.list_by_type = AsyncMock(return_value=mock_filters)
-        
+
         result = await service.list_by_type(FilterType.WHITELIST)
         assert len(result) == 2
         assert all(f.filter_type == FilterType.WHITELIST for f in result)
@@ -101,7 +101,7 @@ class TestFilterService:
         """Test listing enabled filters."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         mock_filters = [
             FilterRule(
                 id=FilterRuleId.generate(),
@@ -114,9 +114,9 @@ class TestFilterService:
                 priority=1,
             )
         ]
-        
+
         service.repository.list_enabled = AsyncMock(return_value=mock_filters)
-        
+
         result = await service.list_enabled()
         assert len(result) == 1
         assert result[0].enabled is True
@@ -126,7 +126,7 @@ class TestFilterService:
         """Test applying whitelist filters."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         whitelist_filter = FilterRule(
             id=FilterRuleId.generate(),
             name="Allow Test",
@@ -137,15 +137,15 @@ class TestFilterService:
             enabled=True,
             priority=1,
         )
-        
+
         service.repository.list_enabled = AsyncMock(return_value=[whitelist_filter])
-        
+
         # Test search results that match whitelist
         search_results = [
             {"filename": "Good Track.mp3", "username": "user1"},
             {"filename": "Bad Track.mp3", "username": "user2"},
         ]
-        
+
         filtered = await service.apply_filters(search_results)
         # Should only include results matching whitelist
         assert len(filtered) <= len(search_results)
@@ -155,7 +155,7 @@ class TestFilterService:
         """Test applying blacklist filters."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         blacklist_filter = FilterRule(
             id=FilterRuleId.generate(),
             name="Block Bad",
@@ -166,15 +166,15 @@ class TestFilterService:
             enabled=True,
             priority=1,
         )
-        
+
         service.repository.list_enabled = AsyncMock(return_value=[blacklist_filter])
-        
+
         # Test search results with blacklisted terms
         search_results = [
             {"filename": "Good Track.mp3", "username": "user1"},
             {"filename": "Bad Track.mp3", "username": "user2"},
         ]
-        
+
         filtered = await service.apply_filters(search_results)
         # Should exclude results matching blacklist
         assert len(filtered) <= len(search_results)
@@ -184,7 +184,7 @@ class TestFilterService:
         """Test applying regex filters."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         regex_filter = FilterRule(
             id=FilterRuleId.generate(),
             name="Regex Test",
@@ -195,15 +195,15 @@ class TestFilterService:
             enabled=True,
             priority=1,
         )
-        
+
         service.repository.list_enabled = AsyncMock(return_value=[regex_filter])
-        
+
         # Test search results
         search_results = [
             {"filename": "test123.mp3", "username": "user1"},
             {"filename": "testabc.mp3", "username": "user2"},
         ]
-        
+
         filtered = await service.apply_filters(search_results)
         # Should only include results matching regex
         assert isinstance(filtered, list)
@@ -213,7 +213,7 @@ class TestFilterService:
         """Test disabling a filter."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         filter_id = FilterRuleId.generate()
         mock_filter = FilterRule(
             id=filter_id,
@@ -225,12 +225,12 @@ class TestFilterService:
             enabled=True,
             priority=1,
         )
-        
+
         service.repository.get_by_id = AsyncMock(return_value=mock_filter)
         service.repository.update = AsyncMock()
-        
+
         await service.disable_filter(filter_id)
-        
+
         assert mock_filter.enabled is False
         service.repository.update.assert_called_once_with(mock_filter)
 
@@ -239,7 +239,7 @@ class TestFilterService:
         """Test enabling a filter."""
         session = AsyncMock(spec=AsyncSession)
         service = FilterService(session)
-        
+
         filter_id = FilterRuleId.generate()
         mock_filter = FilterRule(
             id=filter_id,
@@ -251,11 +251,11 @@ class TestFilterService:
             enabled=False,
             priority=1,
         )
-        
+
         service.repository.get_by_id = AsyncMock(return_value=mock_filter)
         service.repository.update = AsyncMock()
-        
+
         await service.enable_filter(filter_id)
-        
+
         assert mock_filter.enabled is True
         service.repository.update.assert_called_once_with(mock_filter)

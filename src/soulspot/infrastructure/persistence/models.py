@@ -319,9 +319,7 @@ class ArtistWatchlistModel(Base):
         ForeignKey("artists.id", ondelete="CASCADE"),
         nullable=False,
     )
-    status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="active"
-    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
     check_frequency_hours: Mapped[int] = mapped_column(
         Integer, default=24, nullable=False
     )
@@ -370,9 +368,7 @@ class FilterRuleModel(Base):
     pattern: Mapped[str] = mapped_column(Text, nullable=False)
     is_regex: Mapped[bool] = mapped_column(default=False, nullable=False)
     enabled: Mapped[bool] = mapped_column(default=True, nullable=False)
-    priority: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False
-    )
+    priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -401,9 +397,7 @@ class AutomationRuleModel(Base):
         String(50), nullable=False
     )  # search_and_download, notify_only, add_to_queue
     enabled: Mapped[bool] = mapped_column(default=True, nullable=False)
-    priority: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False
-    )
+    priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     quality_profile: Mapped[str] = mapped_column(
         String(20), default="high", nullable=False
     )

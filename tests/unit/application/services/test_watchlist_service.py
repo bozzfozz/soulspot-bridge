@@ -1,14 +1,13 @@
 """Unit tests for watchlist service."""
 
+from unittest.mock import AsyncMock
+
 import pytest
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, Mock
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from soulspot.application.services.watchlist_service import WatchlistService
 from soulspot.domain.entities import ArtistWatchlist, WatchlistStatus
 from soulspot.domain.value_objects import ArtistId, WatchlistId
-from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
 
 
 class TestWatchlistService:
@@ -19,7 +18,7 @@ class TestWatchlistService:
         """Test creating a new watchlist."""
         session = AsyncMock(spec=AsyncSession)
         service = WatchlistService(session)
-        
+
         artist_id = ArtistId.generate()
         watchlist = await service.create_watchlist(
             artist_id=artist_id,
@@ -27,7 +26,7 @@ class TestWatchlistService:
             auto_download=True,
             quality_profile="high",
         )
-        
+
         assert watchlist.artist_id == artist_id
         assert watchlist.check_frequency_hours == 24
         assert watchlist.auto_download is True
@@ -39,10 +38,10 @@ class TestWatchlistService:
         """Test getting a watchlist by ID."""
         session = AsyncMock(spec=AsyncSession)
         service = WatchlistService(session)
-        
+
         watchlist_id = WatchlistId.generate()
         artist_id = ArtistId.generate()
-        
+
         mock_watchlist = ArtistWatchlist(
             id=watchlist_id,
             artist_id=artist_id,
@@ -55,9 +54,9 @@ class TestWatchlistService:
             total_releases_found=0,
             total_downloads_triggered=0,
         )
-        
+
         service.repository.get_by_id = AsyncMock(return_value=mock_watchlist)
-        
+
         result = await service.get_watchlist(watchlist_id)
         assert result == mock_watchlist
         service.repository.get_by_id.assert_called_once_with(watchlist_id)
@@ -67,7 +66,7 @@ class TestWatchlistService:
         """Test listing all watchlists."""
         session = AsyncMock(spec=AsyncSession)
         service = WatchlistService(session)
-        
+
         mock_watchlists = [
             ArtistWatchlist(
                 id=WatchlistId.generate(),
@@ -83,9 +82,9 @@ class TestWatchlistService:
             )
             for _ in range(3)
         ]
-        
+
         service.repository.list_all = AsyncMock(return_value=mock_watchlists)
-        
+
         result = await service.list_all(limit=100, offset=0)
         assert len(result) == 3
         service.repository.list_all.assert_called_once_with(100, 0)
@@ -95,10 +94,10 @@ class TestWatchlistService:
         """Test deleting a watchlist."""
         session = AsyncMock(spec=AsyncSession)
         service = WatchlistService(session)
-        
+
         watchlist_id = WatchlistId.generate()
         service.repository.delete = AsyncMock()
-        
+
         await service.delete_watchlist(watchlist_id)
         service.repository.delete.assert_called_once_with(watchlist_id)
 
@@ -107,10 +106,10 @@ class TestWatchlistService:
         """Test pausing a watchlist."""
         session = AsyncMock(spec=AsyncSession)
         service = WatchlistService(session)
-        
+
         watchlist_id = WatchlistId.generate()
         artist_id = ArtistId.generate()
-        
+
         mock_watchlist = ArtistWatchlist(
             id=watchlist_id,
             artist_id=artist_id,
@@ -123,12 +122,12 @@ class TestWatchlistService:
             total_releases_found=0,
             total_downloads_triggered=0,
         )
-        
+
         service.repository.get_by_id = AsyncMock(return_value=mock_watchlist)
         service.repository.update = AsyncMock()
-        
+
         await service.pause_watchlist(watchlist_id)
-        
+
         assert mock_watchlist.status == WatchlistStatus.PAUSED
         service.repository.update.assert_called_once_with(mock_watchlist)
 
@@ -137,10 +136,10 @@ class TestWatchlistService:
         """Test resuming a paused watchlist."""
         session = AsyncMock(spec=AsyncSession)
         service = WatchlistService(session)
-        
+
         watchlist_id = WatchlistId.generate()
         artist_id = ArtistId.generate()
-        
+
         mock_watchlist = ArtistWatchlist(
             id=watchlist_id,
             artist_id=artist_id,
@@ -153,11 +152,11 @@ class TestWatchlistService:
             total_releases_found=0,
             total_downloads_triggered=0,
         )
-        
+
         service.repository.get_by_id = AsyncMock(return_value=mock_watchlist)
         service.repository.update = AsyncMock()
-        
+
         await service.resume_watchlist(watchlist_id)
-        
+
         assert mock_watchlist.status == WatchlistStatus.ACTIVE
         service.repository.update.assert_called_once_with(mock_watchlist)
