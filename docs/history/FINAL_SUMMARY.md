@@ -157,7 +157,7 @@ Erstellt:
 9. `tests/integration/api/test_main.py`
 
 ### Beispiele (1 Datei)
-10. `examples/example_phase4.py`
+10. `docs/examples/example_phase4.py`
 
 ### Dokumentation (2 Dateien)
 11. `docs/history/REVIEW_FIXES_REPORT.md` (NEU)

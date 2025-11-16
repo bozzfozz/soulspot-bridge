@@ -84,7 +84,7 @@ Successfully implemented the **Library Scanning & Self-Healing** features (Epic 
   - Technical details
   - Error handling
 
-- `examples/library_scanner_demo.py` - Usage examples
+- `docs/examples/library_scanner_demo.py` - Usage examples
   - Scanning a library
   - Checking scan status
   - Finding duplicates
@@ -254,7 +254,7 @@ alembic downgrade -1
 - `src/soulspot/application/use_cases/scan_library.py`
 - `src/soulspot/api/routers/library.py`
 - `tests/unit/application/services/test_library_scanner.py`
-- `examples/library_scanner_demo.py`
+- `docs/examples/library_scanner_demo.py`
 - `docs/library-management-api.md`
 
 **Modified Files (4):**
