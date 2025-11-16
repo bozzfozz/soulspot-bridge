@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from rapidfuzz import fuzz, process
+from rapidfuzz import fuzz
 
 
 @dataclass
@@ -206,13 +206,13 @@ class AdvancedSearchService:
     def calculate_smart_score(
         self,
         result: SearchResult,
-        query: str,
+        _query: str,  # noqa: ARG002 - kept for potential future use
     ) -> float:
         """Calculate overall smart score combining multiple factors.
 
         Args:
             result: Search result
-            query: Original search query
+            _query: Original search query (reserved for future use)
 
         Returns:
             Smart score (0-100)
