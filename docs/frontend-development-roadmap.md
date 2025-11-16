@@ -1,10 +1,10 @@
 # SoulSpot Bridge – Frontend Development Roadmap
 
 > **Last Updated:** 2025-11-16  
-> **Version:** 0.2.0 (Alpha → Beta Preparation)  
-> **Status:** Phase 7 Complete | UI 1.0 Design System Complete | V2.0 Planning Complete (HTMX-Only Approach) | Ready for Implementation  
+> **Version:** 1.0 → 2.0 (Active Development)  
+> **Status:** 🚧 v1.0 & v2.0 In Active Development | UI 1.0 Design System Complete | Phase 7 Complete  
 > **Owner:** Frontend Team  
-> **Next:** V2.0 Dashboard Builder (HTMX-Only, 12-18 days)
+> **Current Focus:** Queue Management, Settings UI, v2.0 Dashboard Builder & Playlist/Library Features
 
 > **📌 Hinweis:** Für eine detaillierte **Version 1.0 Roadmap** mit Feature-Freeze-Kriterien, Meilensteinen und Qualitätssicherung, siehe [Frontend Development Roadmap v1.0](archived/frontend-development-roadmap-v1.0.md).
 
@@ -57,6 +57,26 @@ The frontend of SoulSpot Bridge provides:
 
 ## 📍 Current Status
 
+### 🚧 Active Development (v1.0 & v2.0)
+
+**Status:** In Progress  
+**Timeline:** November 2025 - January 2026  
+**Focus:** Alle für v1.0 und v2.0 geplanten Features werden jetzt aktiv implementiert
+
+| Version | Feature Set | Status | Timeline |
+|---------|-------------|--------|----------|
+| **v1.0** | Queue Management, Settings UI | 🚧 In Progress | Nov-Dec 2025 |
+| **v2.0** | Dynamic Dashboard Builder, Playlist & Library Management | 🚧 In Progress | Dec 2025-Jan 2026 |
+
+**v1.0 Features in Entwicklung:**
+- 🚧 Download Queue Management (Priority indicators, drag & drop, progress bars, pause/resume, batch operations)
+- 🚧 Settings & Configuration UI (Settings page, form validation, theme switcher, API key management)
+
+**v2.0 Features in Entwicklung:**
+- 🚧 v2.0 Dynamic Dashboard Builder (HTMX-only approach, button-based layout, 5 core widgets)
+- 🚧 Playlist Management UI (Browser, details, sync status, missing tracks, export)
+- 🚧 Library Browser (Artist/album/track views, search & filter, metadata editing)
+
 ### ✅ Completed Phases
 
 | Phase | Status | Key Features |
@@ -85,8 +105,8 @@ The frontend of SoulSpot Bridge provides:
 
 ### 🔄 Current Phase: v2.0 Planning – Dynamic Views & Widget-Palette
 
-**Status:** Planning & Design  
-**Focus:** Grid-based page builder with customizable widgets
+**Status:** 🚧 **IN ACTIVE DEVELOPMENT** (Planning Complete, Implementation Started)  
+**Focus:** Grid-based page builder with customizable widgets, Queue Management, Settings UI, Playlist & Library Features
 
 ---
 
@@ -151,7 +171,9 @@ templates/
 
 ## 🚀 Now (Next 4-8 Weeks)
 
-### Priority: HIGH (P0/P1)
+### Priority: HIGH (P0/P1) - 🚧 IN ACTIVE DEVELOPMENT
+
+> **⚠️ Status Update:** Alle unten aufgeführten Features werden jetzt aktiv implementiert. Die Status-Angaben zeigen den aktuellen Implementierungsfortschritt.
 
 ---
 
@@ -358,16 +380,17 @@ templates/
 **Epic:** Enhanced Queue UI  
 **Owner:** Frontend Team  
 **Priority:** P0  
-**Effort:** Medium (2 weeks)
+**Effort:** Medium (2 weeks)  
+**Status:** 🚧 **IN PROGRESS** (v1.0 Implementation)
 
 | Task | Description | Priority | Effort | Status |
 |------|-------------|----------|--------|--------|
-| **Priority Indicators** | Visual priority badges | P1 | Small | 📋 Planned |
-| **Drag & Drop Reorder** | Manual priority adjustment | P1 | Medium | 📋 Planned |
-| **Progress Visualization** | Enhanced progress bars | P0 | Small | 📋 Planned |
-| **Pause/Resume Controls** | Individual job controls | P0 | Small | 📋 Planned |
-| **Batch Operations** | Select multiple jobs | P1 | Medium | 📋 Planned |
-| **Queue Filters** | Filter by status, priority | P1 | Small | 📋 Planned |
+| **Priority Indicators** | Visual priority badges | P1 | Small | 🚧 In Progress |
+| **Drag & Drop Reorder** | Manual priority adjustment | P1 | Medium | 🚧 In Progress |
+| **Progress Visualization** | Enhanced progress bars | P0 | Small | 🚧 In Progress |
+| **Pause/Resume Controls** | Individual job controls | P0 | Small | 🚧 In Progress |
+| **Batch Operations** | Select multiple jobs | P1 | Medium | 🚧 In Progress |
+| **Queue Filters** | Filter by status, priority | P1 | Small | 🚧 In Progress |
 
 **Acceptance Criteria:**
 - [ ] Priority badges (P0/P1/P2) displayed
@@ -384,15 +407,16 @@ templates/
 **Epic:** Settings UI  
 **Owner:** Frontend Team  
 **Priority:** P1  
-**Effort:** Medium (2 weeks)
+**Effort:** Medium (2 weeks)  
+**Status:** 🚧 **IN PROGRESS** (v1.0 Implementation)
 
 | Task | Description | Priority | Effort | Status |
 |------|-------------|----------|--------|--------|
-| **Settings Page** | Comprehensive settings UI | P1 | Medium | 📋 Planned |
-| **Form Validation** | Client-side validation | P1 | Small | 📋 Planned |
-| **Theme Switcher** | Light/dark/auto theme selector | P1 | Small | 📋 Planned |
-| **API Key Management** | Secure input fields | P1 | Small | 📋 Planned |
-| **Reset Functionality** | Reset to defaults | P2 | Small | 📋 Planned |
+| **Settings Page** | Comprehensive settings UI | P1 | Medium | 🚧 In Progress |
+| **Form Validation** | Client-side validation | P1 | Small | 🚧 In Progress |
+| **Theme Switcher** | Light/dark/auto theme selector | P1 | Small | 🚧 In Progress |
+| **API Key Management** | Secure input fields | P1 | Small | 🚧 In Progress |
+| **Reset Functionality** | Reset to defaults | P2 | Small | 🚧 In Progress |
 
 **Acceptance Criteria:**
 - [ ] Settings page with tabbed sections
@@ -405,7 +429,9 @@ templates/
 
 ## 📅 Next (2-3 Months)
 
-### Priority: STRATEGIC (P0 for v2.0)
+### Priority: STRATEGIC (P0 for v2.0) - 🚧 IN ACTIVE DEVELOPMENT
+
+> **⚠️ Status Update:** v2.0 Features werden parallel zu v1.0 entwickelt. Die Evaluation ist abgeschlossen, Implementation läuft.
 
 #### 5. v2.0 Dynamic Views & Widget-Palette ⭐ HTMX-ONLY APPROACH
 
@@ -413,7 +439,7 @@ templates/
 **Owner:** Frontend Team  
 **Priority:** P0 (Strategic)  
 **Effort:** Medium (12-18 days / 2.5-3.5 weeks)  
-**Status:** 📋 Planned (Evaluation Complete)
+**Status:** 🚧 **IN ACTIVE DEVELOPMENT** (Evaluation Complete, Implementation Started)
 
 > **Architecture Decision:** Pure HTMX approach with button-based layout controls instead of GridStack drag-and-drop.  
 > **Rationale:** Superior accessibility, faster development (12-18 days vs 25-35), zero custom JS, mobile-friendly.  
@@ -421,10 +447,10 @@ templates/
 
 | Phase | Description | Priority | Effort | Status |
 |-------|-------------|----------|--------|--------|
-| **Phase 0: Foundation** | Database schema, migrations | P0 | 2 days | 📋 Planned |
-| **Phase 1: Canvas & Widgets** | Widget partials, CSS Grid layout | P0 | 4-5 days | 📋 Planned |
-| **Phase 2: Core Features** | Add/remove, movement, resize | P0 | 3-4 days | 📋 Planned |
-| **Phase 3: Advanced** | Edit/view mode, config, pages | P0 | 2-3 days | 📋 Planned |
+| **Phase 0: Foundation** | Database schema, migrations | P0 | 2 days | 🚧 In Progress |
+| **Phase 1: Canvas & Widgets** | Widget partials, CSS Grid layout | P0 | 4-5 days | 🚧 In Progress |
+| **Phase 2: Core Features** | Add/remove, movement, resize | P0 | 3-4 days | 🚧 In Progress |
+| **Phase 3: Advanced** | Edit/view mode, config, pages | P0 | 2-3 days | 🚧 In Progress |
 | **Phase 4: Launch** | Testing, polish, rollout | P0 | 3-4 days | 📋 Planned |
 
 **Total Effort:** 12-18 days (vs 25-35 for GridStack hybrid)
@@ -703,15 +729,23 @@ CREATE TABLE widget_instances (
 **Epic:** Playlist Features  
 **Owner:** Frontend Team  
 **Priority:** P1  
-**Effort:** Medium (2-3 weeks)
+**Effort:** Medium (2-3 weeks)  
+**Status:** 🚧 **IN PROGRESS** (v2.0 Implementation)
 
 | Task | Description | Priority | Effort | Status |
 |------|-------------|----------|--------|--------|
-| **Playlist Browser** | List and browse playlists | P1 | Medium | 📋 Planned |
-| **Playlist Details** | Track list, metadata | P1 | Small | 📋 Planned |
-| **Sync Status** | Visual sync indicators | P1 | Small | 📋 Planned |
-| **Missing Tracks** | Compare and download | P0 | Medium | 📋 Planned |
-| **Export Options** | M3U, CSV, JSON export | P1 | Small | 📋 Planned |
+| **Playlist Browser** | List and browse playlists | P1 | Medium | 🚧 In Progress |
+| **Playlist Details** | Track list, metadata | P1 | Small | 🚧 In Progress |
+| **Sync Status** | Visual sync indicators | P1 | Small | 🚧 In Progress |
+| **Missing Tracks** | Compare and download | P0 | Medium | 🚧 In Progress |
+| **Export Options** | M3U, CSV, JSON export | P1 | Small | 🚧 In Progress |
+
+**Acceptance Criteria:**
+- [ ] Playlist list view with grid/list toggle
+- [ ] Playlist detail page with track list
+- [ ] Sync status badges (synced, pending, failed)
+- [ ] Missing tracks comparison view
+- [ ] Export functionality for M3U, CSV, JSON formats
 
 ---
 
@@ -720,15 +754,23 @@ CREATE TABLE widget_instances (
 **Epic:** Music Library UI  
 **Owner:** Frontend Team  
 **Priority:** P1  
-**Effort:** Large (3-4 weeks)
+**Effort:** Large (3-4 weeks)  
+**Status:** 🚧 **IN PROGRESS** (v2.0 Implementation)
 
 | Task | Description | Priority | Effort | Status |
 |------|-------------|----------|--------|--------|
-| **Artist Browser** | Grid/list view of artists | P1 | Medium | 📋 Planned |
-| **Album Browser** | Album grid with covers | P1 | Medium | 📋 Planned |
-| **Track List** | Sortable, filterable tracks | P1 | Medium | 📋 Planned |
-| **Search & Filter** | Advanced library search | P1 | Medium | 📋 Planned |
-| **Metadata Editing** | Inline metadata editor | P1 | Large | 📋 Planned |
+| **Artist Browser** | Grid/list view of artists | P1 | Medium | 🚧 In Progress |
+| **Album Browser** | Album grid with covers | P1 | Medium | 🚧 In Progress |
+| **Track List** | Sortable, filterable tracks | P1 | Medium | 🚧 In Progress |
+| **Search & Filter** | Advanced library search | P1 | Medium | 🚧 In Progress |
+| **Metadata Editing** | Inline metadata editor | P1 | Large | 🚧 In Progress |
+
+**Acceptance Criteria:**
+- [ ] Artist grid/list view with cover art
+- [ ] Album grid with album covers and metadata
+- [ ] Track list with sorting and filtering
+- [ ] Advanced search across library
+- [ ] Inline metadata editing capability
 
 ---
 
@@ -855,6 +897,47 @@ Phase 8 (Advanced Features)
 ---
 
 ## 📝 Changelog
+
+### 2025-11-16: v1.0 & v2.0 Active Development Started
+
+**Major Status Update:**
+- 🚧 **Development Status Changed:** From "Ready for Implementation" to "v1.0 & v2.0 In Active Development"
+- 🚧 **Version Update:** From 0.2.0 (Alpha → Beta Preparation) to 1.0 → 2.0 (Active Development)
+- 🚧 **All Planned Features Now In Progress:** Alle für v1.0 und v2.0 geplanten Features werden jetzt aktiv implementiert
+
+**v1.0 Features in Entwicklung:**
+- Download Queue Management (Epics 3)
+  - Priority indicators, drag & drop reordering, progress visualization
+  - Pause/resume controls, batch operations, queue filters
+- Settings & Configuration UI (Epic 4)
+  - Settings page, form validation, theme switcher
+  - API key management, reset functionality
+
+**v2.0 Features in Entwicklung:**
+- v2.0 Dynamic Dashboard Builder (Epic 5)
+  - HTMX-only approach with button-based layout
+  - Phase 0-3 implementation started
+  - 5 core widgets in development
+- Playlist Management UI (Epic 6)
+  - Playlist browser, details, sync status
+  - Missing tracks comparison, export options
+- Library Browser (Epic 7)
+  - Artist/album/track browsers
+  - Advanced search & filtering
+  - Inline metadata editing
+
+**Timeline:**
+- v1.0 Features: November - December 2025
+- v2.0 Features: December 2025 - January 2026
+
+**Documentation Updates:**
+- Updated roadmap header with new version and status
+- Added "Active Development" section with feature breakdown
+- Changed all relevant status indicators from "📋 Planned" to "🚧 In Progress"
+- Updated current focus in header
+
+**Purpose:**
+This update marks the transition from planning to active implementation of all v1.0 and v2.0 frontend features, signaling a major development push for the SoulSpot Bridge frontend.
 
 ### 2025-11-16: Design Resources Location Documented
 
