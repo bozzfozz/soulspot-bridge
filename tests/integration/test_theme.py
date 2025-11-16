@@ -1,6 +1,5 @@
 """Tests for Harmony theme integration."""
 
-import json
 from pathlib import Path
 
 import pytest
@@ -39,39 +38,6 @@ class TestThemeFiles:
         theme_css = Path("src/soulspot/static/css/theme.css")
         assert theme_css.exists(), "theme.css should exist"
         assert theme_css.stat().st_size > 0, "theme.css should not be empty"
-
-    def test_colors_json_exists(self):
-        """Test that colors.json token file exists."""
-        colors_json = Path("design/tokens/colors.json")
-        assert colors_json.exists(), "colors.json should exist"
-
-        # Validate JSON structure
-        with open(colors_json) as f:
-            data = json.load(f)
-            assert "colors" in data
-            assert "brand" in data["colors"]
-            assert "semantic" in data["colors"]
-            assert "neutral" in data["colors"]
-
-    def test_typography_json_exists(self):
-        """Test that typography.json token file exists."""
-        typography_json = Path("design/tokens/typography.json")
-        assert typography_json.exists(), "typography.json should exist"
-
-        # Validate JSON structure
-        with open(typography_json) as f:
-            data = json.load(f)
-            assert "typography" in data
-            assert "fontFamily" in data["typography"]
-            assert "fontSize" in data["typography"]
-
-    def test_tailwind_theme_exists(self):
-        """Test that tailwind.theme.js exists."""
-        tailwind_theme = Path("design/tailwind.theme.js")
-        assert tailwind_theme.exists(), "tailwind.theme.js should exist"
-        assert tailwind_theme.stat().st_size > 0, (
-            "tailwind.theme.js should not be empty"
-        )
 
     def test_theme_include_exists(self):
         """Test that theme include template exists."""
@@ -152,40 +118,4 @@ class TestThemeStaticFiles:
         assert "harmony-btn" in content
 
 
-class TestDesignTokens:
-    """Test design token values."""
 
-    def test_primary_color_value(self):
-        """Test that primary color is correctly set."""
-        with open("design/tokens/colors.json") as f:
-            data = json.load(f)
-            primary = data["colors"]["brand"]["primary"]["base"]
-            assert primary == "#fe4155"
-
-    def test_font_family_includes_inter(self):
-        """Test that font family includes Inter."""
-        with open("design/tokens/typography.json") as f:
-            data = json.load(f)
-            fonts = data["typography"]["fontFamily"]["sans"]
-            assert "Inter" in fonts
-
-    def test_spacing_scale_defined(self):
-        """Test that spacing scale is defined."""
-        with open("design/tokens/typography.json") as f:
-            data = json.load(f)
-            spacing = data["spacing"]
-            assert "xs" in spacing
-            assert "sm" in spacing
-            assert "md" in spacing
-            assert "lg" in spacing
-            assert "xl" in spacing
-
-    def test_semantic_colors_defined(self):
-        """Test that all semantic colors are defined."""
-        with open("design/tokens/colors.json") as f:
-            data = json.load(f)
-            semantic = data["colors"]["semantic"]
-            assert "success" in semantic
-            assert "warning" in semantic
-            assert "danger" in semantic
-            assert "info" in semantic

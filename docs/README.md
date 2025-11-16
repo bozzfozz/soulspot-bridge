@@ -39,6 +39,13 @@ Detailed specifications for specific features:
 - **circuit-breaker.md** - Circuit breaker pattern implementation
 - **soulspot-ideas.md** - Future feature ideas
 
+### `/examples/` - Example Scripts and Demos
+Example scripts demonstrating SoulSpot Bridge functionality:
+- **example_phase4.py** - Phase 4 functionality demonstration
+- **validate_phase4.py** - Phase 4 validation script
+- **library_scanner_demo.py** - Library scanning examples
+- **circuit_breaker_demo.py** - Circuit breaker pattern examples
+
 ### `/history/` - Implementation History
 Historical records of implementations and changes:
 - Phase summaries (PHASE1_SUMMARY.md through PHASE6_SUMMARY.md)

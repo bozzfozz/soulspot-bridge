@@ -13,7 +13,7 @@ Example script demonstrating Phase 4 functionality including:
 
 **Usage:**
 ```bash
-python examples/example_phase4.py
+python docs/examples/example_phase4.py
 ```
 
 **Requirements:**
@@ -30,7 +30,7 @@ Validation script for Phase 4 implementation:
 
 **Usage:**
 ```bash
-python examples/validate_phase4.py
+python docs/examples/validate_phase4.py
 ```
 
 ## Creating New Examples
@@ -46,11 +46,11 @@ When adding new example scripts:
 
 Examples can be tested with:
 ```bash
-pytest examples/ --doctest-modules
+pytest docs/examples/ --doctest-modules
 ```
 
 ## See Also
 
-- [Setup Guide](../docs/setup-guide.md) - For environment setup
-- [Testing Guide](../docs/testing-guide.md) - For testing best practices
-- [Contributing Guide](../docs/contributing.md) - For contribution guidelines
+- [Setup Guide](../guide/setup-guide.md) - For environment setup
+- [Testing Guide](../guide/testing-guide.md) - For testing best practices
+- [Contributing Guide](../contributing.md) - For contribution guidelines

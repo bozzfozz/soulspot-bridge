@@ -252,7 +252,7 @@ Analysis Result for 'python'. Found 0 alerts
 7. `tests/unit/application/services/test_auto_import.py` - Imports + Mock
 8. `tests/unit/application/workers/test_job_queue.py` - Imports + Variable
 9. `tests/integration/api/test_main.py` - Debug-Print
-10. `examples/example_phase4.py` - Imports
+10. `docs/examples/example_phase4.py` - Imports
 
 ## Empfehlungen für die Zukunft
 
