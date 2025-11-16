@@ -1,6 +1,6 @@
 # SoulSpot Bridge – Frontend Development Roadmap
 
-> **Last Updated:** 2025-11-15  
+> **Last Updated:** 2025-11-16  
 > **Version:** 0.2.0 (Alpha → Beta Preparation)  
 > **Status:** Phase 7 Complete | UI 1.0 Design System Complete | V2.0 Planning Complete (HTMX-Only Approach) | Ready for Implementation  
 > **Owner:** Frontend Team  
@@ -41,6 +41,17 @@ The frontend of SoulSpot Bridge provides:
 - **Minimal JS** – HTMX handles most interactivity, JS only when necessary
 - **Component-Based** – Reusable template partials and components
 - **Performance** – Optimized assets, lazy loading, efficient updates
+
+### Design Resources
+
+> **📂 Official Design System Location:** `/docs/ui/`  
+> Alle Design-Ressourcen (Design Tokens, Komponenten, Layouts) befinden sich ab jetzt im Verzeichnis `/docs/ui/`. Dies ist die zentrale Quelle für alle UI-Komponenten und Design-Richtlinien.
+>
+> - `theme.css` – Design Tokens (Farben, Typografie, Abstände)
+> - `components.css` – Fertige UI-Komponenten (Buttons, Cards, Forms, etc.)
+> - `layout.css` – Layout-Utilities (Grid, Flexbox, Responsive)
+> - `ui-demo.html` – Interaktive Demo aller Komponenten
+> - `README_UI_1_0.md` – Vollständige Dokumentation und Verwendungsanleitung
 
 ---
 
@@ -152,6 +163,8 @@ templates/
 **Effort:** Small (3-4 days)  
 **Status:** ✅ **COMPLETE** (Delivered 2025-11-15)
 
+> **📂 Design Resources Location:** Alle Design-Ressourcen für dieses Projekt befinden sich im Verzeichnis **`/docs/ui/`**. Dies ist die zentrale und offizielle Quelle für alle UI-Komponenten, Design Tokens und Layout-Utilities, die für die SoulSpot Bridge Frontend-Entwicklung verwendet werden.
+
 | Task | Description | Priority | Effort | Status |
 |------|-------------|----------|--------|--------|
 | **Design Tokens** | Color palette, typography, spacing | P1 | Small | ✅ Complete |
@@ -170,6 +183,8 @@ templates/
 - [x] No branding elements (logos, product names) included
 
 **Delivered Artifacts:**
+
+> **📌 Alle Dateien befinden sich in `/docs/ui/` und werden aktiv für die Frontend-Entwicklung genutzt.**
 
 1. **`docs/ui/theme.css`** (8.8 KB)
    - CSS custom properties for all design tokens
@@ -840,6 +855,17 @@ Phase 8 (Advanced Features)
 ---
 
 ## 📝 Changelog
+
+### 2025-11-16: Design Resources Location Documented
+
+**Changes:**
+- ✅ **Explicit Design Resource Location:** Documented that all design resources are located in `/docs/ui/`
+- ✅ **Added "Design Resources" section** under "Vision & Goals" to clearly state that `/docs/ui/` is the official location for all UI components and design guidelines
+- ✅ **Enhanced UI 1.0 Design System section** with prominent note that all files in `/docs/ui/` are actively used for frontend development
+- ✅ **Updated "Delivered Artifacts" section** to emphasize that these files are the central source for design resources
+
+**Purpose:**
+This update clarifies that `/docs/ui/` is the single source of truth for all design-related files (Design Tokens, Components, Layouts) used in SoulSpot Bridge frontend development.
 
 ### 2025-11-13: V2.0 HTMX-Only Architecture Decision
 
