@@ -328,29 +328,15 @@ In your Jinja2 template:
 
 ### Tailwind Integration
 
-To extend your existing Tailwind config with Harmony colors:
-
-```js
-const harmonyTheme = require('./design/tailwind.theme.js');
-
-module.exports = {
-  theme: {
-    extend: {
-      ...harmonyTheme.extend
-    }
-  }
-}
-```
+The Harmony color palette and design tokens are already integrated into the main `tailwind.config.js` file at the root of the project.
 
 ## Demo Page
 
 Visit `/theme-sample` to see all components and design tokens in action.
 
-## Design Token Files
+## Design Files
 
-- **Colors**: `design/tokens/colors.json`
-- **Typography**: `design/tokens/typography.json`
-- **Tailwind Extension**: `design/tailwind.theme.js`
+- **Tailwind Configuration**: `tailwind.config.js` (root)
 - **CSS Theme**: `src/soulspot/static/css/theme.css`
 
 ## License Note
