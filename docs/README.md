@@ -1,109 +1,229 @@
 # SoulSpot Bridge Documentation
 
-This directory contains all documentation for the SoulSpot Bridge project.
+> **Version:** 1.0  
+> **Last Updated:** 2025-11-17
 
-## 📁 Directory Structure
+---
 
-### Root Level
-- **architecture.md** - System architecture and design overview
-- **backend-development-roadmap.md** - Backend development roadmap (includes cross-cutting concerns)
-- **frontend-development-roadmap.md** - Frontend development roadmap
-- **ci-cd.md** - CI/CD pipeline documentation
-- **contributing.md** - Contribution guidelines
+## 📁 Documentation Structure
 
-### `/guide/` - User and Developer Guides
-All guides for users and developers:
-- **setup-guide.md** - Installation and setup instructions
-- **deployment-guide.md** - Deployment procedures
-- **testing-guide.md** - Testing guidelines
-- **troubleshooting-guide.md** - Common issues and solutions
-- **observability-guide.md** - Logging, monitoring, and health checks
-- **operations-runbook.md** - Operational procedures
-- **design-guidelines.md** - Design system guidelines
-- **soulspot-style-guide.md** - UI/UX style guide
-- **ui-ux-visual-guide.md** - Visual component showcase
-- **advanced-search-guide.md** - Search feature guide
-- **keyboard-navigation.md** - Keyboard shortcuts
-- **gridstack-page-builder-quick-ref.md** - Page builder reference
-- **release-quick-reference.md** - Release process quick reference
+This documentation is organized by purpose to help you find what you need quickly.
 
-### `/archived/` - Historical Documents
-Outdated or superseded documentation:
-- Old roadmaps (development-roadmap.md, frontend-roadmap-research.md, etc.)
-- Completed phase summaries
-- Old implementation plans
-- Archived features and evaluations
+```
+docs/
+├── project/          # Project-level documentation
+├── guides/           # User and developer guides
+│   ├── user/        # End-user documentation
+│   └── developer/   # Developer documentation
+├── api/             # API reference documentation
+├── development/     # Development roadmaps and guidelines
+├── implementation/  # Implementation details and guides
+├── history/         # Historical records of implementations
+└── archived/        # Archived and outdated documentation
+```
 
-### `/features/` - Feature Specifications
-Detailed specifications for specific features:
-- **circuit-breaker.md** - Circuit breaker pattern implementation
-- **soulspot-ideas.md** - Future feature ideas
+---
 
-### `/examples/` - Example Scripts and Demos
-Example scripts demonstrating SoulSpot Bridge functionality:
-- **example_phase4.py** - Phase 4 functionality demonstration
-- **validate_phase4.py** - Phase 4 validation script
-- **library_scanner_demo.py** - Library scanning examples
-- **circuit_breaker_demo.py** - Circuit breaker pattern examples
-
-### `/history/` - Implementation History
-Historical records of implementations and changes:
-- Phase summaries (PHASE1_SUMMARY.md through PHASE6_SUMMARY.md)
-- Implementation notes
-- Review reports
-
-### `/issues/` - Issue Templates and Planning
-Templates and documentation for issues:
-- Example issue templates
-- Issue planning documents
-
-### `/ui/` - UI Assets and Demos
-UI-related assets:
-- UI 1.0 design system
-- CSS files (components.css, layout.css, theme.css)
-- UI demo HTML
-
-### `/ui-screenshots/` - UI Screenshots
-Screenshots of the application UI
-
-### `/analysis/` - Analysis Documents
-Project analysis and assessment documents
-
-### `/archive/` - Legacy Archive
-Note: There are two archive directories:
-- `/archived/` - Contains recently archived documents (recommended)
-- `/archive/` - Contains older archived documents (legacy)
-
-## 🗺️ Roadmaps
-
-The project maintains two main roadmaps:
-1. **Backend Development Roadmap** (`backend-development-roadmap.md`) - Includes backend features and cross-cutting concerns (CI/CD, security, observability)
-2. **Frontend Development Roadmap** (`frontend-development-roadmap.md`) - Includes frontend features and UI development
-
-## 📚 Quick Links
+## 🚀 Quick Start
 
 ### For Users
-- [Setup Guide](guide/setup-guide.md)
-- [Troubleshooting Guide](guide/troubleshooting-guide.md)
-- [Advanced Search Guide](guide/advanced-search-guide.md)
+New to SoulSpot Bridge? Start here:
+1. [Setup Guide](guides/user/setup-guide.md) - Installation and configuration
+2. [User Guide](guides/user/user-guide.md) - How to use all features
+3. [Troubleshooting](guides/user/troubleshooting-guide.md) - Common issues and solutions
 
 ### For Developers
-- [Architecture](architecture.md)
-- [Backend Roadmap](backend-development-roadmap.md)
-- [Frontend Roadmap](frontend-development-roadmap.md)
-- [Contributing Guidelines](contributing.md)
-- [Testing Guide](guide/testing-guide.md)
+Contributing to SoulSpot Bridge? Start here:
+1. [Architecture](project/architecture.md) - System design and structure
+2. [Contributing Guide](project/contributing.md) - How to contribute
+3. [Testing Guide](guides/developer/testing-guide.md) - Writing and running tests
 
 ### For Operators
-- [Deployment Guide](guide/deployment-guide.md)
-- [Operations Runbook](guide/operations-runbook.md)
-- [Observability Guide](guide/observability-guide.md)
-- [CI/CD Documentation](ci-cd.md)
+Deploying or maintaining SoulSpot Bridge? Start here:
+1. [Deployment Guide](guides/developer/deployment-guide.md) - Production deployment
+2. [Operations Runbook](guides/developer/operations-runbook.md) - Day-to-day operations
+3. [Observability Guide](guides/developer/observability-guide.md) - Monitoring and logging
 
-## 📝 Documentation Updates
+---
 
-Last reorganization: 2025-11-15
-- Moved all guides to `/docs/guide/` for better organization
-- Archived outdated roadmaps and documents to `/docs/archived/`
-- Consolidated cross-cutting concerns into backend roadmap
-- Updated all internal references and links
+## 📚 Documentation Sections
+
+### Project Documentation (`project/`)
+Core project information and guidelines:
+- **[CHANGELOG](project/CHANGELOG.md)** - Version history and release notes
+- **[Architecture](project/architecture.md)** - System architecture and design
+- **[Contributing](project/contributing.md)** - Contribution guidelines
+
+### User Guides (`guides/user/`)
+End-user documentation:
+- **[Setup Guide](guides/user/setup-guide.md)** - Installation and initial setup
+- **[User Guide](guides/user/user-guide.md)** - Complete feature walkthrough
+- **[Advanced Search Guide](guides/user/advanced-search-guide.md)** - Search tips and tricks
+- **[Troubleshooting Guide](guides/user/troubleshooting-guide.md)** - Problem resolution
+
+### Developer Guides (`guides/developer/`)
+Technical documentation for developers:
+
+**Development**
+- **[Testing Guide](guides/developer/testing-guide.md)** - Test strategies and execution
+- **[Deployment Guide](guides/developer/deployment-guide.md)** - Deployment procedures
+- **[Operations Runbook](guides/developer/operations-runbook.md)** - Operational procedures
+- **[Observability Guide](guides/developer/observability-guide.md)** - Logging and monitoring
+
+**UI/UX Development**
+- **[Component Library](guides/developer/component-library.md)** - Reusable UI components
+- **[Design Guidelines](guides/developer/design-guidelines.md)** - Design system and patterns
+- **[HTMX Patterns](guides/developer/htmx-patterns.md)** - HTMX integration patterns
+- **[Style Guide](guides/developer/soulspot-style-guide.md)** - CSS and styling conventions
+- **[Visual Guide](guides/developer/ui-ux-visual-guide.md)** - Visual component showcase
+- **[Keyboard Navigation](guides/developer/keyboard-navigation.md)** - Accessibility shortcuts
+
+**Dashboard Development**
+- **[Dashboard Developer Guide](guides/developer/dashboard-developer-guide.md)** - Dashboard system overview
+- **[Widget Development Guide](guides/developer/widget-development-guide.md)** - Creating custom widgets
+- **[GridStack Quick Reference](guides/developer/gridstack-page-builder-quick-ref.md)** - Page builder reference
+- **[Page Reference](guides/developer/page-reference.md)** - Page structure and components
+
+**Release Management**
+- **[Release Quick Reference](guides/developer/release-quick-reference.md)** - Release process overview
+
+### API Documentation (`api/`)
+REST API reference:
+- **[API Overview](api/README.md)** - API introduction and conventions
+- **[Advanced Search API](api/advanced-search-api.md)** - Search endpoint documentation
+- **[Library Management API](api/library-management-api.md)** - Library operations
+- **[Download Management](api/download-management.md)** - Download queue management
+
+**Interactive Documentation:**
+- Swagger UI: http://localhost:8765/docs
+- ReDoc: http://localhost:8765/redoc
+
+### Development Documentation (`development/`)
+Development planning and guidelines:
+- **[Backend Roadmap](development/backend-roadmap.md)** - Backend development plan
+- **[Frontend Roadmap](development/frontend-roadmap.md)** - Frontend development plan
+- **[CI/CD](development/ci-cd.md)** - Continuous integration and deployment
+- **[Design Guidelines](development/design-guidelines.md)** - Design principles
+- **[Performance Optimization](development/performance-optimization.md)** - Performance best practices
+
+### Implementation Documentation (`implementation/`)
+Detailed implementation guides:
+- **[Dashboard Implementation](implementation/dashboard-implementation.md)** - Dashboard system details
+- **[Onboarding UI Implementation](implementation/onboarding-ui-implementation.md)** - Onboarding flow
+- **[Onboarding UI Overview](implementation/onboarding-ui-overview.md)** - Onboarding design
+- **[Onboarding Visual Guide](implementation/onboarding-ui-visual-guide.md)** - Onboarding visuals
+
+**Feature Implementations** (`implementation/features/`)
+- **[Circuit Breaker](implementation/features/circuit-breaker.md)** - Circuit breaker pattern
+- **[Feature Ideas](implementation/features/soulspot-ideas.md)** - Planned features
+
+### History (`history/`)
+Historical implementation records - see [History README](history/README.md) for details.
+
+### Archived (`archived/`)
+Outdated or superseded documentation - see [Archived README](archived/README.md) for details.
+
+---
+
+## 🔍 Finding What You Need
+
+### By Role
+
+**I'm a new user** → Start with [Setup Guide](guides/user/setup-guide.md) and [User Guide](guides/user/user-guide.md)
+
+**I'm a developer** → Check [Architecture](project/architecture.md) and [Contributing Guide](project/contributing.md)
+
+**I'm deploying to production** → See [Deployment Guide](guides/developer/deployment-guide.md)
+
+**I'm troubleshooting an issue** → Try [Troubleshooting Guide](guides/user/troubleshooting-guide.md)
+
+**I'm building a custom widget** → Read [Widget Development Guide](guides/developer/widget-development-guide.md)
+
+**I need API documentation** → Browse [API Documentation](api/)
+
+### By Topic
+
+**Setup & Configuration**
+- [Setup Guide](guides/user/setup-guide.md)
+- [Deployment Guide](guides/developer/deployment-guide.md)
+
+**Using Features**
+- [User Guide](guides/user/user-guide.md)
+- [Advanced Search Guide](guides/user/advanced-search-guide.md)
+
+**Development**
+- [Architecture](project/architecture.md)
+- [Backend Roadmap](development/backend-roadmap.md)
+- [Frontend Roadmap](development/frontend-roadmap.md)
+- [Testing Guide](guides/developer/testing-guide.md)
+
+**UI/UX**
+- [Component Library](guides/developer/component-library.md)
+- [Design Guidelines](guides/developer/design-guidelines.md)
+- [Style Guide](guides/developer/soulspot-style-guide.md)
+- [HTMX Patterns](guides/developer/htmx-patterns.md)
+
+**Operations**
+- [Operations Runbook](guides/developer/operations-runbook.md)
+- [Observability Guide](guides/developer/observability-guide.md)
+- [CI/CD Documentation](development/ci-cd.md)
+
+**Dashboard & Widgets**
+- [Dashboard Implementation](implementation/dashboard-implementation.md)
+- [Dashboard Developer Guide](guides/developer/dashboard-developer-guide.md)
+- [Widget Development Guide](guides/developer/widget-development-guide.md)
+
+---
+
+## 📝 Documentation Standards
+
+All documentation in this repository follows these standards:
+
+### Format
+- All documentation is in Markdown format
+- Files use `.md` extension
+- Use descriptive filenames with hyphens (e.g., `setup-guide.md`)
+
+### Structure
+- Every document starts with a title (H1)
+- Include version and last updated date at the top
+- Use clear headings and subheadings
+- Add a table of contents for long documents
+
+### Versioning
+- All documentation references **version 1.0**
+- No version prefixes in filenames (no v1.0, v2.0)
+- Historical versions are in `archived/` directory
+
+### Links
+- Use relative links within documentation
+- Link to related documentation where appropriate
+- Verify links work before committing
+
+---
+
+## 🤝 Contributing to Documentation
+
+Documentation improvements are always welcome! 
+
+- Fix typos or unclear explanations
+- Add missing information
+- Improve examples and code snippets
+- Update outdated content
+
+See the [Contributing Guide](project/contributing.md) for details on how to submit documentation changes.
+
+---
+
+## ❓ Getting Help
+
+Can't find what you're looking for?
+
+1. Check the [Troubleshooting Guide](guides/user/troubleshooting-guide.md)
+2. Search the documentation using your IDE or text editor
+3. Open an issue on GitHub with the question
+4. Check existing GitHub issues for similar questions
+
+---
+
+**SoulSpot Bridge version 1.0** - Complete documentation for a complete music automation platform.

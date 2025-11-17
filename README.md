@@ -51,7 +51,7 @@ SoulSpot Bridge verknüpft deine Spotify-Playlists mit dem Soulseek-Netzwerk. Di
    docker-compose -f docker/docker-compose.yml logs -f
    ```
 
-Weitere Konfigurationsmöglichkeiten (z. B. Benutzer-IDs, Zeitzone, geheime Schlüssel) findest du im [Docker Setup Guide](docker/README.md).
+Weitere Konfigurationsmöglichkeiten (z. B. Benutzer-IDs, Zeitzone, geheime Schlüssel) findest du im [Docker Setup Guide](docker/README.md).
 
 ## Zugriff nach dem Start
 | Dienst | URL | Beschreibung |
@@ -67,17 +67,29 @@ Weitere Konfigurationsmöglichkeiten (z. B. Benutzer-IDs, Zeitzone, geheime Sc
 3. Wähle die Playlists aus, die synchronisiert werden sollen.
 4. Beobachte den Download-Status und prüfe deine `mnt/music`-Bibliothek.
 
-Die automatische Musik-Importfunktion verschiebt fertig heruntergeladene Dateien in regelmäßigen Abständen aus `mnt/downloads` nach `mnt/music`. Unterstützte Formate sind u. a. MP3, FLAC, M4A und OGG.
+Die automatische Musik-Importfunktion verschiebt fertig heruntergeladene Dateien in regelmäßigen Abständen aus `mnt/downloads` nach `mnt/music`. Unterstützte Formate sind u. a. MP3, FLAC, M4A und OGG.
 
-## Hilfe & Support
-- Ausführliche Schritt-für-Schritt-Anleitung: [Docker Setup Guide](docker/README.md)
-- Hinweise zur Fehlerbehebung: Abschnitt „Troubleshooting“ im Docker Guide
-- Versionshinweise: [CHANGELOG](CHANGELOG.md)
-- Frontend Entwicklung: [Frontend Development Roadmap](docs/frontend-development-roadmap.md) | [v1.0 Details](docs/archived/frontend-development-roadmap-v1.0.md)
-- UI Design System: [UI 1.0 Design System](docs/ui/README_UI_1_0.md)
+## Dokumentation
+
+### Für Anwender
+- **[Setup Guide](docs/guides/user/setup-guide.md)** - Ausführliche Installations- und Konfigurationsanleitung
+- **[User Guide](docs/guides/user/user-guide.md)** - Vollständige Anleitung für alle Funktionen
+- **[Troubleshooting](docs/guides/user/troubleshooting-guide.md)** - Lösungen für häufige Probleme
+- **[Docker Setup Guide](docker/README.md)** - Docker-spezifische Konfiguration
+
+### Für Entwickler
+- **[Architecture](docs/project/architecture.md)** - System-Architektur und Design
+- **[Contributing](docs/project/contributing.md)** - Richtlinien für Beiträge
+- **[Backend Roadmap](docs/development/backend-roadmap.md)** - Backend-Entwicklungsplan
+- **[Frontend Roadmap](docs/development/frontend-roadmap.md)** - Frontend-Entwicklungsplan
+- **[API Documentation](docs/api/)** - REST API Referenz
+
+### Weitere Ressourcen
+- **[CHANGELOG](docs/project/CHANGELOG.md)** - Versionshinweise und Änderungshistorie
+- **[Complete Documentation](docs/)** - Vollständige Dokumentationsübersicht
 
 ## Lizenz
 Die Lizenz ist noch in Arbeit und wird vor dem ersten Stable-Release veröffentlicht.
 
 ---
-**Version:** 0.1.0 (Alpha) · **Status:** Active Development · **Frontend:** v1.0 Complete · **Letzte Aktualisierung:** 2025-11-16
+**Version:** 1.0 · **Status:** Active Development · **Letzte Aktualisierung:** 2025-11-17

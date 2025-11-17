@@ -55,7 +55,7 @@ These historical documents serve multiple purposes:
 
 ## Current Status
 
-See the main [README.md](../../README.md) and [CHANGELOG.md](../../CHANGELOG.md) for current status and recent changes.
+See the main [README.md](../../README.md) and [CHANGELOG.md](../project/CHANGELOG.md) for current status and recent changes.
 
 ## Future Phases
 

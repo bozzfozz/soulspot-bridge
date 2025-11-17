@@ -31,7 +31,7 @@ Comprehensive HTMX-First evaluation for SoulSpot Bridge V2.0 Dynamic Views/Widge
 - Testing & rollout plan
 
 ### 3. Updated Frontend Roadmap ✅
-**File:** `docs/frontend-development-roadmap.md` (updated, 28KB)
+**File:** `docs/development/frontend-roadmap.md` (updated, 28KB)
 - V2.0 section rewritten for HTMX-only approach
 - 5 implementation phases with AC/DoD
 - Effort: 12-18 days (reduced from 25-35)

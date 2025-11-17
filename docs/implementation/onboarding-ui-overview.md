@@ -13,7 +13,7 @@ This document provides a complete overview of the onboarding UI implementation f
 - **Technical Documentation:** [onboarding-ui-implementation.md](./onboarding-ui-implementation.md)
 - **Visual Guide & Mockups:** [onboarding-ui-visual-guide.md](./onboarding-ui-visual-guide.md)
 - **UI 1.0 Design System:** [ui/README_UI_1_0.md](./ui/README_UI_1_0.md)
-- **Frontend Roadmap:** [frontend-development-roadmap.md](./frontend-development-roadmap.md)
+- **Frontend Roadmap:** [development/frontend-roadmap.md](./development/frontend-roadmap.md)
 
 ---
 
@@ -598,7 +598,7 @@ Check logs for:
 - [Technical Implementation](./onboarding-ui-implementation.md)
 - [Visual Guide](./onboarding-ui-visual-guide.md)
 - [UI 1.0 Design System](./ui/README_UI_1_0.md)
-- [Frontend Roadmap](./frontend-development-roadmap.md)
+- [Frontend Roadmap](./development/frontend-roadmap.md)
 
 ### External Resources
 - [HTMX Documentation](https://htmx.org/docs/)
