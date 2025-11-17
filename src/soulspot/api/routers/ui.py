@@ -437,6 +437,167 @@ async def library_tracks(
     )
 
 
+@router.get("/library/artists/{artist_name}", response_class=HTMLResponse)
+async def library_artist_detail(
+    request: Request,
+    artist_name: str,
+    track_repository: TrackRepository = Depends(get_track_repository),
+) -> Any:
+    """Artist detail page with albums and tracks."""
+    from urllib.parse import unquote
+
+    artist_name = unquote(artist_name)
+    tracks = await track_repository.list_all()
+
+    # Filter tracks by artist
+    artist_tracks = [t for t in tracks if t.artist and t.artist.lower() == artist_name.lower()]
+
+    if not artist_tracks:
+        return templates.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error_code": 404,
+                "error_message": f"Artist '{artist_name}' not found",
+            },
+            status_code=404,
+        )
+
+    # Group tracks by album
+    albums_dict: dict[str, dict[str, Any]] = {}
+    for track in artist_tracks:
+        if track.album:
+            album_key = track.album
+            if album_key not in albums_dict:
+                albums_dict[album_key] = {
+                    "id": f"{artist_name}::{track.album}",
+                    "title": track.album,
+                    "track_count": 0,
+                    "year": track.year,
+                }
+            albums_dict[album_key]["track_count"] += 1
+
+    albums = sorted(albums_dict.values(), key=lambda x: x["title"].lower())
+
+    # Convert tracks to template format
+    tracks_data = [
+        {
+            "id": str(track.id.value),
+            "title": track.title,
+            "artist": track.artist,
+            "album": track.album,
+            "duration_ms": track.duration_ms,
+            "file_path": track.file_path,
+            "is_broken": track.is_broken,
+        }
+        for track in artist_tracks
+    ]
+
+    # Sort tracks by album, then track number
+    tracks_data.sort(
+        key=lambda x: (
+            x["album"] or "",
+            x["title"].lower(),
+        )
+    )
+
+    artist_data = {
+        "name": artist_name,
+        "albums": albums,
+        "tracks": tracks_data,
+        "track_count": len(tracks_data),
+    }
+
+    return templates.TemplateResponse(
+        "library_artist_detail.html", {"request": request, "artist": artist_data}
+    )
+
+
+@router.get("/library/albums/{album_key}", response_class=HTMLResponse)
+async def library_album_detail(
+    request: Request,
+    album_key: str,
+    track_repository: TrackRepository = Depends(get_track_repository),
+) -> Any:
+    """Album detail page with track listing."""
+    from urllib.parse import unquote
+
+    album_key = unquote(album_key)
+
+    # Split key into artist and album
+    if "::" not in album_key:
+        return templates.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error_code": 400,
+                "error_message": "Invalid album key format",
+            },
+            status_code=400,
+        )
+
+    artist_name, album_title = album_key.split("::", 1)
+    tracks = await track_repository.list_all()
+
+    # Filter tracks by artist and album
+    album_tracks = [
+        t
+        for t in tracks
+        if t.artist
+        and t.artist.lower() == artist_name.lower()
+        and t.album
+        and t.album.lower() == album_title.lower()
+    ]
+
+    if not album_tracks:
+        return templates.TemplateResponse(
+            "error.html",
+            {
+                "request": request,
+                "error_code": 404,
+                "error_message": f"Album '{album_title}' by '{artist_name}' not found",
+            },
+            status_code=404,
+        )
+
+    # Convert tracks to template format
+    tracks_data = [
+        {
+            "id": str(track.id.value),
+            "title": track.title,
+            "artist": track.artist,
+            "album": track.album,
+            "track_number": track.track_number,
+            "duration_ms": track.duration_ms,
+            "file_path": track.file_path,
+            "is_broken": track.is_broken,
+        }
+        for track in album_tracks
+    ]
+
+    # Sort by track number, then title
+    tracks_data.sort(key=lambda x: (x["track_number"] or 999, x["title"].lower()))
+
+    # Calculate total duration
+    total_duration_ms = sum(t["duration_ms"] or 0 for t in tracks_data)
+
+    # Get year from first track
+    year = album_tracks[0].year if album_tracks else None
+
+    album_data = {
+        "title": album_title,
+        "artist": artist_name,
+        "artist_slug": artist_name,
+        "tracks": tracks_data,
+        "year": year,
+        "total_duration_ms": total_duration_ms,
+    }
+
+    return templates.TemplateResponse(
+        "library_album_detail.html", {"request": request, "album": album_data}
+    )
+
+
 @router.get("/tracks/{track_id}/metadata-editor", response_class=HTMLResponse)
 async def track_metadata_editor(
     request: Request,
