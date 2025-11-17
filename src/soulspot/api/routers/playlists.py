@@ -337,6 +337,13 @@ async def get_missing_tracks(
     Returns:
         List of missing tracks
     """
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import joinedload
+
+    from soulspot.api.dependencies import get_db_session
+    from soulspot.infrastructure.persistence.models import TrackModel
+
     try:
         playlist_id_obj = PlaylistId.from_string(playlist_id)
         playlist = await playlist_repository.get_by_id(playlist_id_obj)
@@ -344,21 +351,33 @@ async def get_missing_tracks(
         if not playlist:
             raise HTTPException(status_code=404, detail="Playlist not found")
 
+        # Get session for direct DB query
+        session: AsyncSession = await anext(get_db_session())
+
         # Find tracks without file_path
         missing_tracks = []
         for track_id in playlist.track_ids:
-            track = await track_repository.get_by_id(track_id)
-            if track and not track.file_path:
+            stmt = (
+                select(TrackModel)
+                .where(TrackModel.id == str(track_id.value))
+                .options(joinedload(TrackModel.artist), joinedload(TrackModel.album))
+            )
+            result = await session.execute(stmt)
+            track_model = result.unique().scalar_one_or_none()
+
+            if track_model and not track_model.file_path:
                 missing_tracks.append(
                     {
-                        "id": str(track.id.value),
-                        "title": track.title,
-                        "artist": track.artist,
-                        "album": track.album,
-                        "duration_ms": track.duration_ms,
-                        "spotify_uri": str(track.spotify_uri)
-                        if track.spotify_uri
-                        else None,
+                        "id": track_model.id,
+                        "title": track_model.title,
+                        "artist": track_model.artist.name
+                        if track_model.artist
+                        else "Unknown Artist",
+                        "album": track_model.album.title
+                        if track_model.album
+                        else "Unknown Album",
+                        "duration_ms": track_model.duration_ms,
+                        "spotify_uri": track_model.spotify_uri,
                     }
                 )
 

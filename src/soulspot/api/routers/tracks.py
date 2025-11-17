@@ -176,32 +176,47 @@ async def get_track(
     Returns:
         Track details
     """
-    try:
-        track_id_obj = TrackId.from_string(track_id)
-        track = await track_repository.get_by_id(track_id_obj)
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import joinedload
 
-        if not track:
+    from soulspot.api.dependencies import get_db_session
+    from soulspot.infrastructure.persistence.models import TrackModel
+
+    try:
+        # Get session for direct DB query to include artist/album names
+        session: AsyncSession = await anext(get_db_session())
+
+        stmt = (
+            select(TrackModel)
+            .where(TrackModel.id == track_id)
+            .options(joinedload(TrackModel.artist), joinedload(TrackModel.album))
+        )
+        result = await session.execute(stmt)
+        track_model = result.unique().scalar_one_or_none()
+
+        if not track_model:
             raise HTTPException(status_code=404, detail="Track not found")
 
         return {
-            "id": str(track.id.value),
-            "title": track.title,
-            "artist": track.artist,
-            "album": track.album,
-            "album_artist": track.album_artist,
-            "genre": track.genre,
-            "year": track.year,
-            "artist_id": str(track.artist_id.value),
-            "album_id": str(track.album_id.value) if track.album_id else None,
-            "duration_ms": track.duration_ms,
-            "track_number": track.track_number,
-            "disc_number": track.disc_number,
-            "spotify_uri": str(track.spotify_uri) if track.spotify_uri else None,
-            "musicbrainz_id": track.musicbrainz_id,
-            "isrc": track.isrc,
-            "file_path": str(track.file_path) if track.file_path else None,
-            "created_at": track.created_at.isoformat(),
-            "updated_at": track.updated_at.isoformat(),
+            "id": track_model.id,
+            "title": track_model.title,
+            "artist": track_model.artist.name if track_model.artist else None,
+            "album": track_model.album.title if track_model.album else None,
+            "album_artist": track_model.album.artist if track_model.album and hasattr(track_model.album, "artist") else None,
+            "genre": None,  # TODO: Add genre field to track model
+            "year": track_model.album.year if track_model.album and hasattr(track_model.album, "year") else None,
+            "artist_id": track_model.artist_id,
+            "album_id": track_model.album_id,
+            "duration_ms": track_model.duration_ms,
+            "track_number": track_model.track_number,
+            "disc_number": track_model.disc_number,
+            "spotify_uri": track_model.spotify_uri,
+            "musicbrainz_id": track_model.musicbrainz_id,
+            "isrc": track_model.isrc,
+            "file_path": track_model.file_path,
+            "created_at": track_model.created_at.isoformat(),
+            "updated_at": track_model.updated_at.isoformat(),
         }
     except ValueError as e:
         raise HTTPException(

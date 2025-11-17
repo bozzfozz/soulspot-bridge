@@ -94,7 +94,12 @@ async def playlist_missing_tracks(
     track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Return missing tracks partial for a playlist."""
+    from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
+
+    from soulspot.api.dependencies import get_db_session
     from soulspot.domain.value_objects import PlaylistId
+    from soulspot.infrastructure.persistence.models import TrackModel
 
     try:
         playlist_id_obj = PlaylistId.from_string(playlist_id)
@@ -111,21 +116,33 @@ async def playlist_missing_tracks(
                 status_code=404,
             )
 
+        # Get session for direct DB query
+        session = await anext(get_db_session())
+
         # Find tracks without file_path (missing tracks)
         missing_tracks = []
         for track_id in playlist.track_ids:
-            track = await track_repository.get_by_id(track_id)
-            if track and not track.file_path:
+            stmt = (
+                select(TrackModel)
+                .where(TrackModel.id == str(track_id.value))
+                .options(joinedload(TrackModel.artist), joinedload(TrackModel.album))
+            )
+            result = await session.execute(stmt)
+            track_model = result.unique().scalar_one_or_none()
+
+            if track_model and not track_model.file_path:
                 missing_tracks.append(
                     {
-                        "id": str(track.id.value),
-                        "title": track.title,
-                        "artist": track.artist,
-                        "album": track.album,
-                        "duration_ms": track.duration_ms,
-                        "spotify_uri": str(track.spotify_uri)
-                        if track.spotify_uri
-                        else None,
+                        "id": track_model.id,
+                        "title": track_model.title,
+                        "artist": track_model.artist.name
+                        if track_model.artist
+                        else "Unknown Artist",
+                        "album": track_model.album.title
+                        if track_model.album
+                        else "Unknown Album",
+                        "duration_ms": track_model.duration_ms,
+                        "spotify_uri": track_model.spotify_uri,
                     }
                 )
 
@@ -411,20 +428,34 @@ async def library_tracks(
     track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Library tracks browser page."""
-    tracks = await track_repository.list_all()
+    from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
+
+    from soulspot.api.dependencies import get_db_session
+    from soulspot.infrastructure.persistence.models import TrackModel
+
+    # Get session for direct DB query
+    session = await anext(get_db_session())
+
+    # Query with joined loads for artist and album
+    stmt = select(TrackModel).options(
+        joinedload(TrackModel.artist), joinedload(TrackModel.album)
+    )
+    result = await session.execute(stmt)
+    track_models = result.unique().scalars().all()
 
     # Convert to template-friendly format
     tracks_data = [
         {
-            "id": str(track.id.value),
+            "id": track.id,
             "title": track.title,
-            "artist": track.artist or "Unknown Artist",
-            "album": track.album or "Unknown Album",
+            "artist": track.artist.name if track.artist else "Unknown Artist",
+            "album": track.album.title if track.album else "Unknown Album",
             "duration_ms": track.duration_ms,
             "file_path": track.file_path,
             "is_broken": track.is_broken,
         }
-        for track in tracks
+        for track in track_models
     ]
 
     # Sort by artist, album, title
@@ -446,13 +477,28 @@ async def library_artist_detail(
     """Artist detail page with albums and tracks."""
     from urllib.parse import unquote
 
+    from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
+
+    from soulspot.api.dependencies import get_db_session
+    from soulspot.infrastructure.persistence.models import TrackModel
+
     artist_name = unquote(artist_name)
-    tracks = await track_repository.list_all()
 
-    # Filter tracks by artist
-    artist_tracks = [t for t in tracks if t.artist and t.artist.lower() == artist_name.lower()]
+    # Get session for direct DB query
+    session = await anext(get_db_session())
 
-    if not artist_tracks:
+    # Query tracks with joined loads for artist and album
+    stmt = (
+        select(TrackModel)
+        .join(TrackModel.artist)
+        .where(TrackModel.artist.has(name=artist_name))
+        .options(joinedload(TrackModel.artist), joinedload(TrackModel.album))
+    )
+    result = await session.execute(stmt)
+    track_models = result.unique().scalars().all()
+
+    if not track_models:
         return templates.TemplateResponse(
             "error.html",
             {
@@ -465,15 +511,15 @@ async def library_artist_detail(
 
     # Group tracks by album
     albums_dict: dict[str, dict[str, Any]] = {}
-    for track in artist_tracks:
+    for track in track_models:
         if track.album:
-            album_key = track.album
+            album_key = track.album.title
             if album_key not in albums_dict:
                 albums_dict[album_key] = {
-                    "id": f"{artist_name}::{track.album}",
-                    "title": track.album,
+                    "id": f"{artist_name}::{track.album.title}",
+                    "title": track.album.title,
                     "track_count": 0,
-                    "year": track.year,
+                    "year": track.album.year if hasattr(track.album, "year") else None,
                 }
             albums_dict[album_key]["track_count"] += 1
 
@@ -482,24 +528,19 @@ async def library_artist_detail(
     # Convert tracks to template format
     tracks_data = [
         {
-            "id": str(track.id.value),
+            "id": track.id,
             "title": track.title,
-            "artist": track.artist,
-            "album": track.album,
+            "artist": track.artist.name if track.artist else "Unknown Artist",
+            "album": track.album.title if track.album else "Unknown Album",
             "duration_ms": track.duration_ms,
             "file_path": track.file_path,
             "is_broken": track.is_broken,
         }
-        for track in artist_tracks
+        for track in track_models
     ]
 
-    # Sort tracks by album, then track number
-    tracks_data.sort(
-        key=lambda x: (
-            x["album"] or "",
-            x["title"].lower(),
-        )
-    )
+    # Sort tracks by album, then track number/title
+    tracks_data.sort(key=lambda x: (x["album"] or "", x["title"].lower()))
 
     artist_data = {
         "name": artist_name,
@@ -522,6 +563,12 @@ async def library_album_detail(
     """Album detail page with track listing."""
     from urllib.parse import unquote
 
+    from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
+
+    from soulspot.api.dependencies import get_db_session
+    from soulspot.infrastructure.persistence.models import TrackModel
+
     album_key = unquote(album_key)
 
     # Split key into artist and album
@@ -537,19 +584,25 @@ async def library_album_detail(
         )
 
     artist_name, album_title = album_key.split("::", 1)
-    tracks = await track_repository.list_all()
 
-    # Filter tracks by artist and album
-    album_tracks = [
-        t
-        for t in tracks
-        if t.artist
-        and t.artist.lower() == artist_name.lower()
-        and t.album
-        and t.album.lower() == album_title.lower()
-    ]
+    # Get session for direct DB query
+    session = await anext(get_db_session())
 
-    if not album_tracks:
+    # Query tracks for this album
+    stmt = (
+        select(TrackModel)
+        .join(TrackModel.artist)
+        .join(TrackModel.album)
+        .where(
+            TrackModel.artist.has(name=artist_name),
+            TrackModel.album.has(title=album_title),
+        )
+        .options(joinedload(TrackModel.artist), joinedload(TrackModel.album))
+    )
+    result = await session.execute(stmt)
+    track_models = result.unique().scalars().all()
+
+    if not track_models:
         return templates.TemplateResponse(
             "error.html",
             {
@@ -563,16 +616,16 @@ async def library_album_detail(
     # Convert tracks to template format
     tracks_data = [
         {
-            "id": str(track.id.value),
+            "id": track.id,
             "title": track.title,
-            "artist": track.artist,
-            "album": track.album,
+            "artist": track.artist.name if track.artist else "Unknown Artist",
+            "album": track.album.title if track.album else "Unknown Album",
             "track_number": track.track_number,
             "duration_ms": track.duration_ms,
             "file_path": track.file_path,
             "is_broken": track.is_broken,
         }
-        for track in album_tracks
+        for track in track_models
     ]
 
     # Sort by track number, then title
@@ -581,8 +634,12 @@ async def library_album_detail(
     # Calculate total duration
     total_duration_ms = sum(t["duration_ms"] or 0 for t in tracks_data)
 
-    # Get year from first track
-    year = album_tracks[0].year if album_tracks else None
+    # Get year from first track's album
+    year = (
+        track_models[0].album.year
+        if track_models and track_models[0].album and hasattr(track_models[0].album, "year")
+        else None
+    )
 
     album_data = {
         "title": album_title,
@@ -605,13 +662,25 @@ async def track_metadata_editor(
     track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Return metadata editor modal for a track."""
-    from soulspot.domain.value_objects import TrackId
+    from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
+
+    from soulspot.api.dependencies import get_db_session
+    from soulspot.infrastructure.persistence.models import TrackModel
 
     try:
-        track_id_obj = TrackId.from_string(track_id)
-        track = await track_repository.get_by_id(track_id_obj)
+        # Get session for direct DB query
+        session = await anext(get_db_session())
 
-        if not track:
+        stmt = (
+            select(TrackModel)
+            .where(TrackModel.id == track_id)
+            .options(joinedload(TrackModel.artist), joinedload(TrackModel.album))
+        )
+        result = await session.execute(stmt)
+        track_model = result.unique().scalar_one_or_none()
+
+        if not track_model:
             return templates.TemplateResponse(
                 "error.html",
                 {
@@ -623,16 +692,16 @@ async def track_metadata_editor(
             )
 
         track_data = {
-            "id": str(track.id.value),
-            "title": track.title,
-            "artist": track.artist,
-            "album": track.album,
-            "album_artist": track.album_artist,
-            "genre": track.genre,
-            "year": track.year,
-            "track_number": track.track_number,
-            "disc_number": track.disc_number,
-            "file_path": str(track.file_path) if track.file_path else None,
+            "id": track_model.id,
+            "title": track_model.title,
+            "artist": track_model.artist.name if track_model.artist else None,
+            "album": track_model.album.title if track_model.album else None,
+            "album_artist": None,  # TODO: Add album_artist field
+            "genre": None,  # TODO: Add genre field
+            "year": track_model.album.year if track_model.album and hasattr(track_model.album, "year") else None,
+            "track_number": track_model.track_number,
+            "disc_number": track_model.disc_number,
+            "file_path": track_model.file_path,
         }
 
         return templates.TemplateResponse(
