@@ -312,7 +312,7 @@ Once running, access:
 
 ### Production Mode
 
-**Important:** See [Development Roadmap](development-roadmap.md) - Production setup will be fully documented in Phase 6.
+**Important:** See [Development Roadmap](../../development/backend-roadmap.md) - Production setup will be fully documented in Phase 6.
 
 **Basic Production Command:**
 ```bash
