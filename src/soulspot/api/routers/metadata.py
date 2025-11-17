@@ -41,7 +41,7 @@ from soulspot.infrastructure.persistence.repositories import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/metadata", tags=["metadata"])
+router = APIRouter()
 
 
 def get_metadata_merger() -> MetadataMerger:
@@ -326,12 +326,15 @@ async def auto_fix_track_metadata(
             "sources_used": result.sources_used,
             "message": "Metadata auto-fixed successfully",
         }
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid track ID: {str(e)}",
-        ) from e
-    except Exception as e:
+    except (ValueError, Exception) as e:
+        # Check if it's a validation error
+        from soulspot.domain.exceptions import ValidationException
+
+        if isinstance(e, ValidationException) or "Invalid TrackId" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid track ID: {str(e)}",
+            ) from e
         logger.exception(f"Failed to auto-fix metadata for track {track_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
