@@ -92,7 +92,7 @@ Successfully implemented the **Library Scanning & Self-Healing** features (Epic 
   - Direct scanner usage
 
 **Updated:**
-- `docs/backend-development-roadmap.md`
+- `docs/development/backend-roadmap.md`
   - Marked tasks as complete
   - Updated progress percentage
   - Added implementation notes
@@ -261,7 +261,7 @@ alembic downgrade -1
 - `src/soulspot/infrastructure/persistence/models.py`
 - `src/soulspot/domain/entities/__init__.py`
 - `src/soulspot/api/routers/__init__.py`
-- `docs/backend-development-roadmap.md`
+- `docs/development/backend-roadmap.md`
 
 **Total Lines Added:** ~1,500 lines of code + tests + documentation
 

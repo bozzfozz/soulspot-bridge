@@ -447,7 +447,7 @@ While the UI 1.0 Design System provides comprehensive tokens, the following coul
 
 - **Problem Statement:** Original requirements document
 - **UI 1.0 Design System:** `/docs/ui/README_UI_1_0.md`
-- **Frontend Roadmap:** `/docs/frontend-development-roadmap.md`
+- **Frontend Roadmap:** `/docs/development/frontend-roadmap.md`
 - **HTMX Documentation:** https://htmx.org/docs/
 - **WCAG 2.1 Guidelines:** https://www.w3.org/WAI/WCAG21/quickref/
 

@@ -477,7 +477,7 @@ Use the [Release Checklist](../.github/ISSUE_TEMPLATE/release_checklist.md) issu
 - [Style Guide](soulspot-style-guide.md) - UI/UX design system
 - [CI/CD Guide](ci-cd.md) - Continuous Integration and Releases
 - [Development Roadmap](development-roadmap.md) - Future plans
-- [CHANGELOG.md](../CHANGELOG.md) - Version history
+- [CHANGELOG.md](../project/CHANGELOG.md) - Version history
 
 ### External Resources
 

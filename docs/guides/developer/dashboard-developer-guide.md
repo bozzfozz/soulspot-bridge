@@ -688,7 +688,7 @@ async def save_config(instance_id: int, request: Request, ...):
 - [WCAG Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
 
 ### Internal Docs
-- [Frontend Roadmap](frontend-development-roadmap.md)
+- [Frontend Roadmap](../../development/frontend-roadmap.md)
 - [Implementation Summary](v2.0-dashboard-implementation-summary.md)
 - [UI Design System](ui/README_UI_1_0.md)
 

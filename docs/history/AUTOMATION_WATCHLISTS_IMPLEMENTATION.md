@@ -224,7 +224,7 @@ GET  /api/automation/quality-upgrades/unprocessed - Get unprocessed candidates
 - `src/soulspot/api/routers/__init__.py` (+3 lines)
 
 ### Documentation (103 lines)
-- `docs/backend-development-roadmap.md` (+45 lines)
+- `docs/development/backend-roadmap.md` (+45 lines)
 - `CHANGELOG.md` (+58 lines)
 
 **Total**: 2,061 lines of production code

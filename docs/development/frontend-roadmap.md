@@ -1,8 +1,8 @@
 # SoulSpot Bridge – Frontend Development Roadmap
 
+> **Version:** 1.0  
 > **Last Updated:** 2025-11-17  
-> **Current Version:** v1.0 ✅ Complete  
-> **Next Version:** v2.0 🚧 Phase 0-3 Complete, Phase 4 In Progress  
+> **Status:** Core Features Complete  
 > **Owner:** Frontend Team
 
 ---
@@ -10,19 +10,19 @@
 ## 🎯 Quick Overview
 
 **What is complete:**
-- ✅ **v1.0** - All core pages, queue management, settings UI, search, authentication (Complete Nov 2025)
-- ✅ **UI 1.0 Design System** - Component library, design tokens, accessibility features
-- ✅ **v2.0 Phase 0-3** - Dashboard widget system fully implemented (Complete Nov 2025)
-- ✅ **Server-Sent Events (SSE)** - Real-time updates infrastructure (Complete Nov 2025)
-- ✅ **Widget Template System** - Custom widget development framework (Complete Nov 2025)
+- ✅ **Core Pages** - All primary pages, queue management, settings UI, search, authentication
+- ✅ **UI Design System** - Component library, design tokens, accessibility features
+- ✅ **Dashboard System** - Dynamic widget system with drag-and-drop customization
+- ✅ **Server-Sent Events (SSE)** - Real-time updates infrastructure
+- ✅ **Widget Template System** - Custom widget development framework
 
 **What's in progress:**
-- 🚧 **v2.0 Phase 4** - Testing, performance optimization, and final polish (In Progress)
-- 🚧 **Custom Widget API** - Plugin system and developer tools (In Progress)
+- 🚧 **Testing & Optimization** - Integration tests, E2E tests, performance improvements
+- 🚧 **Custom Widget API** - Plugin system and developer tools
 
-**What's next (Priority Order):**
+**What's planned (Priority Order):**
 1. 🚧 **Custom Widget API & Documentation** - Complete plugin API and developer guide (1 week)
-2. 🚧 **v2.0 Dashboard Testing & Launch** - Integration tests, E2E tests, performance (1-2 weeks)
+2. 🚧 **Testing & Launch** - Integration tests, E2E tests, performance (1-2 weeks)
 3. 📋 **Playlist Management** - Enhanced playlist features and missing track detection (2-3 weeks)
 4. 📚 **Library Browser** - Artist/album/track browsing and metadata editing (3-4 weeks)
 
@@ -30,9 +30,9 @@
 
 ## 📑 Table of Contents
 
-1. [What's Next (v2.0)](#-whats-next-v20---priority-ordered)
+1. [What's Next](#-whats-next---priority-ordered)
 2. [Technology Stack](#-technology-stack)
-3. [v1.0 Achievements](#-v10-achievements-complete)
+3. [Completed Features](#-completed-features)
 4. [Vision & Principles](#-vision--principles)
 5. [Future Plans (>3 Months)](#-future-plans-3-months)
 6. [Dependencies & Risks](#-dependencies--risks)
@@ -40,17 +40,17 @@
 
 ---
 
-## 🚀 What's Next (v2.0) - Priority Ordered
+## 🚀 What's Next - Priority Ordered
 
 ### Priority 1: Dynamic Dashboard Builder ⭐ START HERE
 
-**Epic 5: HTMX-Only Dashboard Builder (Button-Based Layout)**  
+**Epic: HTMX-Only Dashboard Builder (Button-Based Layout)**  
 **Estimated Effort:** 12-18 days (2.5-3.5 weeks)  
-**Status:** 🚧 Phase 0-3 Complete, Phase 4 In Progress  
+**Status:** 🚧 Testing and Final Polish In Progress  
 **Team:** Frontend
 
 #### Why This First?
-- Core feature for v2.0
+- Core feature for version 1.0
 - Enables user customization
 - Foundation for other features
 - All planning complete
@@ -70,11 +70,11 @@ A customizable dashboard where users can:
 
 | Phase | Focus | Estimated Time | Status |
 |-------|-------|----------------|--------|
-| **Phase 0: Foundation** | Database schema, migrations, API stubs | 2 days | ✅ Complete |
-| **Phase 1: Canvas & Widgets** | CSS Grid layout, widget templates | 4-5 days | ✅ Complete |
-| **Phase 2: Core Features** | Add/remove/move/resize widgets | 3-4 days | ✅ Complete |
-| **Phase 3: Advanced** | Edit/view modes, config, pages, accessibility | 2-3 days | ✅ Complete |
-| **Phase 4: Launch** | Testing, polish, rollout | 3-4 days | 🚧 In Progress |
+| **Stage: Foundation** | Database schema, migrations, API stubs | 2 days | ✅ Complete |
+| **Stage: Canvas & Widgets** | CSS Grid layout, widget templates | 4-5 days | ✅ Complete |
+| **Stage: Core Features** | Add/remove/move/resize widgets | 3-4 days | ✅ Complete |
+| **Stage: Advanced** | Edit/view modes, config, pages, accessibility | 2-3 days | ✅ Complete |
+| **Stage: Launch** | Testing, polish, rollout | 3-4 days | 🚧 In Progress |
 
 #### 5 Core Widgets (MVP)
 
@@ -109,7 +109,7 @@ A customizable dashboard where users can:
 ✅ **Easier Testing** - Standard HTTP patterns  
 ❌ **Trade-off:** No free-form drag positioning (acceptable)
 
-**Full Details:** See [`docs/archived/frontend-roadmap-htmx-evaluation.md`](archived/frontend-roadmap-htmx-evaluation.md)
+**Full Details:** See [`docs/../archived/frontend-roadmap-htmx-evaluation.md`](../archived/frontend-roadmap-htmx-evaluation.md)
 
 ---
 
@@ -314,7 +314,7 @@ See `src/soulspot/templates/widget_templates/system_stats.json` for a complete e
 
 ---
 
-## ✅ v1.0 Achievements (Complete)
+## ✅ version 1.0 Achievements (Complete)
 
 **Status:** ✅ Completed November 2025  
 **All Core Features Delivered:**
@@ -345,7 +345,7 @@ See `src/soulspot/templates/widget_templates/system_stats.json` for a complete e
 - ✅ Mobile-first responsive design
 - ✅ Complete test coverage
 
-**Full v1.0 Details:** See [`docs/FRONTEND_V1_SUMMARY.md`](FRONTEND_V1_SUMMARY.md)
+**Full version 1.0 Details:** See [`docs/FRONTEND_V1_SUMMARY.md`](FRONTEND_V1_SUMMARY.md)
 
 ---
 
@@ -391,7 +391,7 @@ Provide a clean, modern, accessible web UI for SoulSpot Bridge that works beauti
 
 ## 🔮 Future Plans (>3 Months)
 
-**Not Planned for v2.0 - Lower Priority:**
+**Not Planned for version 1.0 - Lower Priority:**
 
 ### Advanced Features (Phase 8)
 - Mobile App (React Native / PWA) - P3
@@ -423,7 +423,7 @@ Provide a clean, modern, accessible web UI for SoulSpot Bridge that works beauti
 | **Tailwind CSS** | HIGH | ✅ Stable | Self-hosted, build process |
 | **Heroicons** | LOW | ✅ Stable | Local SVG copies |
 
-### Technical Risks (v2.0)
+### Technical Risks (version 1.0)
 
 | Risk | Probability | Impact | Mitigation |
 |------|------------|--------|------------|
@@ -437,14 +437,14 @@ Provide a clean, modern, accessible web UI for SoulSpot Bridge that works beauti
 ### Feature Dependencies
 
 ```
-v1.0 (Complete) ✅
+version 1.0 (Complete) ✅
     ↓
-v2.0 Dashboard Builder (Current Focus)
-    ├─→ Phase 0: Foundation
-    ├─→ Phase 1: Canvas & Widgets
-    ├─→ Phase 2: Core Features
-    ├─→ Phase 3: Advanced
-    └─→ Phase 4: Launch
+version 1.0 Dashboard Builder (Current Focus)
+    ├─→ Stage: Foundation
+    ├─→ Stage: Canvas & Widgets
+    ├─→ Stage: Core Features
+    ├─→ Stage: Advanced
+    └─→ Stage: Launch
     ↓
 Playlist Management UI
     ↓
@@ -459,13 +459,13 @@ Future Features (Phase 8+)
 
 ### Internal Documentation
 
-**v2.0 Planning:**
-- [HTMX Evaluation & Architecture](archived/frontend-roadmap-htmx-evaluation.md) - Complete v2.0 technical design
+**version 1.0 Planning:**
+- [HTMX Evaluation & Architecture](../archived/frontend-roadmap-htmx-evaluation.md) - Complete version 1.0 technical design
 - [HTMX Usage Inventory](archived/frontend-htmx-inventory.md) - Current HTMX patterns
 
-**v1.0 Reference:**
-- [v1.0 Summary](FRONTEND_V1_SUMMARY.md) - Complete v1.0 feature list
-- [v1.0 Archived Roadmap](archived/frontend-development-roadmap-v1.0.md) - Original v1.0 planning
+**version 1.0 Reference:**
+- [version 1.0 Summary](FRONTEND_V1_SUMMARY.md) - Complete version 1.0 feature list
+- [version 1.0 Archived Roadmap](../archived/frontend-development-roadmap-version 1.0.md) - Original version 1.0 planning
 
 **Design Resources:**
 - [UI Design System](ui/) - Component library and design tokens
@@ -473,7 +473,7 @@ Future Features (Phase 8+)
 - [Keyboard Navigation Guide](guide/keyboard-navigation.md) - Shortcuts reference
 
 **Other Roadmaps:**
-- [Backend Development Roadmap](backend-development-roadmap.md) - Backend features
+- [Backend Development Roadmap](backend-roadmap.md) - Backend features
 - [Architecture Overview](architecture.md) - System architecture
 
 ### External Resources
@@ -522,21 +522,21 @@ Future Features (Phase 8+)
 
 **Impact:** Enables real-time dashboard updates and custom widget development, eliminating polling overhead and providing extensibility framework.
 
-### 2025-11-17: v2.0 Phase 0-3 Complete - Dashboard Widget System Fully Implemented ✅
-- ✅ **Phase 0: Foundation Complete**
+### 2025-11-17: version 1.0 Phase 0-3 Complete - Dashboard Widget System Fully Implemented ✅
+- ✅ **Stage: Foundation Complete**
   - Database schema with migrations (widgets, pages, widget_instances tables)
   - Domain entities with full business logic
   - API endpoints for all CRUD operations
   - Repository layer implementation
 
-- ✅ **Phase 1: Canvas & Widgets Complete**
+- ✅ **Stage: Canvas & Widgets Complete**
   - CSS Grid 12-column responsive layout
   - 5 core widget templates implemented
   - Widget canvas with loading states
   - Dark mode support
   - Mobile-first responsive design
 
-- ✅ **Phase 2: Core Features Complete**
+- ✅ **Stage: Core Features Complete**
   - Button-based widget controls (↑ ↓ ← → ⬌ ⚙ ✕)
   - Add/remove widgets functionality
   - Move widgets in 4 directions
@@ -544,7 +544,7 @@ Future Features (Phase 8+)
   - Widget configuration modals
   - Page management (create, switch, delete)
 
-- ✅ **Phase 3: Advanced Features Complete**
+- ✅ **Stage: Advanced Features Complete**
   - Edit and view modes
   - Keyboard navigation (Ctrl+E, Ctrl+A, Ctrl+P, Ctrl+?, Esc)
   - Keyboard shortcuts help modal
@@ -555,7 +555,7 @@ Future Features (Phase 8+)
   - Reduced motion support
   - Improved modal UX
 
-- 🚧 **Phase 4: Launch In Progress**
+- 🚧 **Stage: Launch In Progress**
   - [ ] Integration tests expansion
   - [ ] E2E tests for critical flows
   - [ ] Performance measurement and optimization
@@ -570,16 +570,16 @@ Future Features (Phase 8+)
 
 ### 2025-11-17: Roadmap Restructured for Clarity
 - ✅ Reorganized to prioritize "What's Next"
-- ✅ Moved v1.0 completed features to summary section
+- ✅ Moved version 1.0 completed features to summary section
 - ✅ Improved visual hierarchy and scanning
 - ✅ Added clear priority ordering (P1, P2, P3)
 - ✅ Simplified structure (removed redundant details)
 - ✅ Enhanced "Quick Overview" section
 
-### 2025-11-16: v1.0 Complete - All Features Delivered
-- ✅ v1.0 marked as complete (9 pages, all features)
+### 2025-11-16: version 1.0 Complete - All Features Delivered
+- ✅ version 1.0 marked as complete (9 pages, all features)
 - ✅ Updated roadmap to reflect completion status
-- ✅ v2.0 status changed to "Ready for Implementation"
+- ✅ version 1.0 status changed to "Ready for Implementation"
 
 ### 2025-11-13: V2.0 HTMX-Only Architecture Decided
 - ✅ Architecture decision: HTMX-only with button-based layout
@@ -591,4 +591,4 @@ Future Features (Phase 8+)
 
 **Last Updated:** 2025-11-17  
 **Document Owner:** Frontend Team  
-**Status:** v1.0 Complete ✅ | v2.0 Ready to Start 📋
+**Status:** version 1.0 Complete ✅ | version 1.0 Ready to Start 📋

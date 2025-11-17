@@ -48,11 +48,11 @@ The backend of SoulSpot Bridge is responsible for:
 
 | Phase | Status | Key Features |
 |-------|--------|--------------|
-| **Phase 1: Foundation** | ✅ Complete | Domain Layer, Project Setup, Core Models |
-| **Phase 2: Core Infrastructure** | ✅ Complete | Settings Management, Database Layer, FastAPI Application |
-| **Phase 3: External Integrations** | ✅ Complete | slskd Client, Spotify OAuth, MusicBrainz Integration |
-| **Phase 4: Application Layer** | ✅ Complete | Use Cases, Worker System, Token Management, Caching |
-| **Phase 6: Production Readiness** | ✅ Complete | Structured Logging, Health Checks, Performance Optimization |
+| **Stage: Foundation** | ✅ Complete | Domain Layer, Project Setup, Core Models |
+| **Stage: Core Infrastructure** | ✅ Complete | Settings Management, Database Layer, FastAPI Application |
+| **Stage: External Integrations** | ✅ Complete | slskd Client, Spotify OAuth, MusicBrainz Integration |
+| **Stage: Application Layer** | ✅ Complete | Use Cases, Worker System, Token Management, Caching |
+| **Stage: Production Readiness** | ✅ Complete | Structured Logging, Health Checks, Performance Optimization |
 
 ### ✅ Current Phase: Phase 7 – Feature Enhancements (COMPLETE)
 
@@ -692,7 +692,7 @@ alembic upgrade head
 
 ---
 
-#### 9. Enterprise Features (v3.0)
+#### 9. Enterprise Features (future release)
 
 | Feature | Description | Priority | Effort |
 |---------|-------------|----------|--------|
@@ -789,16 +789,16 @@ Cross-cutting concerns affect both backend and frontend, ensuring:
 | **Secrets Rotation** | Automated secret rotation | P2 | 📋 Planned |
 | **Audit Logging** | Comprehensive audit trail | P1 | 📋 Planned |
 
-#### Operational Excellence (v3.0)
-**Priority:** P1 (v3.0) | **Effort:** Medium (2-3 weeks)
+#### Operational Excellence (future release)
+**Priority:** P1 (future release) | **Effort:** Medium (2-3 weeks)
 
 | Task | Description | Priority | Status |
 |------|-------------|----------|--------|
-| **Backup & Recovery** | Automated backup procedures | P0 | 📋 v3.0 |
-| **Disaster Recovery** | Full system recovery plan | P1 | 📋 v3.0 |
-| **Rollback Procedures** | Database and app rollback | P0 | 📋 v3.0 |
+| **Backup & Recovery** | Automated backup procedures | P0 | 📋 future release |
+| **Disaster Recovery** | Full system recovery plan | P1 | 📋 future release |
+| **Rollback Procedures** | Database and app rollback | P0 | 📋 future release |
 | **Incident Response** | Runbook for common issues | P1 | ✅ Done |
-| **Capacity Planning** | Resource usage projections | P1 | 📋 v3.0 |
+| **Capacity Planning** | Resource usage projections | P1 | 📋 future release |
 
 > **Note:** PostgreSQL, Redis, nginx und Kubernetes wurden entfernt (lokal-only Betrieb mit SQLite).
 
@@ -839,7 +839,7 @@ Phase 7 (Feature Enhancements)
 Phase 8 (Advanced Features)
     └─→ Audio Fingerprinting
     ↓
-v3.0 (Production Hardening)
+future release (Production Hardening)
     └─→ Security Hardening
 ```
 
@@ -857,7 +857,7 @@ v3.0 (Production Hardening)
 
 ### Related Roadmaps
 
-- [Frontend Development Roadmap](frontend-development-roadmap.md)
+- [Frontend Development Roadmap](frontend-roadmap.md)
 - [Full Development Roadmap (Index)](archived/development-roadmap.md)
 
 ### External Resources

@@ -727,7 +727,7 @@ If you encounter issues not covered here:
 - [Advanced Search Guide](advanced-search-guide.md)
 - [Design Guidelines](design-guidelines.md)
 - [API Documentation](/docs)
-- [Frontend Development Roadmap](../frontend-development-roadmap.md)
+- [Frontend Development Roadmap](../../development/frontend-roadmap.md)
 
 ---
 

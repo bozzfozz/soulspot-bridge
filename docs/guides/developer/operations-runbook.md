@@ -720,7 +720,7 @@ docker-compose restart soulspot
 - [Troubleshooting Guide](troubleshooting-guide.md)
 - [Architecture Documentation](../architecture.md)
 - [API Documentation](http://localhost:8765/docs)
-- [Backend Development Roadmap](../backend-development-roadmap.md)
+- [Backend Development Roadmap](../../development/backend-roadmap.md)
 
 ---
 

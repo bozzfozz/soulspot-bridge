@@ -667,7 +667,7 @@ document.body.addEventListener('htmx:timeout', function(evt) {
 - [HTMX Official Docs](https://htmx.org/docs/)
 - [HTMX Examples](https://htmx.org/examples/)
 - [Hypermedia Systems Book](https://hypermedia.systems/)
-- [Frontend Development Roadmap](../frontend-development-roadmap.md)
+- [Frontend Development Roadmap](../../../../development/frontend-roadmap.md)
 
 ---
 
