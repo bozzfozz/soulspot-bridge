@@ -325,7 +325,7 @@ async def export_playlist_json(
 async def get_missing_tracks(
     playlist_id: str,
     playlist_repository: PlaylistRepository = Depends(get_playlist_repository),
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> dict[str, Any]:
     """Get tracks that are in the playlist but not downloaded to the library.
 

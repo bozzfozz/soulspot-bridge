@@ -109,7 +109,7 @@ async def get_canvas(
 @router.post("/dashboard/toggle-edit-mode", response_class=HTMLResponse)
 async def toggle_edit_mode(
     request: Request,
-    session: AsyncSession = Depends(get_db_session),
+    _session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """Toggle edit mode for dashboard."""
     # Get current edit mode from form data or query param

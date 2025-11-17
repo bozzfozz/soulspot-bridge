@@ -165,7 +165,7 @@ async def search_tracks(
 @router.get("/{track_id}")
 async def get_track(
     track_id: str,
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> dict[str, Any]:
     """Get track details.
 
@@ -203,9 +203,13 @@ async def get_track(
             "title": track_model.title,
             "artist": track_model.artist.name if track_model.artist else None,
             "album": track_model.album.title if track_model.album else None,
-            "album_artist": track_model.album.artist if track_model.album and hasattr(track_model.album, "artist") else None,
+            "album_artist": track_model.album.artist
+            if track_model.album and hasattr(track_model.album, "artist")
+            else None,
             "genre": None,  # TODO: Add genre field to track model
-            "year": track_model.album.year if track_model.album and hasattr(track_model.album, "year") else None,
+            "year": track_model.album.year
+            if track_model.album and hasattr(track_model.album, "year")
+            else None,
             "artist_id": track_model.artist_id,
             "album_id": track_model.album_id,
             "duration_ms": track_model.duration_ms,

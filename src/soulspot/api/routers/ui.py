@@ -91,7 +91,7 @@ async def playlist_missing_tracks(
     request: Request,
     playlist_id: str,
     playlist_repository: PlaylistRepository = Depends(get_playlist_repository),
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Return missing tracks partial for a playlist."""
     from sqlalchemy import select
@@ -425,7 +425,7 @@ async def library_albums(
 @router.get("/library/tracks", response_class=HTMLResponse)
 async def library_tracks(
     request: Request,
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Library tracks browser page."""
     from sqlalchemy import select
@@ -472,7 +472,7 @@ async def library_tracks(
 async def library_artist_detail(
     request: Request,
     artist_name: str,
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Artist detail page with albums and tracks."""
     from urllib.parse import unquote
@@ -558,7 +558,7 @@ async def library_artist_detail(
 async def library_album_detail(
     request: Request,
     album_key: str,
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Album detail page with track listing."""
     from urllib.parse import unquote
@@ -637,7 +637,9 @@ async def library_album_detail(
     # Get year from first track's album
     year = (
         track_models[0].album.year
-        if track_models and track_models[0].album and hasattr(track_models[0].album, "year")
+        if track_models
+        and track_models[0].album
+        and hasattr(track_models[0].album, "year")
         else None
     )
 
@@ -659,7 +661,7 @@ async def library_album_detail(
 async def track_metadata_editor(
     request: Request,
     track_id: str,
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Return metadata editor modal for a track."""
     from sqlalchemy import select
@@ -698,7 +700,9 @@ async def track_metadata_editor(
             "album": track_model.album.title if track_model.album else None,
             "album_artist": None,  # TODO: Add album_artist field
             "genre": None,  # TODO: Add genre field
-            "year": track_model.album.year if track_model.album and hasattr(track_model.album, "year") else None,
+            "year": track_model.album.year
+            if track_model.album and hasattr(track_model.album, "year")
+            else None,
             "track_number": track_model.track_number,
             "disc_number": track_model.disc_number,
             "file_path": track_model.file_path,
