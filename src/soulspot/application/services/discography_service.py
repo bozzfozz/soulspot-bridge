@@ -97,7 +97,9 @@ class DiscographyService:
             )
 
         # Get owned albums from database
-        stmt_albums = select(AlbumModel).where(AlbumModel.artist_id == str(artist_id.value))
+        stmt_albums = select(AlbumModel).where(
+            AlbumModel.artist_id == str(artist_id.value)
+        )
         result = await self.session.execute(stmt_albums)
         owned_albums = result.scalars().all()
         owned_spotify_uris = {
