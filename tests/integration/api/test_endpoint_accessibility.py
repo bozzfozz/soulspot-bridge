@@ -333,7 +333,9 @@ class TestSSEEndpoints:
             async with asyncio.timeout(2.0):  # 2 second timeout
                 async with async_client.stream("GET", "/api/ui/sse/stream") as response:
                     assert response.status_code == 200
-                    assert "text/event-stream" in response.headers.get("content-type", "")
+                    assert "text/event-stream" in response.headers.get(
+                        "content-type", ""
+                    )
                     # Read one chunk to ensure stream works
                     async for _ in response.aiter_bytes():
                         break  # Exit after first chunk
@@ -350,7 +352,9 @@ class TestSSEEndpoints:
             async with asyncio.timeout(2.0):  # 2 second timeout
                 async with async_client.stream("GET", "/api/ui/sse/test") as response:
                     assert response.status_code == 200
-                    assert "text/event-stream" in response.headers.get("content-type", "")
+                    assert "text/event-stream" in response.headers.get(
+                        "content-type", ""
+                    )
                     # Read one chunk to ensure stream works
                     async for _ in response.aiter_bytes():
                         break  # Exit after first chunk
