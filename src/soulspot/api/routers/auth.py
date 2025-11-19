@@ -45,12 +45,12 @@ async def authorize(
         oauth_state=state, code_verifier=code_verifier
     )
 
-    # Set session cookie (HttpOnly for security)
+    # Set session cookie (HttpOnly for security, no Secure flag for local use)
     response.set_cookie(
         key="session_id",
         value=session.session_id,
         httponly=True,
-        secure=settings.api.secure_cookies,  # Configurable via API_SECURE_COOKIES env var
+        secure=False,  # Local use only - no HTTPS required
         samesite="lax",
         max_age=3600,  # 1 hour
     )

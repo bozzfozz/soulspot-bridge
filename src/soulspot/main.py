@@ -264,20 +264,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """Health check endpoint.
 
         Returns:
-            dict: Health status including app name, environment, and profile.
+            dict: Health status including app name and profile.
 
         Example response:
             {
                 "status": "healthy",
                 "app_name": "SoulSpot Bridge",
-                "environment": "production",
                 "profile": "simple"
             }
         """
         return {
             "status": "healthy",
             "app_name": settings.app_name,
-            "environment": settings.app_env,
             "profile": settings.profile.value,
         }
 

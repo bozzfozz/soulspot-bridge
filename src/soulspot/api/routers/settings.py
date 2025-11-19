@@ -60,7 +60,7 @@ class AdvancedSettings(BaseModel):
 
     api_host: str = Field(description="API host")
     api_port: int = Field(ge=1, le=65535, description="API port")
-    secure_cookies: bool = Field(description="Use secure cookies")
+    # Removed secure_cookies - not needed for local-only use
     circuit_breaker_failure_threshold: int = Field(
         ge=1, description="Circuit breaker failure threshold"
     )
@@ -116,7 +116,6 @@ async def get_all_settings() -> AllSettings:
         advanced=AdvancedSettings(
             api_host=settings.api.host,
             api_port=settings.api.port,
-            secure_cookies=settings.api.secure_cookies,
             circuit_breaker_failure_threshold=settings.observability.circuit_breaker.failure_threshold,
             circuit_breaker_timeout=settings.observability.circuit_breaker.timeout,
         ),
@@ -241,7 +240,6 @@ async def get_default_settings() -> AllSettings:
         advanced=AdvancedSettings(
             api_host=api_defaults.host,
             api_port=api_defaults.port,
-            secure_cookies=api_defaults.secure_cookies,
             circuit_breaker_failure_threshold=circuit_breaker_defaults.failure_threshold,
             circuit_breaker_timeout=circuit_breaker_defaults.timeout,
         ),

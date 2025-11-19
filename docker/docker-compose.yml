@@ -1,5 +1,5 @@
 services:
-  # SoulSpot Bridge - Main application
+  # SoulSpot Bridge - Main application (local single-user setup)
   soulspot:
     build:
       context: ..
@@ -33,7 +33,6 @@ services:
       
       # Application Settings
       - APP_NAME=SoulSpot Bridge
-      - APP_ENV=${APP_ENV:-production}
       - DEBUG=${DEBUG:-false}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       
@@ -46,13 +45,12 @@ services:
       - STORAGE__ARTWORK_PATH=/config/artwork
       - STORAGE__TEMP_PATH=/config/tmp
       
-      # Security
-      - SECRET_KEY=${SECRET_KEY:-change-me-to-a-random-secret-key-in-production}
+      # Security (local single-user setup)
+      - SECRET_KEY=${SECRET_KEY:-change-me-to-a-random-secret-key}
       
       # API Configuration
       - API_HOST=0.0.0.0
       - API_PORT=8765
-      - API_SECURE_COOKIES=${API_SECURE_COOKIES:-false}
     restart: unless-stopped
     depends_on:
       - slskd
