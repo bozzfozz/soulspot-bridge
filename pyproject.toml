@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "soulspot-bridge"
-version = "0.1.0"
+version = "0.9"
 description = "Intelligente Musik-Download-Anwendung mit Spotify-Playlist-Synchronisation und Soulseek-Integration"
 authors = ["bozzfozz"]
 readme = "README.md"

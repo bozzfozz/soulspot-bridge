@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9] - 2025-11-19
+
+### Added
+- 
+
+### Changed
+- 
+
+### Fixed
+- 
+
+
 ### Added - Server-Sent Events & Widget Template System - 2025-11-17
 
 #### Real-Time Updates Infrastructure
@@ -766,3 +778,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.0.3]: https://github.com/bozzfozz/soulspot-bridge/releases/tag/v0.0.3
 [0.0.2]: https://github.com/bozzfozz/soulspot-bridge/releases/tag/v0.0.2
 [0.0.1]: https://github.com/bozzfozz/soulspot-bridge/releases/tag/v0.0.1
+
+[0.9]: https://github.com/bozzfozz/soulspot-bridge/releases/tag/v0.9
