@@ -100,23 +100,36 @@ async def db_session(db: Database) -> AsyncGenerator[AsyncSession, None]:
 async def app_with_db(test_settings: Settings, db: Database):
     """Create FastAPI app with initialized database (no lifespan)."""
     # Create app without lifespan to avoid automatic initialization
-    from unittest.mock import AsyncMock
+    from typing import Any
+    from unittest.mock import AsyncMock, MagicMock
 
     from fastapi import FastAPI
+    from fastapi.middleware.cors import CORSMiddleware
+
+    from soulspot.application.workers.job_queue import JobQueue
+    from soulspot.infrastructure.observability.health import (
+        HealthStatus,
+        check_database_health,
+    )
 
     app = FastAPI(
         title=test_settings.app_name,
         debug=test_settings.debug,
     )
 
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:8000", "http://localhost:8765"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     # Manually set db in app state for tests
     app.state.db = db
 
     # Add mock job queue to avoid 503 errors in download endpoint tests
-    from unittest.mock import MagicMock
-
-    from soulspot.application.workers.job_queue import JobQueue
-
     mock_job_queue = AsyncMock(spec=JobQueue)
     mock_job_queue.enqueue = AsyncMock(return_value=None)
     mock_job_queue.pause = AsyncMock(return_value=None)
@@ -152,10 +165,55 @@ async def app_with_db(test_settings: Settings, db: Database):
     # Include UI router at root
     app.include_router(ui.router, tags=["UI"])
 
-    # Add basic health endpoint
-    @app.get("/health")
-    async def health_check():
-        return {"status": "healthy"}
+    # Add health endpoints matching main.py
+    @app.get(
+        "/health",
+        tags=["Health"],
+        summary="Basic health check",
+    )
+    async def health_check() -> dict[str, Any]:
+        """Health check endpoint."""
+        return {
+            "status": "healthy",
+            "app_name": test_settings.app_name,
+            "profile": test_settings.profile.value,
+        }
+
+    @app.get(
+        "/ready",
+        tags=["Health"],
+        summary="Readiness check with dependencies",
+    )
+    async def readiness_check() -> dict[str, Any]:
+        """Readiness check endpoint with database connectivity check."""
+        checks = {}
+        overall_status = HealthStatus.HEALTHY
+
+        # Database connectivity check
+        if hasattr(app.state, "db"):
+            db_check = await check_database_health(app.state.db)
+            checks["database"] = {
+                "status": db_check.status.value,
+                "message": db_check.message,
+            }
+            if db_check.status == HealthStatus.UNHEALTHY:
+                overall_status = HealthStatus.UNHEALTHY
+            elif (
+                db_check.status == HealthStatus.DEGRADED
+                and overall_status != HealthStatus.UNHEALTHY
+            ):
+                overall_status = HealthStatus.DEGRADED
+        else:
+            checks["database"] = {
+                "status": HealthStatus.UNHEALTHY.value,
+                "message": "Database not initialized",
+            }
+            overall_status = HealthStatus.UNHEALTHY
+
+        return {
+            "status": overall_status.value,
+            "checks": checks,
+        }
 
     yield app
 
