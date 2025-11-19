@@ -29,9 +29,27 @@ if [ ! -f "pyproject.toml" ]; then
     exit 1
 fi
 
+# Check if poetry is installed
+if ! command -v poetry &> /dev/null; then
+    print_error "Poetry is not installed. Please install it first:"
+    echo "  pip install poetry"
+    echo "  OR"
+    echo "  curl -sSL https://install.python-poetry.org | python3 -"
+    exit 1
+fi
+
 # Check if git working directory is clean
 if ! git diff-index --quiet HEAD --; then
     print_error "Working directory is not clean. Commit or stash changes first."
+    exit 1
+fi
+
+# Define CHANGELOG path
+CHANGELOG_PATH="docs/project/CHANGELOG.md"
+
+# Check if CHANGELOG exists
+if [ ! -f "$CHANGELOG_PATH" ]; then
+    print_error "CHANGELOG not found at $CHANGELOG_PATH"
     exit 1
 fi
 
@@ -103,20 +121,20 @@ cat > /tmp/new_changelog_section.md << EOF
 EOF
 
 # Insert after [Unreleased] section
-awk '/## \[Unreleased\]/{print; system("cat /tmp/new_changelog_section.md"); next}1' CHANGELOG.md > /tmp/CHANGELOG.md.new
-mv /tmp/CHANGELOG.md.new CHANGELOG.md
+awk '/## \[Unreleased\]/{print; system("cat /tmp/new_changelog_section.md"); next}1' "$CHANGELOG_PATH" > /tmp/CHANGELOG.md.new
+mv /tmp/CHANGELOG.md.new "$CHANGELOG_PATH"
 
 # Add comparison link at the bottom
-if ! grep -q "^\[$NEW_VERSION\]:" CHANGELOG.md; then
-    echo "" >> CHANGELOG.md
-    echo "[$NEW_VERSION]: https://github.com/bozzfozz/soulspot-bridge/releases/tag/v$NEW_VERSION" >> CHANGELOG.md
+if ! grep -q "^\[$NEW_VERSION\]:" "$CHANGELOG_PATH"; then
+    echo "" >> "$CHANGELOG_PATH"
+    echo "[$NEW_VERSION]: https://github.com/bozzfozz/soulspot-bridge/releases/tag/v$NEW_VERSION" >> "$CHANGELOG_PATH"
 fi
 
 print_success "CHANGELOG.md updated with new section"
 
 # Show changes
 print_info "Changes to be committed:"
-git diff pyproject.toml package.json CHANGELOG.md
+git diff pyproject.toml package.json "$CHANGELOG_PATH"
 
 echo ""
 read -p "Do you want to commit these changes? [y/N]: " CONFIRM
@@ -127,14 +145,14 @@ if [[ $CONFIRM =~ ^[Yy]$ ]]; then
     git checkout -b "$BRANCH_NAME"
     
     # Commit changes
-    git add pyproject.toml package.json CHANGELOG.md
+    git add pyproject.toml package.json "$CHANGELOG_PATH"
     git commit -m "chore: bump version to $NEW_VERSION"
     
     print_success "Changes committed to branch: $BRANCH_NAME"
     
     echo ""
     print_info "Next steps:"
-    echo "  1. Edit CHANGELOG.md and fill in the changes for this release"
+    echo "  1. Edit $CHANGELOG_PATH and fill in the changes for this release"
     echo "  2. Run tests: poetry run pytest"
     echo "  3. Review the changes: git diff main"
     echo "  4. Push the branch: git push origin $BRANCH_NAME"
@@ -146,6 +164,6 @@ if [[ $CONFIRM =~ ^[Yy]$ ]]; then
     print_success "Release preparation complete!"
 else
     # Revert changes
-    git checkout pyproject.toml package.json CHANGELOG.md
+    git checkout pyproject.toml package.json "$CHANGELOG_PATH"
     print_info "Changes reverted"
 fi
