@@ -83,6 +83,7 @@ jobs:
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.new }}"
           DATE=$(date +%Y-%m-%d)
+          CHANGELOG_PATH="docs/project/CHANGELOG.md"
           
           # Create a temporary file with the new entry
           cat > /tmp/new_entry.md << EOF
@@ -100,12 +101,12 @@ jobs:
           EOF
           
           # Insert the new entry after the [Unreleased] section
-          awk '/## \[Unreleased\]/{print; print ""; system("cat /tmp/new_entry.md"); next}1' CHANGELOG.md > /tmp/CHANGELOG.md.tmp
-          mv /tmp/CHANGELOG.md.tmp CHANGELOG.md
+          awk '/## \[Unreleased\]/{print; print ""; system("cat /tmp/new_entry.md"); next}1' "$CHANGELOG_PATH" > /tmp/CHANGELOG.md.tmp
+          mv /tmp/CHANGELOG.md.tmp "$CHANGELOG_PATH"
           
           # Update the comparison links at the bottom
-          echo "" >> CHANGELOG.md
-          echo "[$NEW_VERSION]: https://github.com/${{ github.repository }}/releases/tag/v$NEW_VERSION" >> CHANGELOG.md
+          echo "" >> "$CHANGELOG_PATH"
+          echo "[$NEW_VERSION]: https://github.com/${{ github.repository }}/releases/tag/v$NEW_VERSION" >> "$CHANGELOG_PATH"
       
       - name: Set up Git
         run: |
@@ -116,7 +117,7 @@ jobs:
         run: |
           BRANCH_NAME="release/v${{ steps.new_version.outputs.new }}"
           git checkout -b "$BRANCH_NAME"
-          git add pyproject.toml package.json CHANGELOG.md
+          git add pyproject.toml package.json docs/project/CHANGELOG.md
           git commit -m "chore: bump version to ${{ steps.new_version.outputs.new }}"
           git push origin "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
