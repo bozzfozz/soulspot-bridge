@@ -2,33 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-from fastapi.testclient import TestClient
-
-from soulspot.config import Settings
-from soulspot.main import create_app
-
-
-@pytest.fixture
-def test_settings():
-    """Create test settings."""
-    return Settings(
-        app_env="development",
-        debug=True,
-        database={"url": "sqlite+aiosqlite:///:memory:"},
-        observability={
-            "enable_dependency_health_checks": False,
-        },
-    )
-
-
-@pytest.fixture
-def client(test_settings):
-    """Create test client."""
-    app = create_app(test_settings)
-    with TestClient(app) as test_client:
-        yield test_client
-
 
 class TestThemeFiles:
     """Test that theme files exist and are valid."""
