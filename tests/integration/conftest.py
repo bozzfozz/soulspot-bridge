@@ -13,10 +13,10 @@ from soulspot.config import Settings
 from soulspot.infrastructure.persistence import Database
 
 
-@pytest.fixture(scope="session")
-def test_db_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
+@pytest.fixture(scope="function")
+def test_db_path(tmp_path: Path) -> Path:
     """Create a temporary database file for tests."""
-    return tmp_path_factory.mktemp("data") / "test.db"
+    return tmp_path / "test.db"
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def test_settings(test_db_path: Path) -> Settings:
     )
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def db(
     test_settings: Settings, test_db_path: Path
 ) -> AsyncGenerator[Database, None]:
@@ -82,18 +82,21 @@ async def db(
 
     yield database
 
-    # Cleanup
+    # Cleanup - ensure all connections are closed
     await database.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def db_session(db: Database) -> AsyncGenerator[AsyncSession, None]:
     """Provide a database session for tests."""
     async for session in db.get_session():
-        yield session
+        try:
+            yield session
+        finally:
+            await session.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def app_with_db(test_settings: Settings, db: Database):
     """Create FastAPI app with initialized database (no lifespan)."""
     # Create app without lifespan to avoid automatic initialization
@@ -157,14 +160,14 @@ async def app_with_db(test_settings: Settings, db: Database):
     yield app
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def client(app_with_db) -> TestClient:
     """Create synchronous test client with initialized app."""
     with TestClient(app_with_db) as test_client:
         yield test_client
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 async def async_client(app_with_db) -> AsyncGenerator[AsyncClient, None]:
     """Create async test client with initialized app."""
     transport = ASGITransport(app=app_with_db)
