@@ -15,6 +15,12 @@ test: ## Run all tests
 test-unit: ## Run unit tests only
 	pytest tests/unit/ -v
 
+test-fast: ## Run unit tests only (fastest)
+	pytest tests/unit/ -q
+
+test-integration: ## Run integration tests only
+	pytest tests/integration/ -v -m "not slow"
+
 test-cov: ## Run tests with coverage
 	pytest tests/ --cov=src/soulspot --cov-report=html --cov-report=term
 

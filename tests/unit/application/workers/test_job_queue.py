@@ -362,20 +362,13 @@ class TestJobQueue:
         self, job_queue: JobQueue, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """Test waiting for job with timeout."""
-        original_sleep = asyncio.sleep
+        # Register slow handler that will block
+        handler_started = asyncio.Event()
 
-        async def mock_sleep(delay: float) -> None:
-            # Only mock long sleeps (>1s), use real sleep for short ones
-            if delay > 1.0:
-                await original_sleep(0.01)
-            else:
-                await original_sleep(delay)
-
-        monkeypatch.setattr("asyncio.sleep", mock_sleep)
-
-        # Register slow handler
         async def handler(job: Job) -> None:
-            await asyncio.sleep(2.0)
+            handler_started.set()
+            # Use a long enough sleep to ensure timeout happens
+            await asyncio.sleep(1.0)
             return None
 
         job_queue.register_handler(JobType.DOWNLOAD, handler)
@@ -386,10 +379,13 @@ class TestJobQueue:
         # Start workers
         await job_queue.start(num_workers=1)
 
+        # Wait for handler to start
+        await asyncio.wait_for(handler_started.wait(), timeout=2.0)
+
         # Wait for job with short timeout - should raise TimeoutError
         timeout_raised = False
         try:
-            await job_queue.wait_for_job(job_id, timeout=0.1)
+            await job_queue.wait_for_job(job_id, timeout=0.05)
         except TimeoutError:
             timeout_raised = True
 

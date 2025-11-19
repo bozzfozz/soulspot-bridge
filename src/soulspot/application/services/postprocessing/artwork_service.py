@@ -201,7 +201,7 @@ class ArtworkService:
         """
         try:
             # Open image
-            img = PILImage.open(BytesIO(image_data))
+            img: PILImage.Image = PILImage.open(BytesIO(image_data))
 
             # Convert to RGB if necessary
             if img.mode not in ("RGB", "RGBA"):

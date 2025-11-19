@@ -155,11 +155,21 @@ class TestTrackFileCache:
         assert await cache.get_file_path(track_id) is None
         assert await cache.get_checksum("/path/to/file.mp3") is None
 
-    async def test_ttl_expiration(self, cache, track_id):
+    async def test_ttl_expiration(self, cache, track_id, monkeypatch):
         """Test that cached entries expire after TTL."""
+        import time
+
         # Temporarily reduce TTL for testing
         original_ttl = cache.FILE_PATH_TTL
         cache.FILE_PATH_TTL = 1  # 1 second
+
+        # Mock time to control expiry
+        current_time = time.time()
+
+        def mock_time():
+            return current_time
+
+        monkeypatch.setattr(time, "time", mock_time)
 
         file_path = FilePath("/path/to/song.mp3")
         await cache.cache_file_path(track_id, file_path)
@@ -167,8 +177,8 @@ class TestTrackFileCache:
         # Should be available immediately
         assert await cache.get_file_path(track_id) is not None
 
-        # Wait for expiration
-        await asyncio.sleep(0.06)
+        # Advance time past TTL
+        current_time += 2
 
         # Should be expired
         assert await cache.get_file_path(track_id) is None
@@ -176,11 +186,21 @@ class TestTrackFileCache:
         # Restore original TTL
         cache.FILE_PATH_TTL = original_ttl
 
-    async def test_cleanup_expired(self, cache):
+    async def test_cleanup_expired(self, cache, monkeypatch):
         """Test cleaning up expired entries."""
+        import time
+
         # Temporarily reduce TTL for testing
         original_ttl = cache.FILE_PATH_TTL
         cache.FILE_PATH_TTL = 1  # 1 second
+
+        # Mock time to control expiry
+        current_time = time.time()
+
+        def mock_time():
+            return current_time
+
+        monkeypatch.setattr(time, "time", mock_time)
 
         track_id1 = TrackId.generate()
         track_id2 = TrackId.generate()
@@ -188,8 +208,8 @@ class TestTrackFileCache:
         await cache.cache_file_path(track_id1, FilePath("/path/1.mp3"))
         await cache.cache_file_path(track_id2, FilePath("/path/2.mp3"))
 
-        # Wait for expiration
-        await asyncio.sleep(0.06)
+        # Advance time past TTL
+        current_time += 2
 
         # Cleanup should remove expired entries
         removed = await cache.cleanup_expired()
