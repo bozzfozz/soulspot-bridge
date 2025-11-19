@@ -13,7 +13,7 @@ class TestSettings:
         """Test default settings values."""
         settings = Settings()
         assert settings.app_name == "SoulSpot Bridge"
-        assert settings.app_env == "development"
+        # Removed app_env - project is for local use only
         assert settings.profile == Profile.SIMPLE
         assert settings.debug is True
         assert settings.log_level == "INFO"
@@ -85,23 +85,7 @@ class TestSettings:
         assert "http://a.com" in settings.api.cors_origins
         assert "http://b.com" in settings.api.cors_origins
 
-    def test_secret_key_production_validation(self):
-        """Test secret key validation in production."""
-        with pytest.raises(
-            ValueError, match="Secret key must be changed in production"
-        ):
-            Settings(
-                app_env="production",
-                secret_key="change-me-to-a-random-secret-key-in-production",
-            )
-
-    def test_secret_key_production_with_valid_key(self):
-        """Test secret key validation passes with valid key in production."""
-        settings = Settings(
-            app_env="production",
-            secret_key="a" * 32,  # Valid secret key
-        )
-        assert settings.secret_key == "a" * 32
+    # Removed production secret key validation test - project is for local use only
 
     def test_ensure_directories(self, tmp_path):
         """Test directory creation."""

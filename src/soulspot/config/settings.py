@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, ValidationInfo, field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -203,10 +203,8 @@ class APISettings(BaseSettings):
         default=True,
         description="Allow credentials in CORS",
     )
-    secure_cookies: bool = Field(
-        default=False,
-        description="Use secure cookies (requires HTTPS). Set to True in production.",
-    )
+    # Removed secure_cookies - not needed for local-only use
+    # Cookies always use httponly for basic security
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -350,10 +348,7 @@ class Settings(BaseSettings):
         default="SoulSpot Bridge",
         description="Application name",
     )
-    app_env: Literal["development", "staging", "production"] = Field(
-        default="development",
-        description="Application environment",
-    )
+    # Removed app_env - project is for local use only
     profile: Profile = Field(
         default=Profile.SIMPLE,
         description="Deployment profile (simple or standard)",
@@ -367,9 +362,9 @@ class Settings(BaseSettings):
         description="Logging level",
     )
 
-    # Security
+    # Security (for local use - generate a random key)
     secret_key: str = Field(
-        default="change-me-to-a-random-secret-key-in-production",
+        default="local-dev-secret-key-change-for-better-security",
         description="Secret key for cryptographic operations",
         min_length=32,
     )
@@ -424,16 +419,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    @field_validator("secret_key")
-    @classmethod
-    def validate_secret_key_in_production(cls, v: str, info: ValidationInfo) -> str:
-        """Validate secret key in production."""
-        if (
-            info.data.get("app_env") == "production"
-            and v == "change-me-to-a-random-secret-key-in-production"
-        ):
-            raise ValueError("Secret key must be changed in production")
-        return v
+    # Removed production secret key validation - this is for local use only
 
     def is_simple_profile(self) -> bool:
         """Check if using simple profile."""
