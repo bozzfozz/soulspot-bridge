@@ -444,7 +444,7 @@ For additional help:
 2. **Create backups** before major deployments
 3. **Monitor logs** during and after deployment
 4. **Use semantic versioning** for releases
-5. **Document changes** in CHANGELOG.md
+5. **Document changes** in docs/project/CHANGELOG.md
 6. **Run smoke tests** after deployment
 7. **Keep secrets secure** - never commit to git
 8. **Use SSL/TLS** in production with a reverse proxy

@@ -23,7 +23,7 @@ assignees: []
 - [ ] Performance regressions checked
 
 ### Documentation
-- [ ] CHANGELOG.md updated with all changes
+- [ ] docs/project/CHANGELOG.md updated with all changes
 - [ ] Breaking changes documented (if major version)
 - [ ] Migration guide updated (if needed)
 - [ ] API documentation up to date
@@ -34,7 +34,7 @@ assignees: []
 - [ ] Version updated in:
   - [ ] `pyproject.toml`
   - [ ] `package.json`
-  - [ ] `CHANGELOG.md`
+  - [ ] `docs/project/CHANGELOG.md`
 
 ## Release Process
 
@@ -46,7 +46,7 @@ Choose one method:
 
 ### Step 2: Review & Merge
 - [ ] Release PR created
-- [ ] CHANGELOG.md entries reviewed and finalized
+- [ ] docs/project/CHANGELOG.md entries reviewed and finalized
 - [ ] Version numbers verified
 - [ ] PR approved by maintainer
 - [ ] PR merged to main

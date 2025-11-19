@@ -101,10 +101,10 @@ Examples:
 4. The workflow will:
    - Create a release branch
    - Update versions in all files
-   - Update CHANGELOG.md
+   - Update docs/project/CHANGELOG.md
    - Create a Pull Request
 
-5. Review and update the CHANGELOG.md with actual changes
+5. Review and update the docs/project/CHANGELOG.md with actual changes
 6. Merge the PR
 7. Create and push the git tag:
    ```bash
@@ -120,7 +120,7 @@ Examples:
    ```
 
 2. Follow the interactive prompts
-3. Edit CHANGELOG.md to add changes
+3. Edit docs/project/CHANGELOG.md to add changes
 4. Push the release branch
 5. Create a Pull Request on GitHub
 6. After merge, create and push the tag:
@@ -143,11 +143,11 @@ Examples:
    }
    ```
 
-3. Update `CHANGELOG.md` (see [Changelog Management](#changelog-management))
+3. Update `docs/project/CHANGELOG.md` (see [Changelog Management](#changelog-management))
 
 4. Commit changes:
    ```bash
-   git add pyproject.toml package.json CHANGELOG.md
+   git add pyproject.toml package.json docs/project/CHANGELOG.md
    git commit -m "chore: bump version to 1.2.3"
    ```
 
@@ -162,7 +162,7 @@ Examples:
 When you push a tag matching `v*.*.*`, the release workflow automatically:
 
 1. **Extracts version** from the tag
-2. **Extracts changelog** for that version from CHANGELOG.md
+2. **Extracts changelog** for that version from docs/project/CHANGELOG.md
 3. **Builds Docker images** for multiple platforms (amd64, arm64)
 4. **Pushes Docker images** to GitHub Container Registry (ghcr.io)
 5. **Tags Docker images** with:
@@ -172,7 +172,7 @@ When you push a tag matching `v*.*.*`, the release workflow automatically:
    - `latest` (if on main branch)
 6. **Builds Python packages** (wheel and source distribution)
 7. **Creates GitHub Release** with:
-   - Release notes from CHANGELOG.md
+   - Release notes from docs/project/CHANGELOG.md
    - Docker pull instructions
    - Python package files as assets
    - Auto-generated release notes
@@ -223,7 +223,7 @@ Versions must be kept in sync across multiple files:
 
 1. **pyproject.toml** - Python package version (managed by Poetry)
 2. **package.json** - Node.js package version (for Tailwind CSS)
-3. **CHANGELOG.md** - Version history with dates
+3. **docs/project/CHANGELOG.md** - Version history with dates
 
 ### Checking Current Version
 
@@ -355,7 +355,7 @@ git push origin :refs/tags/v1.2.3
 - Verify you're logged into GHCR
 
 **Release notes empty:**
-- Ensure CHANGELOG.md has an entry for the version
+- Ensure docs/project/CHANGELOG.md has an entry for the version
 - Check the format: `## [1.2.3] - YYYY-MM-DD`
 
 ## References

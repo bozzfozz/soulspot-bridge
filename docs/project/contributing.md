@@ -441,7 +441,7 @@ SoulSpot Bridge uses automated CI/CD for releases. See the [CI/CD Guide](ci-cd.m
    - Use local script: `./scripts/prepare-release.sh`, or
    - Prepare manually
    
-2. **Update CHANGELOG.md** with all changes for the release
+2. **Update docs/project/CHANGELOG.md** with all changes for the release
 
 3. **Create Release Tag:**
    ```bash
@@ -501,6 +501,6 @@ Use the [Release Checklist](../.github/ISSUE_TEMPLATE/release_checklist.md) issu
 Contributors are recognized in:
 - GitHub contributors page
 - Release notes
-- CHANGELOG.md (for significant contributions)
+- docs/project/CHANGELOG.md (for significant contributions)
 
 Thank you for contributing to SoulSpot Bridge! 🎵🙏

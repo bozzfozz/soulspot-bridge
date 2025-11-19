@@ -6,7 +6,7 @@ Quick guide for maintainers on creating releases.
 
 - Write access to the repository
 - All tests passing on main branch
-- CHANGELOG.md updated with changes
+- docs/project/CHANGELOG.md updated with changes
 
 ## Creating a Release (3 Options)
 
@@ -20,7 +20,7 @@ Quick guide for maintainers on creating releases.
    - `major` for breaking changes (1.0.0 → 2.0.0)
    - `custom` for specific version (e.g., 1.2.3)
 4. The workflow creates a PR with version bumps
-5. Edit the CHANGELOG.md to add actual changes
+5. Edit the docs/project/CHANGELOG.md to add actual changes
 6. Merge the PR
 7. Create the release tag:
    ```bash
@@ -38,7 +38,7 @@ Quick guide for maintainers on creating releases.
 # Follow the interactive prompts
 # Script will:
 # - Bump version in pyproject.toml and package.json
-# - Update CHANGELOG.md
+# - Update docs/project/CHANGELOG.md
 # - Create release branch
 # - Guide you through next steps
 ```
@@ -70,7 +70,7 @@ When you push a tag like `v1.2.3`, the release workflow automatically:
 | Breaking change | major | 1.0.0 → 2.0.0 | API changes, breaking changes |
 | Pre-release | custom | 1.0.0 → 1.1.0-beta.1 | Alpha, beta, rc releases |
 
-## CHANGELOG.md Categories
+## docs/project/CHANGELOG.md Categories
 
 Use these categories in order:
 
@@ -114,7 +114,7 @@ docker build -t test .
 
 - `pyproject.toml` - Python package version
 - `package.json` - Node.js package version  
-- `CHANGELOG.md` - New version section and link
+- `docs/project/CHANGELOG.md` - New version section and link
 
 ## Resources
 
