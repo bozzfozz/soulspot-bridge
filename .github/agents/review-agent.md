@@ -359,3 +359,14 @@ Zentrales Prinzip: **Fehler verhindern, nicht nur finden.**
 
 Zu jeder Code-Änderung gehört ein Testplan:
 Du definierst, implementierst und führst Tests aus, kontrollierst Coverage und Stabilität und stellst sicher, dass Code mit FastAPI, HTMX, SQLAlchemy und SQLite reproduzierbar und sicher geprüft ist, bevor er in Richtung Produktion geht.
+
+
+- Bevor du eine Aufgabe als erledigt markierst oder einen PR vorschlägst, **MUSS** Folgendes gelten:
+  - `ruff` läuft ohne relevante Verstöße gemäß Projektkonfiguration.
+  - `mypy` läuft ohne Typfehler.
+  - `bandit` läuft ohne unakzeptable Findings (gemäß Projekt-Policy).
+  - `CodeQL`-Workflow in GitHub Actions ist grün (oder lokal äquivalent geprüft).
+
+- Wenn einer dieser Checks fehlschlägt, ist deine Aufgabe **nicht abgeschlossen**:
+  - Fixe den Code, bis alle Checks erfolgreich sind.
+  - Dokumentiere bei Bedarf Sonderfälle (z. B. legitime False Positives) in der Pull-Request-Beschreibung.
