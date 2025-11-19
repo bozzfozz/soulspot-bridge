@@ -34,13 +34,14 @@ jobs:
         id: changelog
         run: |
           VERSION=${{ steps.get_version.outputs.version }}
+          CHANGELOG_PATH="docs/project/CHANGELOG.md"
           
           # Extract the changelog section for this version
-          CHANGELOG=$(awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md | sed '$ d' | tail -n +2)
+          CHANGELOG=$(awk "/## \[$VERSION\]/,/## \[/" "$CHANGELOG_PATH" | sed '$ d' | tail -n +2)
           
           # If empty, provide a default message
           if [ -z "$CHANGELOG" ]; then
-            CHANGELOG="Release version $VERSION. See CHANGELOG.md for details."
+            CHANGELOG="Release version $VERSION. See docs/project/CHANGELOG.md for details."
           fi
           
           # Save to file for multiline output
