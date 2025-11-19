@@ -1,6 +1,5 @@
 """Tests for MusicBrainzCache."""
 
-import asyncio
 
 import pytest
 
@@ -118,11 +117,21 @@ class TestMusicBrainzCache:
         assert await cache.get_release("rel1") is None
         assert await cache.get_artist("art1") is None
 
-    async def test_ttl_expiration_recording(self, cache):
+    async def test_ttl_expiration_recording(self, cache, monkeypatch):
         """Test that cached recordings expire after TTL."""
+        import time
+
         # Temporarily reduce TTL for testing
         original_ttl = cache.RECORDING_TTL
         cache.RECORDING_TTL = 1  # 1 second
+
+        # Mock time to control expiry
+        current_time = time.time()
+
+        def mock_time():
+            return current_time
+
+        monkeypatch.setattr(time, "time", mock_time)
 
         recording_data = {"id": "rec123", "title": "Test"}
         await cache.cache_recording_by_isrc("ISRC123", recording_data)
@@ -130,8 +139,8 @@ class TestMusicBrainzCache:
         # Should be available immediately
         assert await cache.get_recording_by_isrc("ISRC123") is not None
 
-        # Wait for expiration
-        await asyncio.sleep(0.06)
+        # Advance time past TTL
+        current_time += 2
 
         # Should be expired
         assert await cache.get_recording_by_isrc("ISRC123") is None
@@ -139,17 +148,27 @@ class TestMusicBrainzCache:
         # Restore original TTL
         cache.RECORDING_TTL = original_ttl
 
-    async def test_cleanup_expired(self, cache):
+    async def test_cleanup_expired(self, cache, monkeypatch):
         """Test cleaning up expired entries."""
+        import time
+
         # Temporarily reduce TTL for testing
         original_ttl = cache.RECORDING_TTL
         cache.RECORDING_TTL = 1  # 1 second
 
+        # Mock time to control expiry
+        current_time = time.time()
+
+        def mock_time():
+            return current_time
+
+        monkeypatch.setattr(time, "time", mock_time)
+
         await cache.cache_recording_by_isrc("ISRC1", {"id": "rec1"})
         await cache.cache_recording_by_isrc("ISRC2", {"id": "rec2"})
 
-        # Wait for expiration
-        await asyncio.sleep(0.06)
+        # Advance time past TTL
+        current_time += 2
 
         # Cleanup should remove expired entries
         removed = await cache.cleanup_expired()
