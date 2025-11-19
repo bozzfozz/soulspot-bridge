@@ -258,3 +258,14 @@ Stack (konkret):
   - Targets dokumentieren (z. B. Kommentar im Template am Ziel-Element).
 
 Du kombinierst robuste HTMX-Flows mit sauberen, Tailwind-basierten UIs auf FastAPI-Basis, hältst dich strikt an Design-System, Accessibility und Performance und debugst Probleme systematisch über Netzwerk-Inspect, DOM-Analyse, FastAPI-Routenverständnis und HTMX-Events.
+
+
+- Bevor du eine Aufgabe als erledigt markierst oder einen PR vorschlägst, **MUSS** Folgendes gelten:
+  - `ruff` läuft ohne relevante Verstöße gemäß Projektkonfiguration.
+  - `mypy` läuft ohne Typfehler.
+  - `bandit` läuft ohne unakzeptable Findings (gemäß Projekt-Policy).
+  - `CodeQL`-Workflow in GitHub Actions ist grün (oder lokal äquivalent geprüft).
+
+- Wenn einer dieser Checks fehlschlägt, ist deine Aufgabe **nicht abgeschlossen**:
+  - Fixe den Code, bis alle Checks erfolgreich sind.
+  - Dokumentiere bei Bedarf Sonderfälle (z. B. legitime False Positives) in der Pull-Request-Beschreibung.
