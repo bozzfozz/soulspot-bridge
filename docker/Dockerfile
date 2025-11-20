@@ -18,9 +18,13 @@ WORKDIR /build
 COPY pyproject.toml poetry.lock README.md ./
 COPY src/ ./src/
 
-# Install dependencies (without dev dependencies)
+# Install dependencies first (without the project itself)
 RUN poetry config virtualenvs.create false && \
-    poetry install --without dev --no-interaction --no-ansi
+    poetry install --without dev --no-interaction --no-ansi --no-root
+
+# Build and install the package as a wheel (non-editable)
+RUN poetry build -f wheel && \
+    pip install --no-cache-dir dist/*.whl
 
 # Production stage
 FROM python:3.12-slim
@@ -43,8 +47,9 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy application code
-COPY . .
+# Copy alembic migrations and configuration
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
 
 # Copy entrypoint script
 COPY docker/docker-entrypoint.sh /usr/local/bin/
