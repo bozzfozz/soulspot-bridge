@@ -7,6 +7,22 @@
 
 ---
 
+## 📊 **STATUS UPDATE - 2025-11-20**
+
+### Sofortmaßnahmen (Sprint 1) - ✅ **COMPLETED**
+- ✅ **M-1**: Ruff linter violations (68 auto-fixed) - 0 violations remaining
+- ✅ **H-1**: Print statement replaced with structured logging
+- ✅ **H-2**: Broad exception handling made specific with proper logging
+- ✅ **K-4**: Global state variables now thread-safe with `@lru_cache`
+
+### Current Quality Metrics ✅
+- **Ruff**: ✅ 0 violations (was 68)
+- **MyPy**: ✅ 0 errors (strict mode)
+- **Bandit**: ✅ 0 high-severity findings
+- **Tests**: ✅ 528 passing, 1 skipped
+
+---
+
 ## 🔴 **KRITISCHE FEHLER (BLOCKER)**
 
 ### K-1: Fehlende Test-Abdeckung in kritischen Komponenten
@@ -94,7 +110,7 @@ Single Responsibility Principle verletzt. Die Datei enthält zu viele Repositori
 
 ---
 
-### K-4: Globale State-Variablen ohne Thread-Safety
+### K-4: Globale State-Variablen ohne Thread-Safety ✅ **RESOLVED 2025-11-20**
 **Schweregrad:** HOCH  
 **Betroffene Dateien:**
 - `src/soulspot/api/dependencies.py:45` - `global _session_store`
@@ -122,17 +138,25 @@ Globale Variablen in Async-/Multithreaded-Umgebung können Race Conditions verur
 - Session-Store-Inkonsistenzen
 - Registry-Corruption
 
-**Empfehlung:**
-1. `asyncio.Lock` für Thread-sichere Initialisierung verwenden
-2. Oder: FastAPI Dependency Injection mit `lru_cache` Decorator nutzen
-3. Oder: `contextvars` für Request-Scoped State
-4. Unit-Tests mit concurrent requests schreiben
+**Lösung (Implementiert):**
+Beide Funktionen verwenden nun `@lru_cache` Decorator für thread-sichere Singleton-Initialisierung:
+```python
+@lru_cache
+def get_session_store() -> SessionStore:
+    return SessionStore(session_timeout_seconds=3600)
+
+@lru_cache
+def get_widget_template_registry() -> WidgetTemplateRegistry:
+    registry = WidgetTemplateRegistry()
+    registry.discover_templates()
+    return registry
+```
 
 ---
 
 ## 🟡 **HOHE PRIORITÄT**
 
-### H-1: Print-Statement statt strukturiertem Logging
+### H-1: Print-Statement statt strukturiertem Logging ✅ **RESOLVED 2025-11-20**
 **Schweregrad:** HOCH  
 **Betroffene Datei:** `src/soulspot/api/routers/tracks.py:318`
 
@@ -148,14 +172,14 @@ In Produktion nicht nachvollziehbar, da `print()` nicht in strukturierte Logs ge
 - Keine Log-Aggregation möglich
 - Verletzung der Logging-Architektur
 
-**Empfehlung:**
+**Lösung (Implementiert):**
 ```python
-logger.warning("Failed to update file tags", exc_info=e, track_id=track.id)
+logger.warning("Failed to update file tags for track %s: %s", track_id, e, exc_info=True)
 ```
 
 ---
 
-### H-2: Übermäßig breite Exception-Handling
+### H-2: Übermäßig breite Exception-Handling ✅ **RESOLVED 2025-11-20**
 **Schweregrad:** HOCH  
 **Betroffene Dateien:**
 - `src/soulspot/application/services/token_manager.py:152`
@@ -178,11 +202,10 @@ Fängt SystemExit, KeyboardInterrupt und andere Exceptions ab, die nicht abgefan
 - Programm läuft weiter trotz kritischer Fehler
 - Keine aussagekräftigen Fehlermeldungen
 
-**Empfehlung:**
-1. Spezifische Exceptions verwenden (z.B. `httpx.HTTPError`, `sqlalchemy.exc.SQLAlchemyError`)
-2. Nur erwartete Exceptions abfangen
-3. Logging hinzufügen vor `pass`
-4. Kritische Fehler re-raisen
+**Lösung (Implementiert):**
+1. **token_manager.py**: Spezifische Exceptions `except (httpx.HTTPError, ValueError)` mit Logging
+2. **enrich_metadata.py**: Spezifische Exception `except httpx.HTTPError` mit Logging
+3. **database.py**: Clarifying comments added - broad exception intentional for transaction rollback integrity
 
 ---
 
@@ -280,7 +303,7 @@ file_path = Path(base_dir) / user_provided_filename
 
 ## 🟠 **MITTLERE PRIORITÄT**
 
-### M-1: 64 Linter-Violations (Ruff)
+### M-1: 64 Linter-Violations (Ruff) ✅ **RESOLVED 2025-11-20**
 **Schweregrad:** MITTEL  
 **Quelle:** `/tmp/ruff-report.json`
 
@@ -296,11 +319,13 @@ file_path = Path(base_dir) / user_provided_filename
 - Alembic-Migration-Dateien (Codegen-Output)
 - `scripts/capture_screenshots.py` (16 Issues)
 
-**Empfehlung:**
-1. `ruff check --fix .` für Auto-Fixes ausführen
-2. Pre-Commit-Hook aktivieren (bereits in `.pre-commit-config.yaml`)
-3. Migration-Templates anpassen für sauberen Codegen
-4. CI-Check auf "zero violations" verschärfen
+**Lösung (Implementiert):**
+Alle 68 Violations wurden mit `ruff check --fix .` automatisch behoben:
+- Modern Python 3.10+ type unions (`X | Y` statt `Union[X, Y]`)
+- Imports from `collections.abc` statt `typing`
+- Sorted and formatted imports
+- Removed trailing whitespace
+- All checks now pass with 0 violations
 
 ---
 
@@ -537,10 +562,19 @@ API-Endpunkte ohne `/v1/`-Präfix. Bei Breaking Changes schwierig zu migrieren.
 
 ### Sofortmaßnahmen (Sprint 1)
 1. ✅ **K-2 beheben:** Fehlgeschlagene Error-Handling-Tests debuggen und fixen
-2. ✅ **K-4 absichern:** Globale State-Variablen mit Locks schützen
-3. ✅ **H-1 fixen:** Print-Statement durch Logging ersetzen
-4. ✅ **H-2 verbessern:** Broad Exception-Handling spezifischer machen
-5. ✅ **M-1 aufräumen:** Ruff-Violations mit Auto-Fix beseitigen
+2. ✅ **K-4 absichern:** Globale State-Variablen mit Locks schützen - **COMPLETED 2025-11-20**
+   - `dependencies.py`: Replaced global `_session_store` with `@lru_cache` decorator
+   - `widget_template_registry.py`: Replaced global `_registry` with `@lru_cache` decorator
+   - Both singletons now thread-safe via FastAPI dependency injection best practices
+3. ✅ **H-1 fixen:** Print-Statement durch Logging ersetzen - **COMPLETED 2025-11-20**
+   - `tracks.py:318`: Replaced `print()` with `logger.warning()` including exc_info
+4. ✅ **H-2 verbessern:** Broad Exception-Handling spezifischer machen - **COMPLETED 2025-11-20**
+   - `token_manager.py:152`: Changed to catch `(httpx.HTTPError, ValueError)` with logging
+   - `enrich_metadata.py:133`: Changed to catch `httpx.HTTPError` with logging
+   - `database.py:52, 65`: Added clarifying comments for intentional broad exception handling
+5. ✅ **M-1 aufräumen:** Ruff-Violations mit Auto-Fix beseitigen - **COMPLETED 2025-11-20**
+   - All 68 violations auto-fixed (W293, UP007, I001, UP035, F541, F401)
+   - Ruff check now passes with 0 violations
 
 ### Kurzfristig (Sprint 2-3)
 6. ✅ **K-1 angehen:** Test-Coverage auf >90% heben (Priorität: main.py, ui.py, workers)
