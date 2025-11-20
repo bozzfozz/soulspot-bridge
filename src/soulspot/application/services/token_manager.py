@@ -1,10 +1,15 @@
 """Token management service for OAuth tokens."""
 
+import logging
 import secrets
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
+import httpx
+
 from soulspot.domain.ports import ISpotifyClient
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -149,8 +154,14 @@ class TokenManager:
                     if refreshed_token:
                         return refreshed_token.access_token
                     return None
-                except Exception:
+                except (httpx.HTTPError, ValueError) as e:
                     # If refresh fails, token might be invalid
+                    logger.warning(
+                        "Failed to refresh token for user %s: %s",
+                        user_id,
+                        e,
+                        exc_info=True,
+                    )
                     return None
             else:
                 # No refresh token available

@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+import httpx
+
 from soulspot.application.use_cases import UseCase
 from soulspot.domain.entities import Album, Artist, Track
 from soulspot.domain.ports import (
@@ -130,7 +132,13 @@ class EnrichMetadataUseCase(UseCase[EnrichMetadataRequest, EnrichMetadataRespons
                 if results:
                     recording = results[0]  # Take first result
                     enriched_fields.append("musicbrainz_search")
-            except Exception:
+            except httpx.HTTPError as e:
+                logger.warning(
+                    "Failed to search MusicBrainz for track %s: %s",
+                    track.id,
+                    e,
+                    exc_info=True,
+                )
                 return None, enriched_fields
 
         if recording:

@@ -5,17 +5,16 @@ Revises: 46d1c2c2f85b
 Create Date: 2025-11-15 20:24:33.076359
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = 'aa15670cdf15'
-down_revision: Union[str, Sequence[str], None] = '46d1c2c2f85b'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = '46d1c2c2f85b'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -29,11 +28,11 @@ def upgrade() -> None:
     op.add_column('tracks', sa.Column('audio_bitrate', sa.Integer(), nullable=True))
     op.add_column('tracks', sa.Column('audio_format', sa.String(20), nullable=True))
     op.add_column('tracks', sa.Column('audio_sample_rate', sa.Integer(), nullable=True))
-    
+
     # Create indexes on tracks
     op.create_index('ix_tracks_file_hash', 'tracks', ['file_hash'])
     op.create_index('ix_tracks_is_broken', 'tracks', ['is_broken'])
-    
+
     # Create library_scans table
     op.create_table(
         'library_scans',
@@ -55,7 +54,7 @@ def upgrade() -> None:
     # Create indexes separately
     op.create_index('ix_library_scans_status', 'library_scans', ['status'])
     op.create_index('ix_library_scans_started_at', 'library_scans', ['started_at'])
-    
+
     # Create file_duplicates table
     op.create_table(
         'file_duplicates',
@@ -79,21 +78,21 @@ def downgrade() -> None:
     # Drop indexes from file_duplicates
     op.drop_index('ix_file_duplicates_resolved', table_name='file_duplicates')
     op.drop_index('ix_file_duplicates_hash', table_name='file_duplicates')
-    
+
     # Drop table
     op.drop_table('file_duplicates')
-    
+
     # Drop indexes from library_scans
     op.drop_index('ix_library_scans_started_at', table_name='library_scans')
     op.drop_index('ix_library_scans_status', table_name='library_scans')
-    
+
     # Drop table
     op.drop_table('library_scans')
-    
+
     # Drop indexes from tracks
     op.drop_index('ix_tracks_is_broken', table_name='tracks')
     op.drop_index('ix_tracks_file_hash', table_name='tracks')
-    
+
     # Remove columns from tracks
     op.drop_column('tracks', 'audio_sample_rate')
     op.drop_column('tracks', 'audio_format')

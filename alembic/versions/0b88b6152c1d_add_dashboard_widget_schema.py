@@ -5,17 +5,16 @@ Revises: cc17880fff37
 Create Date: 2025-11-16 19:37:21.597161
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '0b88b6152c1d'
-down_revision: Union[str, Sequence[str], None] = 'cc17880fff37'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = 'cc17880fff37'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -32,7 +31,7 @@ def upgrade() -> None:
         sa.UniqueConstraint('type')
     )
     op.create_index(op.f('ix_widgets_type'), 'widgets', ['type'], unique=True)
-    
+
     # Create pages table (dashboard pages)
     op.create_table(
         'pages',
@@ -46,7 +45,7 @@ def upgrade() -> None:
         sa.UniqueConstraint('slug')
     )
     op.create_index(op.f('ix_pages_slug'), 'pages', ['slug'], unique=True)
-    
+
     # Create widget_instances table (placed widgets on pages)
     op.create_table(
         'widget_instances',
@@ -66,7 +65,7 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_widget_instances_page_id'), 'widget_instances', ['page_id'], unique=False)
     op.create_index(op.f('ix_widget_instances_widget_type'), 'widget_instances', ['widget_type'], unique=False)
-    
+
     # Seed widget registry with 5 core widgets
     op.execute("""
         INSERT INTO widgets (type, name, template_path, default_config) VALUES
@@ -76,7 +75,7 @@ def upgrade() -> None:
         ('quick_actions', 'Quick Actions', 'partials/widgets/quick_actions.html', '{"actions": ["scan", "import", "fix"]}'),
         ('metadata_manager', 'Metadata Manager', 'partials/widgets/metadata_manager.html', '{"filter": "all"}')
     """)
-    
+
     # Create default dashboard page
     op.execute("""
         INSERT INTO pages (name, slug, is_default, created_at, updated_at) VALUES

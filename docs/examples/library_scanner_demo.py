@@ -78,7 +78,7 @@ async def main() -> None:
                 print(f"\n  Hash: {dup['file_hash'][:16]}...")
                 print(f"  Duplicate count: {dup['duplicate_count']}")
                 print(f"  Total size: {dup['total_size_bytes'] / 1024 / 1024:.2f} MB")
-                print(f"  Files:")
+                print("  Files:")
                 for track in dup["tracks"]:
                     print(f"    - {track['title']} ({track['file_path']})")
         else:
@@ -109,7 +109,7 @@ async def main() -> None:
         # Scan a single file (if any exist)
         if audio_files:
             file_info = scanner.scan_file(audio_files[0])
-            print(f"\nExample file scan:")
+            print("\nExample file scan:")
             print(f"  Path: {file_info.path}")
             print(f"  Size: {file_info.size / 1024:.1f} KB")
             print(f"  Hash: {file_info.hash_value[:16]}...")
