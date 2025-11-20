@@ -165,6 +165,11 @@ async def app_with_db(test_settings: Settings, db: Database):
     # Include UI router at root
     app.include_router(ui.router, tags=["UI"])
 
+    # Register exception handlers for proper error handling in tests
+    from soulspot.main import register_exception_handlers
+
+    register_exception_handlers(app)
+
     # Add health endpoints matching main.py
     @app.get(
         "/health",

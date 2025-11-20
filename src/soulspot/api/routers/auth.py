@@ -45,14 +45,14 @@ async def authorize(
         oauth_state=state, code_verifier=code_verifier
     )
 
-    # Set session cookie (HttpOnly for security, no Secure flag for local use)
+    # Set session cookie (HttpOnly for security, Secure flag from settings)
     response.set_cookie(
-        key="session_id",
+        key=settings.api.session_cookie_name,
         value=session.session_id,
         httponly=True,
-        secure=False,  # Local use only - no HTTPS required
+        secure=settings.api.secure_cookies,  # Configurable - True in production with HTTPS
         samesite="lax",
-        max_age=3600,  # 1 hour
+        max_age=settings.api.session_max_age,
     )
 
     # Get authorization URL
@@ -240,6 +240,7 @@ async def get_session_info(
 @router.post("/logout")
 async def logout(
     response: Response,
+    settings: Settings = Depends(get_settings),
     session_id: str | None = Cookie(None),
     session_store: SessionStore = Depends(get_session_store),
 ) -> dict[str, Any]:
@@ -247,6 +248,7 @@ async def logout(
 
     Args:
         response: FastAPI response for clearing cookies
+        settings: Application settings
         session_id: Session ID from cookie
         session_store: Session store
 
@@ -255,7 +257,7 @@ async def logout(
     """
     if session_id:
         session_store.delete_session(session_id)
-        response.delete_cookie(key="session_id")
+        response.delete_cookie(key=settings.api.session_cookie_name)
         return {"message": "Logged out successfully"}
 
     return {"message": "No active session"}

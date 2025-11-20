@@ -1,19 +1,29 @@
 """FastAPI application entry point."""
 
 import asyncio
+import json
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from soulspot.api.routers import api_router, ui
 from soulspot.config import Settings, get_settings
+from soulspot.domain.exceptions import (
+    DuplicateEntityException,
+    EntityNotFoundException,
+    InvalidStateException,
+    ValidationException,
+)
 from soulspot.infrastructure.observability import configure_logging
 from soulspot.infrastructure.observability.health import (
     HealthStatus,
@@ -26,6 +36,177 @@ from soulspot.infrastructure.observability.middleware import RequestLoggingMiddl
 from soulspot.infrastructure.persistence import Database
 
 logger = logging.getLogger(__name__)
+
+
+def register_exception_handlers(app: FastAPI) -> None:
+    """Register custom exception handlers for domain and validation exceptions.
+
+    This function registers handlers for:
+    - Domain exceptions (ValidationException, EntityNotFoundException, etc.)
+    - Pydantic validation errors (RequestValidationError)
+    - JSON decode errors
+    - Standard Python ValueError
+    - HTTP exceptions with proper logging
+
+    Args:
+        app: FastAPI application instance
+    """
+
+    @app.exception_handler(ValidationException)
+    async def validation_exception_handler(
+        request: Request, exc: ValidationException
+    ) -> JSONResponse:
+        """Handle domain validation exceptions with 422 Unprocessable Entity."""
+        logger.warning(
+            "Validation error at %s: %s",
+            request.url.path,
+            exc.message,
+            extra={"path": request.url.path, "error": exc.message},
+        )
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": exc.message},
+        )
+
+    @app.exception_handler(EntityNotFoundException)
+    async def entity_not_found_exception_handler(
+        request: Request, exc: EntityNotFoundException
+    ) -> JSONResponse:
+        """Handle entity not found exceptions with 404 Not Found."""
+        logger.info(
+            "Entity not found at %s: %s %s",
+            request.url.path,
+            exc.entity_type,
+            exc.entity_id,
+            extra={
+                "path": request.url.path,
+                "entity_type": exc.entity_type,
+                "entity_id": exc.entity_id,
+            },
+        )
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": exc.message},
+        )
+
+    @app.exception_handler(DuplicateEntityException)
+    async def duplicate_entity_exception_handler(
+        request: Request, exc: DuplicateEntityException
+    ) -> JSONResponse:
+        """Handle duplicate entity exceptions with 409 Conflict."""
+        logger.warning(
+            "Duplicate entity at %s: %s %s",
+            request.url.path,
+            exc.entity_type,
+            exc.entity_id,
+            extra={
+                "path": request.url.path,
+                "entity_type": exc.entity_type,
+                "entity_id": exc.entity_id,
+            },
+        )
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": exc.message},
+        )
+
+    @app.exception_handler(InvalidStateException)
+    async def invalid_state_exception_handler(
+        request: Request, exc: InvalidStateException
+    ) -> JSONResponse:
+        """Handle invalid state exceptions with 400 Bad Request."""
+        logger.warning(
+            "Invalid state at %s: %s",
+            request.url.path,
+            exc.message,
+            extra={"path": request.url.path, "error": exc.message},
+        )
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": exc.message},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        """Handle Pydantic request validation errors with 422 Unprocessable Entity."""
+        logger.warning(
+            "Request validation error at %s: %s",
+            request.url.path,
+            exc.errors(),
+            extra={"path": request.url.path, "errors": exc.errors()},
+        )
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": exc.errors()},
+        )
+
+    @app.exception_handler(json.JSONDecodeError)
+    async def json_decode_error_handler(
+        request: Request, exc: json.JSONDecodeError
+    ) -> JSONResponse:
+        """Handle malformed JSON with 400 Bad Request."""
+        logger.warning(
+            "Malformed JSON at %s: %s",
+            request.url.path,
+            str(exc),
+            extra={"path": request.url.path, "error": str(exc)},
+        )
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": f"Malformed JSON: {exc.msg}"},
+        )
+
+    @app.exception_handler(ValueError)
+    async def value_error_exception_handler(
+        request: Request, exc: ValueError
+    ) -> JSONResponse:
+        """Handle ValueError with 422 Unprocessable Entity for validation-related errors."""
+        logger.warning(
+            "Value error at %s: %s",
+            request.url.path,
+            str(exc),
+            extra={"path": request.url.path, "error": str(exc)},
+        )
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(
+        request: Request, exc: StarletteHTTPException
+    ) -> JSONResponse:
+        """Handle HTTP exceptions with proper logging."""
+        if exc.status_code >= 500:
+            logger.error(
+                "HTTP error %d at %s: %s",
+                exc.status_code,
+                request.url.path,
+                exc.detail,
+                extra={
+                    "path": request.url.path,
+                    "status_code": exc.status_code,
+                    "detail": exc.detail,
+                },
+            )
+        else:
+            logger.info(
+                "HTTP error %d at %s: %s",
+                exc.status_code,
+                request.url.path,
+                exc.detail,
+                extra={
+                    "path": request.url.path,
+                    "status_code": exc.status_code,
+                    "detail": exc.detail,
+                },
+            )
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail},
+        )
 
 
 def _validate_sqlite_path(settings: Settings) -> None:
@@ -268,6 +449,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Register custom exception handlers
+    register_exception_handlers(app)
 
     # Mount static files if directory exists
     static_dir = Path(__file__).parent / "static"

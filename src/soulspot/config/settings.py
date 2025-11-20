@@ -204,8 +204,20 @@ class APISettings(BaseSettings):
         default=True,
         description="Allow credentials in CORS",
     )
-    # Removed secure_cookies - not needed for local-only use
-    # Cookies always use httponly for basic security
+    secure_cookies: bool = Field(
+        default=False,
+        description="Use secure flag for cookies (requires HTTPS). Enable in production.",
+    )
+    session_cookie_name: str = Field(
+        default="session_id",
+        description="Name of the session cookie",
+    )
+    session_max_age: int = Field(
+        default=3600,
+        description="Session cookie max age in seconds",
+        ge=60,
+        le=86400,
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod
