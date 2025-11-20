@@ -27,6 +27,17 @@ The CI pipeline runs on:
 - Pull requests to `main` and `develop` branches
 - Direct pushes to `main` and `develop` branches
 
+### Daily Docker Build
+
+In addition to the CI pipeline, a separate workflow builds and publishes Docker images daily:
+- **Schedule**: Runs daily at 02:00 UTC
+- **Trigger**: Can also be triggered manually via GitHub Actions UI
+- **Output**: Publishes to `ghcr.io/bozzfozz/soulspot-bridge:latest`
+- **Platforms**: Builds for `linux/amd64` and `linux/arm64`
+- **Tags**: Creates both `latest` and date-stamped tags (e.g., `20250120-abc123`)
+
+This ensures that the `latest` tag always contains recent builds with the newest dependencies and security updates, even between releases.
+
 ### Jobs
 
 #### 1. Test Job
@@ -189,12 +200,15 @@ ghcr.io/bozzfozz/soulspot-bridge
 
 ### Image Tags
 
-| Tag | Description | Example |
-|-----|-------------|---------|
-| `latest` | Latest stable release | `ghcr.io/bozzfozz/soulspot-bridge:latest` |
-| `X.Y.Z` | Exact version | `ghcr.io/bozzfozz/soulspot-bridge:0.1.0` |
-| `X.Y` | Minor version line | `ghcr.io/bozzfozz/soulspot-bridge:0.1` |
-| `X` | Major version line | `ghcr.io/bozzfozz/soulspot-bridge:0` |
+| Tag | Description | Updated | Example |
+|-----|-------------|---------|---------|
+| `latest` | Latest build (daily or release) | Daily at 02:00 UTC | `ghcr.io/bozzfozz/soulspot-bridge:latest` |
+| `X.Y.Z` | Exact version | On release | `ghcr.io/bozzfozz/soulspot-bridge:0.1.0` |
+| `X.Y` | Minor version line | On release | `ghcr.io/bozzfozz/soulspot-bridge:0.1` |
+| `X` | Major version line | On release | `ghcr.io/bozzfozz/soulspot-bridge:0` |
+| `YYYYMMDD-<sha>` | Daily build with date | Daily at 02:00 UTC | `ghcr.io/bozzfozz/soulspot-bridge:20250120-abc123` |
+
+**Note**: The `latest` tag is updated daily via automated builds and also updated when a new release is published.
 
 ### Multi-Platform Support
 
