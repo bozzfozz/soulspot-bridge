@@ -1,5 +1,6 @@
 """Database session management."""
 
+import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -7,6 +8,8 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from soulspot.config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class Database:
@@ -50,6 +53,8 @@ class Database:
                 yield session
                 await session.commit()
             except Exception:
+                # Rollback on any exception - this is intentionally broad to ensure
+                # transaction integrity. All exceptions are re-raised for proper handling.
                 await session.rollback()
                 raise
             finally:
@@ -63,6 +68,8 @@ class Database:
                 yield session
                 await session.commit()
             except Exception:
+                # Rollback on any exception - this is intentionally broad to ensure
+                # transaction integrity. All exceptions are re-raised for proper handling.
                 await session.rollback()
                 raise
             finally:

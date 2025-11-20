@@ -1,6 +1,7 @@
 """Widget template registry service for discovering and managing widget templates."""
 
 import logging
+from functools import lru_cache
 from pathlib import Path
 
 from soulspot.domain.entities.widget_template import (
@@ -378,19 +379,14 @@ class WidgetTemplateRegistry:
         return count
 
 
-# Global registry instance
-_registry: WidgetTemplateRegistry | None = None
-
-
+@lru_cache
 def get_widget_template_registry() -> WidgetTemplateRegistry:
-    """Get the global widget template registry.
+    """Get the global widget template registry (thread-safe).
 
     Returns:
         WidgetTemplateRegistry instance
     """
-    global _registry
-    if _registry is None:
-        _registry = WidgetTemplateRegistry()
-        # Try to discover custom templates
-        _registry.discover_templates()
-    return _registry
+    registry = WidgetTemplateRegistry()
+    # Try to discover custom templates
+    registry.discover_templates()
+    return registry

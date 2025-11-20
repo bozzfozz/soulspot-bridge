@@ -15,8 +15,6 @@ Key optimizations:
 5. Index on file_path in tracks for file system operations
 """
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision = 'cc17880fff37'
@@ -35,7 +33,7 @@ def upgrade() -> None:
         ['album_id', 'track_number'],
         unique=False
     )
-    
+
     # Composite index for tracks by album and disc
     # Optimizes queries with both album_id and disc_number filters
     op.create_index(
@@ -44,7 +42,7 @@ def upgrade() -> None:
         ['album_id', 'disc_number', 'track_number'],
         unique=False
     )
-    
+
     # Index on artist_id in albums for artist->albums relationship queries
     # Optimizes queries like: SELECT * FROM albums WHERE artist_id = ?
     op.create_index(
@@ -53,7 +51,7 @@ def upgrade() -> None:
         ['artist_id'],
         unique=False
     )
-    
+
     # Index on updated_at for filtering recently modified entities
     # Useful for sync operations and change tracking
     op.create_index(
@@ -62,21 +60,21 @@ def upgrade() -> None:
         ['updated_at'],
         unique=False
     )
-    
+
     op.create_index(
         'ix_albums_updated_at',
         'albums',
         ['updated_at'],
         unique=False
     )
-    
+
     op.create_index(
         'ix_artists_updated_at',
         'artists',
         ['updated_at'],
         unique=False
     )
-    
+
     # Index on completed_at in downloads for completed download queries
     # Optimizes queries filtering by completion status with time ranges
     op.create_index(
@@ -85,7 +83,7 @@ def upgrade() -> None:
         ['completed_at'],
         unique=False
     )
-    
+
     # Index on file_path for file system lookup operations
     # Optimizes queries like: SELECT * FROM tracks WHERE file_path = ?
     op.create_index(
@@ -94,7 +92,7 @@ def upgrade() -> None:
         ['file_path'],
         unique=False
     )
-    
+
     # Composite index for downloads by status and priority
     # Optimizes queue processing queries: SELECT * FROM downloads WHERE status = ? ORDER BY priority DESC
     op.create_index(
@@ -103,7 +101,7 @@ def upgrade() -> None:
         ['status', 'priority'],
         unique=False
     )
-    
+
     # Index on last_scanned_at for library management queries
     # Optimizes queries filtering by scan date
     op.create_index(
@@ -112,7 +110,7 @@ def upgrade() -> None:
         ['last_scanned_at'],
         unique=False
     )
-    
+
     # Composite index on is_broken and updated_at for broken file monitoring
     # Optimizes queries: SELECT * FROM tracks WHERE is_broken = true ORDER BY updated_at DESC
     op.create_index(

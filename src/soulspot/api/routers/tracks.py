@@ -1,5 +1,6 @@
 """Track management endpoints."""
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -23,6 +24,7 @@ from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
 from soulspot.infrastructure.persistence.repositories import TrackRepository
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/{track_id}/download")
@@ -315,7 +317,7 @@ async def update_track_metadata(
                 audio.save()
             except Exception as e:
                 # Log error but don't fail the request
-                print(f"Warning: Failed to update file tags: {e}")
+                logger.warning("Failed to update file tags for track %s: %s", track_id, e, exc_info=True)
 
         return {
             "message": "Metadata updated successfully",

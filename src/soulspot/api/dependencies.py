@@ -1,6 +1,7 @@
 """Dependency injection for API endpoints."""
 
 from collections.abc import AsyncGenerator
+from functools import lru_cache
 from typing import cast
 
 from fastapi import Cookie, Depends, HTTPException, Request
@@ -31,21 +32,15 @@ from soulspot.infrastructure.persistence.repositories import (
     TrackRepository,
 )
 
-# Global session store instance
-# In production, this should be stored in app.state or use Redis
-_session_store: SessionStore | None = None
 
-
+@lru_cache
 def get_session_store() -> SessionStore:
-    """Get or create session store singleton.
+    """Get or create session store singleton (thread-safe).
 
     Returns:
         Session store instance
     """
-    global _session_store
-    if _session_store is None:
-        _session_store = SessionStore(session_timeout_seconds=3600)  # 1 hour timeout
-    return _session_store
+    return SessionStore(session_timeout_seconds=3600)  # 1 hour timeout
 
 
 async def get_db_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
