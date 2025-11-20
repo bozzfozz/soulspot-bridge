@@ -43,35 +43,26 @@ async def download_track(
     Returns:
         Download status
     """
-    try:
-        track_id_obj = TrackId.from_string(track_id)
-        request = SearchAndDownloadTrackRequest(
-            track_id=track_id_obj,
-            quality_preference=quality,
+    track_id_obj = TrackId.from_string(track_id)
+    request = SearchAndDownloadTrackRequest(
+        track_id=track_id_obj,
+        quality_preference=quality,
+    )
+    response = await use_case.execute(request)
+
+    if response.status.value == "failed":
+        raise HTTPException(
+            status_code=400, detail=response.error_message or "Download failed"
         )
-        response = await use_case.execute(request)
 
-        if response.status.value == "failed":
-            raise HTTPException(
-                status_code=400, detail=response.error_message or "Download failed"
-            )
-
-        return {
-            "message": "Download started",
-            "track_id": track_id,
-            "download_id": str(response.download.id.value),
-            "quality": quality,
-            "status": response.status.value,
-            "search_results_count": response.search_results_count,
-        }
-    except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid track ID: {str(e)}"
-        ) from e
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to start download: {str(e)}"
-        ) from e
+    return {
+        "message": "Download started",
+        "track_id": track_id,
+        "download_id": str(response.download.id.value),
+        "quality": quality,
+        "status": response.status.value,
+        "search_results_count": response.search_results_count,
+    }
 
 
 @router.post("/{track_id}/enrich")

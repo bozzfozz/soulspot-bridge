@@ -242,35 +242,30 @@ async def get_download_status(
     Returns:
         Download status and progress
     """
-    try:
-        download_id_obj = DownloadId.from_string(download_id)
-        download = await download_repository.get_by_id(download_id_obj)
+    download_id_obj = DownloadId.from_string(download_id)
+    download = await download_repository.get_by_id(download_id_obj)
 
-        if not download:
-            raise HTTPException(status_code=404, detail="Download not found")
+    if not download:
+        raise HTTPException(status_code=404, detail="Download not found")
 
-        return {
-            "id": str(download.id.value),
-            "track_id": str(download.track_id.value),
-            "status": download.status.value,
-            "priority": download.priority,
-            "progress_percent": download.progress_percent,
-            "source_url": download.source_url,
-            "target_path": str(download.target_path) if download.target_path else None,
-            "error_message": download.error_message,
-            "started_at": download.started_at.isoformat()
-            if download.started_at
-            else None,
-            "completed_at": download.completed_at.isoformat()
-            if download.completed_at
-            else None,
-            "created_at": download.created_at.isoformat(),
-            "updated_at": download.updated_at.isoformat(),
-        }
-    except ValueError as e:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid download ID: {str(e)}"
-        ) from e
+    return {
+        "id": str(download.id.value),
+        "track_id": str(download.track_id.value),
+        "status": download.status.value,
+        "priority": download.priority,
+        "progress_percent": download.progress_percent,
+        "source_url": download.source_url,
+        "target_path": str(download.target_path) if download.target_path else None,
+        "error_message": download.error_message,
+        "started_at": download.started_at.isoformat()
+        if download.started_at
+        else None,
+        "completed_at": download.completed_at.isoformat()
+        if download.completed_at
+        else None,
+        "created_at": download.created_at.isoformat(),
+        "updated_at": download.updated_at.isoformat(),
+    }
 
 
 @router.post("/{download_id}/cancel")
