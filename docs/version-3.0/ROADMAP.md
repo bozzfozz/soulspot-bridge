@@ -1067,20 +1067,128 @@ The Soulseek module serves as the **reference implementation** and template for 
 
 ---
 
-## 15. References
+## 15. UI/UX Design System
+
+### 15.1 Card-Based UI Architecture
+
+**Goal:** Replace widget-based UI with clean, card-based design system to prevent "UI garbage".
+
+**Core Card Types (7 total):**
+1. **Status Card**: Module/system health, connection status
+2. **Action Card**: Search forms, triggers, quick actions
+3. **Data Card**: Track info, album details, statistics
+4. **Progress Card**: Download/sync progress indicators
+5. **List Card**: Search results, queues, collections
+6. **Alert Card**: Warnings, errors, notifications
+7. **Form Card**: Configuration, settings, input collection
+
+**Design Tokens:**
+- Spacing scale: 4px base unit (4, 8, 16, 24, 32, 48px)
+- Typography scale: 12px to 30px (rem-based)
+- Semantic colors: Primary (blue), Success (green), Warning (yellow), Error (red)
+- Dark mode support via CSS variables
+
+**Benefits:**
+- ✅ Consistent UI across all modules
+- ✅ Prevents ad-hoc widget creation
+- ✅ Accessibility built-in (WCAG 2.1 AA)
+- ✅ HTMX-first integration patterns
+- ✅ Responsive by default
+
+**Complete Specification:** [UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md)
+
+---
+
+## 16. Onboarding & Configuration
+
+### 16.1 No .env Configuration
+
+**Goal:** Remove .env files completely, replace with guided UI-based onboarding.
+
+**Onboarding Steps:**
+1. **Welcome Screen**: Introduction and expectations
+2. **Spotify Configuration**: Collect credentials with real-time testing
+3. **Soulseek Configuration**: slskd connection with validation
+4. **Optional Modules**: MusicBrainz, Last.fm, Notifications
+5. **Complete**: Summary and next steps
+
+**Key Features:**
+- ✅ **Real-time testing**: Test connections before saving
+- ✅ **Secure storage**: Encrypted credentials in database (Fernet encryption)
+- ✅ **Clear guidance**: Help modals with step-by-step credential guides
+- ✅ **Migration support**: Auto-import from existing .env
+- ✅ **Reconfiguration**: Easy post-setup credential updates
+
+**Security:**
+- All secrets encrypted at rest using Fernet symmetric encryption
+- Database storage in `module_configurations` table
+- No plaintext credentials on disk
+- Audit trail for all credential access
+
+**Benefits:**
+- ✅ Zero configuration files for users
+- ✅ Instant validation prevents setup errors
+- ✅ First-time user success in &lt;5 minutes
+- ✅ Clear error messages with actionable guidance
+
+**Complete Specification:** [ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md)
+
+---
+
+## 17. Implementation Timeline Update
+
+### Phase 1: Foundation (Weeks 1-2)
+- [ ] Core infrastructure (event bus, module registry, module router)
+- [ ] **UI Design System**: Create card CSS framework and design tokens
+- [ ] **Onboarding Flow**: Build wizard UI and secure credential storage
+- [ ] Module scaffolding script
+- [ ] Testing framework setup
+
+### Phase 2: Pilot Module (Weeks 3-4)
+- [ ] Soulseek module implementation (reference)
+- [ ] **Soulseek UI**: Migrate to card-based design
+- [ ] Module Router integration
+- [ ] **First-run onboarding**: Soulseek credential collection
+- [ ] Documentation generation
+- [ ] E2E testing
+
+### Phase 3: Core Modules (Weeks 5-8)
+- [ ] Spotify module migration
+- [ ] **Spotify UI**: Card-based search, playlists, player
+- [ ] **Spotify onboarding**: OAuth credential flow
+- [ ] Library module migration
+- [ ] **Library UI**: Card-based browser and organizer
+- [ ] Metadata module migration
+- [ ] **Metadata UI**: Enrichment status cards
+
+### Phase 4: Polish & Release (Weeks 9-12)
+- [ ] **UI polish**: Dark mode, animations, responsive testing
+- [ ] **Onboarding refinement**: Error messages, help content
+- [ ] Migration guides for existing users
+- [ ] Performance optimization
+- [ ] Documentation completion
+- [ ] Security audit
+- [ ] **v3.0.0 release**
+
+---
+
+## 18. References
 
 - [Architecture Specification](./ARCHITECTURE.md)
 - [Module Specification](./MODULE_SPECIFICATION.md)
 - [Soulseek Module Design](./SOULSEEK_MODULE.md)
 - [Module Communication Patterns](./MODULE_COMMUNICATION.md)
+- **[UI Design System](./UI_DESIGN_SYSTEM.md)** - NEW
+- **[Onboarding Flow](./ONBOARDING_FLOW.md)** - NEW
 - [Current Architecture](../project/architecture.md)
 
 ---
 
 **Next Steps:**
-1. Review this roadmap with stakeholders
-2. Create detailed module specification document
-3. Design Soulseek module in detail
-4. Begin implementation with core module
+1. Review roadmap with stakeholders
+2. Finalize UI card catalog and design tokens
+3. Build onboarding flow prototype
+4. Design Soulseek module UI mockups
+5. Begin implementation with core infrastructure
 
-**Status:** 🔄 In Progress - Documentation Phase
+**Status:** 🔄 In Progress - Documentation Phase Complete

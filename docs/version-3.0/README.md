@@ -48,14 +48,27 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
    - Event bus architecture and implementation
    - Direct module calls via registry
    - Event schemas and versioning
-   - Cross-module data contracts
-   - Error handling and retry strategies
-   - Testing communication patterns
-   - **Essential guide** for module integration
+   - **Module Router/Orchestrator** with complete orchestrated flow
+
+5. **[UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md)** - UI/UX Design System **NEW**
+   - **Card-based UI catalog** (7 core card types)
+   - Design tokens (spacing, typography, colors)
+   - Component specifications with HTMX integration
+   - Responsive grid system
+   - Accessibility requirements
+   - **Reference for all UI development** to prevent "UI garbage"
+
+6. **[ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md)** - Onboarding & Configuration **NEW**
+   - **No .env configuration** - guided UI-based setup
+   - Step-by-step credential collection with real-time testing
+   - Spotify, Soulseek, and optional module configuration
+   - Secure credential storage (encrypted database)
+   - Migration from existing .env files
+   - **Critical for user experience** in v3.0
 
 ### Example Implementation
 
-5. **[SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md)** - Reference Implementation
+7. **[SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md)** - Reference Implementation
    - Complete Soulseek module design
    - Domain model (entities, value objects, services)
    - Application layer (services, use cases, DTOs)
@@ -100,7 +113,12 @@ Essential reading:
 ### For Developers (Frontend)
 
 Essential reading:
-1. [MODULE_SPECIFICATION.md](./MODULE_SPECIFICATION.md) - Section 5 (Frontend Structure)
+1. **[UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md)** - Complete card catalog and design tokens
+2. [MODULE_SPECIFICATION.md](./MODULE_SPECIFICATION.md) - Section 5 (Frontend Structure)
+3. [SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md) - Section 6 (Frontend Components)
+4. **[ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md)** - Credential collection UI patterns
+
+**Goal:** Build consistent, accessible UI using card components
 2. [SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md) - Section 8 (Frontend Components)
 3. [ARCHITECTURE.md](./ARCHITECTURE.md) - Section 7 (Frontend Architecture)
 
