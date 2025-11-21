@@ -119,7 +119,7 @@ class EnrichMetadataUseCase(UseCase[EnrichMetadataRequest, EnrichMetadataRespons
                 )
 
         # Fall back to search if ISRC lookup failed
-        # Hey future me: WHY take first result from search? 
+        # Hey future me: WHY take first result from search?
         # MusicBrainz returns best matches first, but it's not perfect
         # Better would be fuzzy matching on track title + artist name + duration
         # TODO: Add confidence scoring to avoid false matches

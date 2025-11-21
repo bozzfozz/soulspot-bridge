@@ -304,7 +304,7 @@ class JobQueue:
                 # WHY while loop? Keep checking until slot opens or shutdown requested
                 # WHY 0.1s sleep? Fast enough response without CPU burning
                 # GOTCHA: We wait for slot BEFORE dequeuing - prevents queue from being drained while all workers busy
-                
+
                 # Wait for available slot
                 while (
                     len(self._running_jobs) >= self._max_concurrent

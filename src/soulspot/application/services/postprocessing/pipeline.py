@@ -119,7 +119,7 @@ class PostProcessingPipeline:
             # WHY fail if artist not found? Can't tag file without artist name - that's a critical failure
             # WHY continue if artwork fails? Nice to have, not essential - user can add it manually later
             # GOTCHA: Each step is wrapped in try/except to isolate failures - one bad step doesn't kill the whole pipeline
-            
+
             # Fetch related entities
             artist = await self._artist_repository.get_by_id(track.artist_id)
             if not artist:

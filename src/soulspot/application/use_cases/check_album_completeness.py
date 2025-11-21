@@ -108,7 +108,7 @@ class CheckAlbumCompletenessUseCase:
                 # WHY check expected_count == 0 before MusicBrainz? Don't waste API calls if Spotify worked
                 # GOTCHA: If both sources say different track counts, we trust whichever we hit first
                 # This can happen with deluxe editions vs standard - might want to handle that later
-                
+
                 # Try to get expected track count from Spotify
                 if album_model.spotify_uri and self.access_token:
                     spotify_count = (
