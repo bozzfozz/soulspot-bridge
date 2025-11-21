@@ -22,6 +22,13 @@ templates = Jinja2Templates(directory="src/soulspot/templates")
 router = APIRouter(prefix="/ui/widgets", tags=["widget-content"])
 
 
+# Hey future me, this powers the Active Jobs widget! Gets active downloads (queued, in progress) and
+# limits to 10 most recent. The TODO comments say we should get actual track/artist info instead of
+# just using IDs - currently shows "Track <uuid>" and "Unknown Artist" which is poor UX. Should join
+# with track table to get real names. downloads[:10] slice is arbitrary - widget config should control
+# this. List comprehension builds template-friendly dicts. Progress percent defaults to 0 if None which
+# is sensible. The jobs_count includes ALL active downloads even though we only show 10 - misleading!
+# Should clarify "Showing 10 of 50 jobs" or paginate. This endpoint is called frequently by polling.
 @router.get("/active-jobs/content", response_class=HTMLResponse)
 async def active_jobs_content(
     request: Request,
@@ -67,6 +74,14 @@ async def spotify_search_content(
     )
 
 
+# WARNING: Spotify search in widget context! The query string needs at least 2 chars before searching
+# which prevents single-character spam. Creates SpotifyClient fresh every time - inefficient, should
+# cache or inject. More importantly, access_token="" with nosec comment means NO AUTHENTICATION! The
+# B106 bandit warning is suppressed but this is actually a real security issue. Search will fail without
+# valid token. TODO says "needs to be refactored to use session-based auth" - this is broken currently!
+# The search_results dict structure is nested (tracks.items) which matches Spotify API format. List
+# comp extracts relevant fields. Empty results on exception is silent failure - users won't know why
+# search didn't work. Logger warning is good but UI shows nothing. search_type param not actually used!
 @router.get("/spotify-search/results", response_class=HTMLResponse)
 async def spotify_search_results(
     request: Request,
@@ -124,6 +139,13 @@ async def spotify_search_results(
     )
 
 
+# Listen, this widget shows tracks that haven't been downloaded! Gets all playlists then iterates to
+# find missing tracks - very N+1 query pattern. Limited to first 10 playlists which is arbitrary.
+# For each playlist, loops through ALL track IDs doing separate lookups - SUPER slow for big playlists!
+# Should batch fetch tracks. The is_broken check has type: ignore because it's on ORM model not entity.
+# Only includes playlists that have missing tracks which is smart filtering. Total_missing sums across
+# playlists to show overall count. Downloaded_count tracks successfully downloaded files. The missing_tracks
+# list includes track details but could be huge - no limit per playlist! Widget could show 100s of tracks.
 @router.get("/missing-tracks/content", response_class=HTMLResponse)
 async def missing_tracks_content(
     request: Request,
@@ -193,6 +215,14 @@ async def quick_actions_content(
     )
 
 
+# Yo metadata manager widget - detects issues in your tracks! Limited to first 100 tracks to prevent
+# timeout but that means you only see SOME of your issues, not all. Should paginate or sample randomly.
+# Detects missing title/artist/album, broken files, missing files. Each issue has severity (high/medium)
+# and can_auto_fix flag (true if track has spotify_uri for enrichment). The filter param ("all"/"missing"/
+# "incorrect") filters what's shown but the logic is hacky - string matching on issue_type! The "missing"
+# filter checks if "missing" is in issue_type which works but is fragile. Limited to 20 issues for display
+# which is reasonable for widget but issues_count shows total found. Type ignores all over because Track
+# entity uses ORM relationships. This does full table scan of 100 tracks on every widget load - expensive!
 @router.get("/metadata-manager/content", response_class=HTMLResponse)
 async def metadata_manager_content(
     request: Request,

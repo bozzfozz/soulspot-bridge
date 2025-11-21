@@ -49,6 +49,13 @@ class ReDownloadRequest(BaseModel):
     max_files: int | None = None
 
 
+# Hey future me, this kicks off a library scan! Validates scan_path and starts scanning for audio
+# files. The ValueError catch handles path validation errors (like trying to scan outside allowed
+# directories - security feature). Returns scan ID so you can poll for status later. Scan runs
+# asynchronously (I think?) so this returns immediately. Status is an enum value converted to string.
+# total_files might be 0 initially if scan hasn't discovered files yet. Generic Exception catch might
+# hide real issues - consider more specific error types. This is a POST because it creates a scan
+# entity, not idempotent.
 @router.post("/scan")
 async def start_library_scan(
     request: ScanRequest,
@@ -119,6 +126,13 @@ async def get_scan_status(
     )
 
 
+# Yo, finds duplicate files in the library! Optional resolved filter lets you show only unresolved
+# duplicates (which need action) or resolved ones (already handled). Returns duplicate_count per group
+# and calculates wasted_bytes (size of duplicates minus one copy you need). The wasted bytes formula
+# total_size - (size / count) is clever - keeps one copy, counts rest as waste. Sum aggregates across
+# all duplicate groups. No pagination - could return thousands of duplicates and blow up memory! Should
+# add limit/offset. Duplicate detection is by hash, so identical content = duplicate even if different
+# filenames/metadata. Be careful - a re-release might be detected as duplicate of original!
 @router.get("/duplicates")
 async def get_duplicates(
     resolved: bool | None = Query(None, description="Filter by resolved status"),
@@ -168,6 +182,12 @@ async def get_broken_files(
     }
 
 
+# Listen up! Library overview stats endpoint. Uses SQLAlchemy func.count() for efficient aggregation
+# instead of fetching all records. The .scalar() unwraps single value from result. The "or 0" handles
+# None from empty tables. is_broken check uses == True explicitly which looks weird but is necessary
+# for SQLAlchemy (prevents Python truthiness issues). E712 noqa disables flake8 warning about that.
+# scanned_percentage could divide by zero if total_tracks is 0 - the if prevents that. Stats are
+# real-time, not cached, so hitting this frequently could be slow on large libraries. Consider caching!
 @router.get("/stats")
 async def get_library_stats(
     session: AsyncSession = Depends(get_db_session),
@@ -232,6 +252,13 @@ async def get_library_stats(
     }
 
 
+# HEADS UP: This checks album completeness but creates use case with None clients! The comment says
+# "requires Spotify client configuration" and "returns empty results without credentials". This is
+# basically non-functional without proper setup. Should probably return 503 Service Unavailable or
+# require auth. min_track_count filter is smart - avoids flagging 2-track singles as "incomplete".
+# But what if a single is actually missing a B-side? incomplete_only=True by default is sensible (most
+# users care about incomplete, not complete albums). Sum in incomplete_count counts albums where
+# is_complete=False - nice use of generator expression. This endpoint is half-implemented!
 @router.get("/incomplete-albums")
 async def get_incomplete_albums(
     incomplete_only: bool = Query(
@@ -314,6 +341,13 @@ async def get_album_completeness(
         ) from e
 
 
+# Yo this queues broken files for re-download! priority param lets you put urgent fixes at front of
+# queue. max_files limits how many to queue at once (prevents overwhelming download system). Default
+# request object with =ReDownloadRequest() is clever - makes both params optional. Returns result dict
+# from use case with queued_count and then adds a friendly message. The **result spreads the dict which
+# is clean. Generic Exception catch might hide specific issues. This is async operation (queues jobs)
+# but returns sync response - might want to return 202 Accepted instead of 200. The message f-string
+# duplicates the queued_count from result - redundant but readable.
 @router.post("/re-download-broken")
 async def re_download_broken_files(
     request: ReDownloadRequest = ReDownloadRequest(),

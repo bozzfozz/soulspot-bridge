@@ -13,6 +13,11 @@ from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
 router = APIRouter()
 
 
+# Hey future me, this is the START of the OAuth dance. We create a session FIRST with state+verifier
+# BEFORE sending user to Spotify. Why? Because when Spotify redirects back, we need to verify the
+# state matches (CSRF protection!) and we need the verifier to exchange the auth code. The session
+# cookie is HttpOnly to prevent XSS, and SameSite=lax to allow Spotify's redirect. DON'T make it
+# SameSite=strict or the callback will fail! Secure flag depends on settings - True in prod with HTTPS.
 @router.get("/authorize")
 async def authorize(
     response: Response,
@@ -64,6 +69,13 @@ async def authorize(
     }
 
 
+# Listen up future me, this callback is WHERE SECURITY MATTERS MOST! We verify THREE things:
+# 1) Session cookie exists and is valid (prevent session fixation)
+# 2) OAuth state matches what we stored (prevent CSRF - attacker can't replay old codes)
+# 3) Code verifier exists (needed for PKCE token exchange)
+# If ANY check fails, REJECT immediately. Attackers WILL try to bypass these. The redirect_to
+# parameter lets us send users back to where they came from, but we default to "/" for safety.
+# After token exchange succeeds, we CLEAR the state+verifier from session - they're one-time use only!
 @router.get("/callback", response_model=None)
 async def callback(
     code: str = Query(..., description="Authorization code from Spotify"),
@@ -143,6 +155,11 @@ async def callback(
         ) from e
 
 
+# Yo future me, Spotify access tokens expire after 1 hour! This endpoint is your LIFELINE to keep
+# users logged in without forcing re-auth. We use the refresh_token (which doesn't expire) to get
+# a new access_token. IMPORTANT: Spotify MIGHT return a new refresh_token or might not - if they
+# don't, keep using the old one! Don't overwrite it with None or you'll break everything. This is
+# idempotent - safe to call multiple times, unlike the auth flow which is one-shot.
 @router.post("/refresh")
 async def refresh_token(
     session_id: str | None = Cookie(None),
@@ -203,6 +220,11 @@ async def refresh_token(
         ) from e
 
 
+# Hey, this is a SAFE read-only session check - we DON'T return actual tokens (security risk!),
+# just metadata about the session state. Frontend uses this to decide if user needs to re-auth.
+# The has_access_token/has_refresh_token bools are intentionally vague - we don't leak token values.
+# token_expired check is critical - even if we have a token, it might be stale. Trust this over
+# just checking token existence!
 @router.get("/session")
 async def get_session_info(
     session_id: str | None = Cookie(None),
@@ -237,6 +259,11 @@ async def get_session_info(
     }
 
 
+# Listen, logout should ALWAYS succeed - even if session is already gone! That's why we check
+# session_id first and only delete if it exists. We also delete the cookie to prevent the browser
+# from sending stale session IDs. This is a POST not GET to prevent CSRF logout attacks (attacker
+# embedding <img src="/logout"> to force logout). Logout is destructive - session is GONE forever,
+# user needs full OAuth flow to log back in.
 @router.post("/logout")
 async def logout(
     response: Response,
@@ -263,6 +290,11 @@ async def logout(
     return {"message": "No active session"}
 
 
+# Yo, this status check is for the onboarding UI flow. Unlike /session, this returns friendly
+# messages for when things are missing. We check BOTH token existence AND expiration - a common
+# bug is having an expired token and thinking you're still connected! The "connected" bool is the
+# single source of truth the frontend should trust. If false, show the "connect Spotify" button.
+# If true, proceed with API calls. Don't cache this response - token state can change!
 @router.get("/spotify/status")
 async def spotify_status(
     session_id: str | None = Cookie(None),
@@ -306,6 +338,10 @@ async def spotify_status(
     }
 
 
+# Hey future me, this skip endpoint is for users who want to explore the UI without connecting
+# Spotify first. It's basically a no-op right now (we just return OK), but I left the session
+# check in case we want to track "skipped onboarding" state later. Don't delete this endpoint -
+# the frontend onboarding flow expects it! If you remove it, you'll break the skip button.
 @router.post("/onboarding/skip")
 async def skip_onboarding(
     _response: Response,

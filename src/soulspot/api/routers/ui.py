@@ -22,6 +22,13 @@ templates = Jinja2Templates(directory="src/soulspot/templates")
 router = APIRouter()
 
 
+# Listen, the big dashboard index page! Gets REAL stats from repositories instead of hardcoded numbers
+# which is great. Counts playlists, tracks, active downloads. queue_size filters downloads by status
+# "pending" or "queued" - nice detailed metric. The stats dict is passed to template for display. This
+# hits DB on every page load - no caching. Could be slow with large library. Active downloads query
+# might be expensive if there are thousands of historical downloads (needs index on status field). The
+# stats are current snapshot, could be stale by time page renders. Consider WebSocket updates? Returns
+# full HTML page via Jinja2 template. Template must exist at src/soulspot/templates/index.html or crash!
 @router.get("/", response_class=HTMLResponse)
 async def index(
     request: Request,
@@ -86,6 +93,13 @@ async def playlist_export_modal(
     )
 
 
+# Yo this is HTMX partial for missing tracks in a playlist! Uses anext() to get session from generator
+# which is sketchy (same pattern as before). Does N queries in loop for each track - bad performance.
+# joinedload helps but still not great. Returns error.html template for 404/400 errors which is clean
+# HTMX pattern. Track model has artist/album relationships so we check if track_model.artist exists
+# before accessing .name. Missing tracks are those without file_path. Built for HTMX so returns HTML
+# partial not full page. The missing_tracks list could be huge if playlist has 100s of missing tracks -
+# no pagination! Template must handle long lists gracefully (scrolling, lazy loading, etc).
 @router.get("/playlists/{playlist_id}/missing-tracks", response_class=HTMLResponse)
 async def playlist_missing_tracks(
     request: Request,
@@ -422,6 +436,14 @@ async def library_albums(
     )
 
 
+# IMPORTANT: Library tracks page with SQLAlchemy direct queries! Uses anext() to get session - same
+# sketchy pattern. select() with joinedload() is proper way to eagerly load relationships and avoid N+1.
+# unique() on result prevents duplicate Track objects when joins create multiple rows. scalars().all()
+# gets list of Track models. The track data extraction handles None values gracefully with "Unknown".
+# Sorts by artist/album/title in memory using .sort() with lambda - could be slow for 10000s of tracks!
+# Should use ORDER BY in SQL query instead. The type: ignore is needed for .lower() on potentially None
+# values. Good use of joinedload to prevent N+1 queries. Returns full HTML page with all tracks - could
+# be HUGE! Should paginate or use virtual scrolling for big libraries. This loads everything into memory!
 @router.get("/library/tracks", response_class=HTMLResponse)
 async def library_tracks(
     request: Request,

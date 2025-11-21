@@ -66,6 +66,15 @@ class SSEEvent:
         return message
 
 
+# Hey future me, the main SSE event stream! This keeps connections alive and streams real-time updates
+# to clients. poll_interval defaults to 2 seconds which is reasonable - faster = more load, slower = lag.
+# Uses client_id = id(request) for logging which is just memory address - not very meaningful but works
+# for debugging. Heartbeat every 30 seconds (15 iterations * 2s) prevents connection timeout. The
+# "while True" loop runs forever until client disconnects or exception. await request.is_disconnected()
+# checks if client dropped connection - graceful handling. Downloads limited to 10 most recent, same as
+# widget. AsyncGenerator return type with explicit yield makes this a true stream. Exception handling logs
+# errors but keeps stream alive. CancelledError is expected when connection closes. IMPORTANT: infinite
+# loops can leak resources if not properly cleaned up! FastAPI handles this via async context manager.
 async def event_generator(
     request: Request,
     download_repository: DownloadRepository,
@@ -158,6 +167,14 @@ async def event_generator(
         logger.info(f"SSE connection closed: client_id={client_id}")
 
 
+# Listen up! The SSE endpoint that clients connect to. Sets critical headers for SSE: Cache-Control
+# no-cache prevents browsers from caching, Connection keep-alive maintains long-lived HTTP connection,
+# X-Accel-Buffering no tells nginx to not buffer (otherwise events get delayed). StreamingResponse with
+# text/event-stream media type is SSE standard. The _session param is unused but dependency is required
+# to maintain session lifecycle. Docstring has good JavaScript example showing client-side usage. Each
+# client gets their own event stream - memory usage scales with number of connected clients! EventSource
+# API on client side auto-reconnects on disconnect which is nice. No authentication here - anyone can
+# connect and see download status! Should require auth if data is sensitive.
 @router.get("/stream")
 async def event_stream(
     request: Request,

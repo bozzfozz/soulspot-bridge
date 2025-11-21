@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 class ReDownloadBrokenFilesUseCase:
     """Use case for re-downloading broken/corrupted files."""
 
+    # Hey future me, this use case is straightforward - just store the DB session. No fancy setup needed.
+    # The session is passed in (dependency injection) so we can test this without a real DB. Don't create
+    # the session here or you'll have lifetime management headaches!
     def __init__(self, session: AsyncSession) -> None:
         """Initialize use case.
 
@@ -23,6 +26,13 @@ class ReDownloadBrokenFilesUseCase:
         """
         self.session = session
 
+    # Yo future me, this is the MEAT of the use case - find all tracks marked is_broken=True and queue
+    # them for re-download. The priority param (0-2) lets urgent files jump the queue. max_files limits
+    # how many to queue at once - IMPORTANT to prevent queuing 10,000 files and overwhelming the system!
+    # We check EACH track for existing downloads - if already queued/in-progress, skip it! If download
+    # failed before, we REUSE the row and reset status to QUEUED (preserves history). The commit happens
+    # AFTER the loop - if anything fails mid-loop, whole thing rolls back (all-or-nothing). This can be
+    # SLOW for hundreds of tracks - consider pagination or background job for large batches!
     async def execute(
         self, priority: int = 0, max_files: int | None = None
     ) -> dict[str, Any]:
@@ -156,6 +166,10 @@ class ReDownloadBrokenFilesUseCase:
             "tracks": queued_tracks,
         }
 
+    # Hey, this summary endpoint is for UI to show "10 broken files, 3 already queued, 7 ready to queue".
+    # It does SEPARATE query per track to check download status - this is O(n) queries and SLOW for hundreds
+    # of tracks! Should be rewritten with JOIN or subquery. For now, only call this with small datasets or
+    # you'll timeout. The result tells UI whether to show "queue all" button or "downloads in progress" message.
     async def get_broken_files_summary(self) -> dict[str, Any]:
         """Get summary of broken files.
 

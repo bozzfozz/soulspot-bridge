@@ -99,6 +99,14 @@ class MetadataMerger:
 
         return merged[:max_items]
 
+    # Listen, normalizes artist names to standardize "feat" formatting! All those regex patterns catch
+    # variations like "ft.", "feat", "featuring", "Ft.", etc and replace with standard " feat. " (note
+    # the spaces). Uses re.IGNORECASE so "FEATURING" also matches. Multiple patterns needed because
+    # people write it so many different ways! The .strip() at end removes leading/trailing whitespace.
+    # Regex substitution happens in order so later patterns won't undo earlier ones. This is idempotent -
+    # running twice gives same result. Useful for deduplication (different artist strings that are really
+    # the same artist). Doesn't handle unicode variants or typos. Consider adding more patterns like
+    # "f/" or "w/" (common abbreviations). Returns original string if empty/None which is safe.
     @staticmethod
     def normalize_artist_name(name: str) -> str:
         """
@@ -130,6 +138,15 @@ class MetadataMerger:
 
         return normalized.strip()
 
+    # Hey future me, this merges metadata from multiple sources with authority rules! Manual overrides
+    # are highest priority (user knows best), then MusicBrainz (official DB), Spotify (streaming service),
+    # Last.fm (community). For each source, extracts relevant fields and calls _select_best_value which
+    # compares authority levels. Duration and ISRC use strict authority - only better source overwrites.
+    # Tags and genres MERGE from all sources (combine lists) instead of replacing. The metadata_sources dict
+    # tracks which field came from which source - useful for debugging and conflict resolution. Nested dict
+    # access like spotify_data.get("external_ids", {}).get("isrc") prevents KeyError if structure missing.
+    # List slicing [:10] limits tags to prevent bloat. This modifies Track entity in place and returns it.
+    # No validation that new values are reasonable (negative duration, invalid ISRC format, etc).
     def merge_track_metadata(
         self,
         track: Track,

@@ -24,6 +24,10 @@ class MetadataWorker:
     5. Handles rate limiting for MusicBrainz API
     """
 
+    # Hey future me, metadata enrichment needs THREE repos (track, artist, album) because we enrich all
+    # three levels of the music hierarchy! MusicBrainz client is the external dependency - it has STRICT
+    # rate limits (1 request per second) so don't spam it! The use case handles rate limiting internally.
+    # Same pattern as other workers - inject deps, create use case, don't auto-register.
     def __init__(
         self,
         job_queue: JobQueue,
@@ -49,12 +53,21 @@ class MetadataWorker:
             album_repository=album_repository,
         )
 
+    # Yo, register to handle METADATA_ENRICHMENT jobs. MusicBrainz rate limiting means these jobs run SLOW
+    # (max 1 per second!). If you have 1000 tracks to enrich, expect 15+ minutes! Don't register this worker
+    # too early or you'll hit MusicBrainz before you're ready and waste quota on failed requests.
     def register(self) -> None:
         """Register handler with job queue."""
         self._job_queue.register_handler(
             JobType.METADATA_ENRICHMENT, self._handle_metadata_job
         )
 
+    # Listen up future me, this handler calls MusicBrainz API to enrich track/artist/album metadata! The
+    # force_refresh flag bypasses cache and re-fetches from MB (use sparingly!). The enrich_artist/enrich_album
+    # flags let you skip parts (maybe you only want track metadata). IMPORTANT: If MusicBrainz returns errors
+    # (track not found, API down, rate limit hit), we raise Exception which triggers RETRY. Max retries is 3
+    # so we don't spam MB forever. The enriched_fields list in result tells you what actually changed (genres,
+    # release_date, artwork_url, etc). This can take 1-3 seconds per track due to rate limiting!
     async def _handle_metadata_job(self, job: Job) -> Any:
         """Handle a metadata enrichment job.
 
@@ -98,6 +111,11 @@ class MetadataWorker:
             "enriched_fields": response.enriched_fields,
         }
 
+    # Hey, queue a single track for metadata enrichment. force_refresh=True bypasses cache - only use if
+    # you KNOW the cached data is wrong or outdated (don't waste MusicBrainz quota!). The enrich_artist and
+    # enrich_album flags default True because users usually want complete metadata, but you can skip them
+    # for performance (artist/album lookups are extra API calls). max_retries=3 because MusicBrainz can be
+    # flaky (timeouts, temporary errors). Returns job_id for tracking.
     async def enqueue_metadata_enrichment(
         self,
         track_id: TrackId,
@@ -129,6 +147,11 @@ class MetadataWorker:
             max_retries=max_retries,
         )
 
+    # Yo, batch enrichment for multiple tracks - loops and calls enqueue_metadata_enrichment for each. This
+    # creates LOTS of jobs if you pass hundreds of track_ids! MusicBrainz rate limit means they'll queue up
+    # and process slowly (1 per second). For 1000 tracks, expect 15+ minutes! Consider showing progress in
+    # UI or users will think it's broken. Returns job_ids in same order as track_ids. Don't use force_refresh
+    # for batch operations or you'll hammer MusicBrainz unnecessarily!
     async def enqueue_batch_enrichment(
         self,
         track_ids: list[TrackId],

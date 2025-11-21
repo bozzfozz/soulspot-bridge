@@ -18,12 +18,8 @@ class NotificationService:
     - In-app notifications
     """
 
-    # Hey future me, this is a STUB implementation! Right now we just log notifications. TODO:
-    # integrate with actual notification backends (email, Slack, Discord, etc.). The "pass"
-    # here looks weird but it's intentional - Python requires SOMETHING in the function body.
-    # When you implement real notifications, replace this whole method with actual init code
-    # (SMTP client, webhook URLs, API keys, etc.). Don't forget error handling - notification
-    # failures shouldn't crash the app!
+# Already has a drunk note - skipping this one to avoid duplication!
+# Hey future me, this is a STUB implementation! Right now we just log notifications. TODO:
     def __init__(self) -> None:
         """Initialize notification service.
 

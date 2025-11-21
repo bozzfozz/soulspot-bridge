@@ -34,6 +34,15 @@ class AutomationWorkflowService:
         self.repository = AutomationRuleRepository(session)
         self.notification_service = notification_service or NotificationService()
 
+    # Yo this creates automation rules! Defines trigger (new_release, missing_album, etc) and action
+    # (search_and_download, notify_only, add_to_queue). The quality_profile controls download quality
+    # preference (low/medium/high/lossless). apply_filters determines if filter rules are applied to search
+    # results. auto_process controls if post-processing pipeline runs after download. Enabled by default
+    # which means rule is active immediately - might want to create disabled and enable manually? Priority
+    # determines execution order when multiple rules match same trigger. Initializes execution stats to 0
+    # (will be incremented as rule runs). last_triggered_at is None initially. Uses AutomationRuleId.generate()
+    # for UUID primary key. Logs creation with trigger→action showing workflow. No validation that quality
+    # profile is valid string (could be "invalid" and break later). Consider enum for quality_profile?
     async def create_rule(
         self,
         name: str,
@@ -161,6 +170,14 @@ class AutomationWorkflowService:
                 "error": str(e),
             }
 
+    # IMPORTANT: This is the actual "do the thing" logic! Dispatches to _action_search_and_download,
+    # _action_notify_only, or _action_add_to_queue based on rule.action enum. Returns result dict with
+    # success flag and details. Each action method is separate for single responsibility principle. Raises
+    # ValueError for unknown action enum (shouldn't happen but defensive). Context dict contains trigger-
+    # specific data (track IDs, album info, artist name, etc). The action methods are async so they can
+    # do IO (notify external services, queue jobs, etc). Return values are unstructured dicts not Pydantic
+    # which makes them flexible but less type-safe. Consider standardizing result schema across all actions?
+    # The if/elif chain could be replaced with strategy pattern or dict dispatch for better extensibility.
     async def _execute_action(
         self, rule: AutomationRule, context: dict[str, Any]
     ) -> dict[str, Any]:

@@ -55,6 +55,12 @@ class BatchActionRequest(BaseModel):
     priority: int | None = None
 
 
+# Hey future me, this lists downloads with optional status filter and pagination. If status is provided,
+# we filter to just that status (queued, downloading, completed, failed). If not, we get all "active" downloads
+# (probably means not completed/cancelled - check the repo method!). The pagination here is in-memory slicing
+# [skip:skip+limit] which is INEFFICIENT - we fetch ALL downloads then slice! Should push limit/offset to DB
+# query. Total is len(downloads) BEFORE slicing, so pagination math is correct. Don't cache this - download
+# status changes constantly!
 @router.get("/")
 async def list_downloads(
     status: str | None = Query(None, description="Filter by status"),
@@ -112,6 +118,11 @@ async def list_downloads(
     }
 
 
+# Yo, this is a GLOBAL pause - stops ALL download processing across the entire system! The job queue stops
+# consuming download jobs. Queued jobs stay queued, running jobs finish their current operation then pause.
+# This is for emergencies (network maintenance, disk full, etc). Users might expect individual download pause
+# but this is all-or-nothing! Make sure UI is clear about this. Calling pause when already paused is safe
+# (idempotent). No database changes here - just queue state.
 @router.post("/pause")
 async def pause_downloads(
     job_queue: JobQueue = Depends(get_job_queue),
@@ -133,6 +144,10 @@ async def pause_downloads(
     )
 
 
+# Listen up, resume is the opposite of pause - starts consuming download jobs again! Queued jobs start
+# processing immediately. If queue was never paused, this is a no-op (safe to call). This is GLOBAL like
+# pause - all download processing resumes. If you paused because disk was full, make sure you fixed that
+# before resuming or downloads will just fail again!
 @router.post("/resume")
 async def resume_downloads(
     job_queue: JobQueue = Depends(get_job_queue),
@@ -154,6 +169,12 @@ async def resume_downloads(
     )
 
 
+# Hey, this is your dashboard endpoint - shows queue health at a glance! The stats come from job queue's
+# internal counters - active, queued, completed, failed. The paused flag tells you if queue is processing.
+# max_concurrent_downloads is from config - how many jobs run in parallel. If active_downloads is stuck
+# at max for a long time, your downloads are slow or stuck! If queued_downloads is huge and growing, you're
+# queueing faster than downloading (increase concurrency or downloads are failing). Poll this every few seconds
+# for live dashboard.
 @router.get("/status")
 async def get_queue_status(
     job_queue: JobQueue = Depends(get_job_queue),
@@ -182,6 +203,12 @@ async def get_queue_status(
     }
 
 
+# Yo, batch download is for "download this whole playlist" or "download my favorites" - multiple tracks at
+# once! We loop and call enqueue_download for each track_id. ALL tracks get same priority (no per-track
+# priority in batch). If ANY track_id is invalid, we fail IMMEDIATELY with 400 - this is all-or-nothing!
+# Consider changing to "enqueue what we can, return errors for bad IDs" for better UX. The job_ids list
+# lets caller track each download separately. For huge batches (1000+ tracks), this could timeout - consider
+# async job for batch operations.
 @router.post("/batch")
 async def batch_download(
     request: BatchDownloadRequest,
@@ -228,6 +255,11 @@ async def batch_download(
     )
 
 
+# Hey, this gets status of a SINGLE download by ID. Returns full download details including progress_percent
+# (0-100), status (queued/downloading/completed/failed), error_message if failed, timestamps for tracking.
+# UI polls this endpoint for progress bars! Don't poll faster than 1 second or you'll hammer the DB. If
+# download is completed, progress_percent should be 100 and completed_at should be set. If failed, check
+# error_message for why (file not found, network timeout, slskd error, etc). 404 if download_id is invalid.
 @router.get("/{download_id}")
 async def get_download_status(
     download_id: str,
@@ -268,6 +300,12 @@ async def get_download_status(
     }
 
 
+# Yo, cancel is PERMANENT - once cancelled, the download is DONE (won't auto-retry). If download is currently
+# running, this DOESN'T kill the slskd download! It just marks our DB record as cancelled. The download might
+# finish on slskd side anyway. We use download.cancel() domain method which enforces business rules (maybe
+# can't cancel completed downloads?). The ValueError catch is for domain exceptions - invalid state transitions.
+# After cancel, if user wants this track, they need to queue a NEW download (or use retry if you change cancel
+# to failed status).
 @router.post("/{download_id}/cancel")
 async def cancel_download(
     download_id: str,
@@ -304,6 +342,12 @@ async def cancel_download(
         ) from e
 
 
+# Listen up, retry is for failed downloads - requeue them to try again! We check status == FAILED because
+# you can't retry a download that's queued, running, or completed (that's nonsense!). This changes status
+# to QUEUED so the download worker picks it up again. DON'T clear error_message yet - keep it until new
+# attempt starts (helps debug "why did it fail last time"). The download worker will retry with same params
+# (search query, quality preference, etc) - if those were wrong, retry won't help! Consider letting user
+# override params on retry.
 @router.post("/{download_id}/retry")
 async def retry_download(
     download_id: str,
@@ -346,6 +390,11 @@ async def retry_download(
         ) from e
 
 
+# Hey, priority update lets you bump a download to the front of the queue! Higher priority = processed first.
+# This is useful for "I want THIS song NOW" - change priority to 999 and it jumps ahead of priority 0 downloads.
+# We use download.update_priority() domain method which might have validation (priority range limits, etc).
+# IMPORTANT: Changing priority of a RUNNING download doesn't pause/restart it! Priority only affects queue order.
+# If download is already running or completed, priority change is basically pointless (but we allow it anyway).
 @router.post("/{download_id}/priority")
 async def update_download_priority(
     download_id: str,
@@ -384,6 +433,11 @@ async def update_download_priority(
         ) from e
 
 
+# Yo, this is INDIVIDUAL download pause (unlike global /pause endpoint!). Marks this download as paused so
+# worker skips it. If download is currently running, this doesn't actually stop the slskd transfer! The file
+# might finish downloading anyway. We use download.pause() domain method which enforces state rules (can't
+# pause a completed download, etc). Paused downloads stay paused until explicitly resumed - they don't auto-retry.
+# Use case: "pause low-priority downloads to speed up high-priority ones".
 @router.post("/{download_id}/pause")
 async def pause_download(
     download_id: str,
@@ -420,6 +474,10 @@ async def pause_download(
         ) from e
 
 
+# Listen, resume is for unpausing an individual download (not the global queue!). Changes status back to
+# QUEUED so worker picks it up. If download was never paused, resume() domain method might throw ValueError
+# (can't resume something that isn't paused!). After resume, download goes to back of its priority level -
+# doesn't jump to front. If you want it processed NOW, resume then update priority to high number.
 @router.post("/{download_id}/resume")
 async def resume_download(
     download_id: str,
@@ -456,6 +514,12 @@ async def resume_download(
         ) from e
 
 
+# Hey future me, batch-action is for "select 50 downloads and cancel them all" or "pause these 10 downloads"
+# kind of operations! It loops through download_ids and applies the action (cancel/pause/resume/priority) to
+# each. This is PARTIAL SUCCESS - some downloads might succeed, some fail, we return both lists! Don't fail
+# the whole batch if one download is invalid. The action is a string ("cancel", "pause", etc) - no enum, so
+# invalid actions get caught in the else branch. For priority action, request.priority MUST be provided or we
+# error out. This can be SLOW for hundreds of downloads - consider pagination or async job for huge batches.
 @router.post("/batch-action")
 async def batch_action(
     request: BatchActionRequest,

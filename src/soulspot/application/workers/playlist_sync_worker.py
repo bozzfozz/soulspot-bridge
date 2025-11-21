@@ -26,6 +26,9 @@ class PlaylistSyncWorker:
     5. Handles periodic sync for active playlists
     """
 
+    # Hey future me, same pattern as DownloadWorker - inject dependencies and create the use case here.
+    # We need MORE repos than DownloadWorker (playlist, track, artist) because playlist import touches
+    # all three entities! Don't register in __init__, let caller control when worker starts consuming jobs.
     def __init__(
         self,
         job_queue: JobQueue,
@@ -51,12 +54,20 @@ class PlaylistSyncWorker:
             artist_repository=artist_repository,
         )
 
+    # Yo, register this worker to handle PLAYLIST_SYNC jobs. Call after app startup when everything is ready.
+    # If you register too early, jobs might fail because Spotify client isn't configured or DB isn't migrated!
     def register(self) -> None:
         """Register handler with job queue."""
         self._job_queue.register_handler(
             JobType.PLAYLIST_SYNC, self._handle_playlist_sync_job
         )
 
+    # Listen up future me, this handler fetches a WHOLE playlist from Spotify and imports ALL tracks! For
+    # huge playlists (1000+ tracks), this can take MINUTES and hit Spotify rate limits. The access_token
+    # MUST be valid - if it's expired, job fails immediately. The fetch_all_tracks flag controls pagination -
+    # True means fetch every track (slow!), False might fetch only first 100 (faster but incomplete). IMPORTANT:
+    # We DON'T fail the job if some tracks fail to import! We log warnings but return success with error list.
+    # This is because partial sync is better than no sync - maybe track #500 is broken on Spotify, don't fail the whole thing!
     async def _handle_playlist_sync_job(self, job: Job) -> Any:
         """Handle a playlist sync job.
 
@@ -106,6 +117,11 @@ class PlaylistSyncWorker:
             "errors": response.errors,
         }
 
+    # Hey, this is the PUBLIC API for queueing a single playlist sync. The access_token is passed as payload
+    # (NOT in job metadata) because tokens are specific to this sync operation. fetch_all_tracks defaults True
+    # because users expect full sync! max_retries is 2 (not 3 like downloads) because playlist sync is less
+    # critical - if it fails twice, user can manually retry. Don't set max_retries too high or you'll spam
+    # Spotify API and get rate-limited! Returns job_id for tracking progress.
     async def enqueue_playlist_sync(
         self,
         playlist_id: str,
@@ -134,6 +150,11 @@ class PlaylistSyncWorker:
             max_retries=max_retries,
         )
 
+    # Yo, this is for "sync all my playlists" feature - queues multiple playlists in one call. It loops and
+    # calls enqueue_playlist_sync for each one - simple! But CAREFUL: if you pass 100 playlist_ids, you're
+    # creating 100 jobs that all need the same access_token. If token expires before jobs run, they ALL fail!
+    # Consider checking token expiry first and refreshing if needed. The jobs run in parallel (job queue handles
+    # concurrency), but Spotify rate limits might throttle them. Returns list of job_ids in same order as input.
     async def enqueue_batch_sync(
         self,
         playlist_ids: list[str],

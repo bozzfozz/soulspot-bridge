@@ -70,6 +70,13 @@ def get_enrich_use_case(
     )
 
 
+# Hey future me, main metadata enrichment endpoint! Converts API request to use case request which
+# seems redundant but keeps API layer separate from domain. spotify_access_token is hardcoded None
+# with a TODO - this will break Spotify enrichment! The TODO says get from session/JWT but that's
+# not implemented yet. Authority hierarchy is Manual > MusicBrainz > Spotify > Last.fm which makes
+# sense (trust user > official DB > streaming service > community). conflicts array is empty with
+# TODO - conflict detection isn't implemented! That's a pretty critical feature. Returns 404 if
+# track doesn't exist after enrichment which is odd - enrichment might create the track?
 @router.post(
     "/enrich",
     response_model=MetadataEnrichmentResponse,
@@ -136,6 +143,13 @@ async def enrich_metadata(
         ) from e
 
 
+# Listen up - this resolves metadata conflicts manually! You can pick which source to trust OR
+# provide a custom value. The entity_type checks (track_id vs artist_id vs album_id) are mutually
+# exclusive - only one should be provided but there's no validation that EXACTLY one is provided.
+# Could get weird if someone passes multiple IDs. Using setattr() to dynamically set field is
+# powerful but unsafe - no validation that field_name exists on entity! Could crash or create bogus
+# attributes. MetadataSource.MANUAL marking for custom values makes sense but there's no audit trail
+# of WHO made the change or WHEN. Consider adding user_id and timestamp to metadata_sources dict.
 @router.post(
     "/resolve-conflict",
     status_code=status.HTTP_200_OK,
@@ -228,6 +242,12 @@ async def resolve_conflict(
         ) from e
 
 
+# Yo simple normalizer endpoint! Takes array of artist/track names and standardizes "feat" vs "ft"
+# vs "featuring" formats. Good for cleaning up inconsistent metadata. Returns list of results with
+# original/normalized/changed flag which is nice for UI feedback. No rate limiting - someone could
+# send 10000 tags and bog down the server. Should add max length validation. The normalize_artist_name
+# uses regex which could be slow for huge inputs. Results are synchronous (no await) even though
+# function is async - could be made sync. Pretty straightforward utility endpoint though!
 @router.post(
     "/normalize-tags",
     response_model=list[TagNormalizationResult],
@@ -281,6 +301,13 @@ async def get_source_hierarchy() -> dict[str, int]:
     }
 
 
+# Hey heads up, this is basically the "fix this one track" button! force_refresh=True means we'll
+# hit external APIs even if we have cached data. enrich_artist/album=True means we'll also update
+# related entities. All three sources enabled (Spotify, MusicBrainz, Last.fm) so maximum data.
+# No access token though (uses None) so Spotify enrichment will fail! The ValidationException import
+# is INSIDE the exception handler which is weird but works. The "Invalid TrackId" string check is
+# fragile - should use proper exception types. Returns 400 for validation errors, 500 for everything
+# else which is reasonable. Success=True in response but track might not actually be "fixed"!
 @router.post(
     "/{track_id}/auto-fix",
     status_code=status.HTTP_200_OK,
@@ -342,6 +369,14 @@ async def auto_fix_track_metadata(
         ) from e
 
 
+# WARNING: This fixes ALL tracks with issues - could run for HOURS! Returns 202 ACCEPTED which is
+# good (acknowledges request without waiting) but then actually processes synchronously! Should be
+# async background job. Limited to first 100 tracks with [:100] slice to prevent timeout - but no
+# way to process the rest! Missing title/artist/album checks use hasattr() because Track entity uses
+# ORM relationships - confusing. Only fixes tracks with spotify_uri which makes sense (need source
+# for enrichment) but silently skips others. No progress tracking, no way to cancel. The fixed_count
+# vs failed_count is useful but failures just log warnings, don't return details. "no_tracks_fixed"
+# status if fixed_count=0 is confusing - might mean nothing needed fixing OR everything failed!
 @router.post(
     "/fix-all",
     status_code=status.HTTP_202_ACCEPTED,
