@@ -68,7 +68,7 @@ src/soulspot/
 2. **Vertical Slicing**: Modules contain full stack (Frontend + Backend + Tests)
 3. **Explicit Contracts**: Modules communicate only through well-defined interfaces
 4. **Independent Lifecycle**: Modules can be developed, tested, and versioned independently
-5. **Backwards Compatibility**: Maintain existing layered architecture within modules
+5. **Clean Architecture**: Maintain layered architecture within modules (API → Application → Domain → Infrastructure)
 
 ### 3.2 Module Structure Template
 
@@ -175,18 +175,19 @@ modules/
 - Performance testing and optimization
 - Security audit and review
 
-### 4.2 Backwards Compatibility Strategy
+### 4.2 Development Strategy
 
-**During Migration:**
-- Keep existing API endpoints functional
-- Maintain current database schema
-- Run both old and new code paths in parallel (feature flags)
-- Gradual cutover per module
+**Separate Branch Development:**
+- Version 3.0 will be developed in a dedicated branch (e.g., `version-3.0`)
+- No need to maintain backwards compatibility during development
+- Clean slate migration without running both architectures in parallel
+- Allows for complete restructuring without constraints
 
-**After Migration:**
-- Deprecate old import paths with warnings
-- Provide migration guides for custom code
-- Version API endpoints (v2 vs v3)
+**After Completion:**
+- Major version release (v3.0.0)
+- Provide comprehensive migration guides for users
+- Document breaking changes and upgrade path
+- Consider data migration scripts if database schema changes significantly
 
 ---
 
@@ -799,10 +800,10 @@ How this module relates to previous code (if migrated).
 - **Impact:** High
 - **Probability:** Medium
 - **Mitigation:**
-  - Feature flags for gradual rollout
-  - Parallel running of old/new code
-  - Comprehensive integration tests
-  - Staged rollout per module
+  - Develop in separate branch (version-3.0)
+  - Comprehensive testing before merge
+  - Clear migration documentation
+  - Communication plan for breaking changes
 
 **Risk: Performance Degradation**
 - **Impact:** Medium

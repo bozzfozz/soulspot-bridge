@@ -342,7 +342,7 @@ A: Easier development, testing, and maintenance. Teams can work on different mod
 A: Primarily through events (async, loosely coupled). Direct calls via registry for queries.
 
 **Q: Can I mix old and new code?**  
-A: Yes, during migration both architectures run in parallel with feature flags.
+A: No, Version 3.0 will be developed in a separate branch with a clean architecture. Migration from v2.x to v3.0 will be a major version upgrade with migration guides.
 
 **Q: How do I add a new module?**  
 A: Follow [MODULE_SPECIFICATION.md](./MODULE_SPECIFICATION.md) and study [SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md).
