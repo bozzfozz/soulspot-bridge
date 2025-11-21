@@ -189,13 +189,38 @@ async def on_download_completed(event):
     await process(event.data["file_path"])
 ```
 
+**Module Router** (Intelligent Routing):
+```python
+# Router finds capable module and routes request
+result = await module_router.route_request(
+    operation="download.track",
+    params={"track_id": "123", "track_info": {...}}
+)
+# If module unavailable: clear warning in logs/UI, graceful failure
+```
+
 **Direct Calls** (Request-Response):
 ```python
 # Query module
 stats = await module_registry.query("soulseek", "get_statistics")
 ```
 
-### 4. Module Categories
+### 4. Standalone Module Operation
+
+- **Independent Execution**: Each module can run standalone for development/testing
+- **Health Monitoring**: Automatic detection of available/missing modules
+- **Clear Warnings**: Logs, Docker logs, and UI show missing module warnings
+- **Graceful Degradation**: Core features work even when optional modules are unavailable
+
+Example warning when module is missing:
+```
+⚠️  MISSING MODULE WARNING ⚠️
+Operation 'download.track' requires: soulseek
+Inactive modules: soulseek
+Please enable Soulseek module to use download functionality.
+```
+
+### 5. Module Categories
 
 **Core Modules**: `core`, `auth`, `database`  
 **Feature Modules**: `soulseek`, `spotify`, `library`, `metadata`  

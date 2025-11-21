@@ -264,7 +264,53 @@ events:
       new_tracks: array[string]
 ```
 
-### 5.3 Module Dependencies
+### 5.3 Module Router / Orchestrator
+
+**Purpose:**  
+The Module Router acts as an intelligent coordinator that routes requests to appropriate modules, handles module availability, and ensures graceful degradation when modules are missing.
+
+**Key Features:**
+- **Capability Discovery**: Automatically identifies which modules can handle specific operations
+- **Request Routing**: Routes requests to capable modules based on priority and availability
+- **Health Monitoring**: Tracks module status and availability in real-time
+- **Standalone Operation**: Modules can run independently, router handles missing dependencies
+- **Clear Warnings**: Logs, Docker logs, and UI show clear messages when modules are unavailable
+
+**Example Flow:**
+```python
+# User searches for a song
+search_results = await module_router.route_request(
+    operation="search.track",
+    params={"query": "Beatles - Let It Be"}
+)
+# Router finds Spotify module is available and routes to it
+
+# User initiates download
+download = await module_router.route_request(
+    operation="download.track",
+    params={"track_id": "spotify:123", "track_info": {...}}
+)
+# Router checks: Soulseek module available? Yes → routes download
+# If Soulseek unavailable: logs warning, shows in UI, fails gracefully
+```
+
+**Missing Module Handling:**
+```python
+# Module unavailable - clear warning in logs
+⚠️  MISSING MODULE WARNING ⚠️
+Operation 'download.track' requires one of these modules:
+  soulseek, youtube-dl
+Inactive modules: soulseek
+Please enable required modules to use this feature.
+
+# Also displayed in UI dashboard
+[Module Status Widget]
+❌ Soulseek - INACTIVE
+   Impact: Download functionality unavailable
+   Action: Enable Soulseek module to download tracks
+```
+
+### 5.4 Module Dependencies
 
 **Dependency Declaration:**
 ```yaml

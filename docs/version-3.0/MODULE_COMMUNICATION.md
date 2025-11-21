@@ -492,7 +492,692 @@ class DashboardService:
 
 ---
 
-## 4. Event Schemas
+## 4. Module Router / Orchestrator
+
+### 4.1 Overview
+
+The Module Router acts as an **intelligent orchestrator** that coordinates communication between modules, handles module availability detection, and ensures graceful degradation when modules are missing.
+
+**Key Responsibilities:**
+- **Capability Discovery**: Identify which modules can handle specific operations
+- **Request Routing**: Route requests to appropriate modules based on capabilities
+- **Availability Monitoring**: Track which modules are active and healthy
+- **Graceful Degradation**: Handle missing modules without crashing
+- **Standalone Operation**: Allow modules to run independently
+
+### 4.2 Module Router Design
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   MODULE ROUTER                         │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Capability Registry                             │  │
+│  │  - Tracks module capabilities                    │  │
+│  │  - Maps operations to modules                    │  │
+│  │  │  e.g., "download.track" → ["soulseek"]       │  │
+│  │  │       "search.track" → ["spotify", "local"]  │  │
+│  └──────────────────────────────────────────────────┘  │
+│                         ↓↓↓                             │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Module Health Monitor                           │  │
+│  │  - Periodic health checks                        │  │
+│  │  - Module availability status                    │  │
+│  │  - Automatic module discovery                    │  │
+│  └──────────────────────────────────────────────────┘  │
+│                         ↓↓↓                             │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  Request Router                                  │  │
+│  │  - Routes requests to capable modules            │  │
+│  │  - Handles fallbacks for missing modules         │  │
+│  │  - Logs warnings when modules unavailable        │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 4.3 Module Router Implementation
+
+```python
+# core/router/module_router.py
+
+from typing import Dict, List, Any, Optional, Callable, Set
+from dataclasses import dataclass
+from enum import Enum
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
+
+class ModuleStatus(str, Enum):
+    """Module availability status."""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    DEGRADED = "degraded"
+    UNKNOWN = "unknown"
+
+@dataclass
+class ModuleCapability:
+    """
+    Module capability definition.
+    
+    Hey future me, capabilities define WHAT a module can do, not HOW.
+    For example, "download.track" is a capability. Multiple modules might
+    provide it (soulseek, youtube-dl, etc). The router picks the best one!
+    """
+    
+    operation: str  # e.g., "download.track", "search.artist"
+    module_name: str
+    priority: int = 0  # Higher = preferred
+    required_modules: List[str] = field(default_factory=list)
+    
+    def __str__(self) -> str:
+        return f"{self.operation} → {self.module_name} (priority: {self.priority})"
+
+class ModuleRouter:
+    """
+    Intelligent module orchestrator for routing requests.
+    
+    Hey future me, this is THE central coordination point. When a user action
+    requires multiple modules (search in Spotify, download via Soulseek, enrich
+    with Metadata), this router coordinates the flow. If a module is missing,
+    we log it clearly and either use a fallback or fail gracefully.
+    
+    IMPORTANT: This enables standalone module operation! A module can work alone
+    even if other modules aren't available.
+    """
+    
+    def __init__(self):
+        self._capabilities: Dict[str, List[ModuleCapability]] = {}
+        self._module_status: Dict[str, ModuleStatus] = {}
+        self._health_checkers: Dict[str, Callable] = {}
+        self._missing_module_warnings: Set[str] = set()
+    
+    def register_capability(
+        self,
+        operation: str,
+        module_name: str,
+        priority: int = 0,
+        required_modules: Optional[List[str]] = None,
+    ) -> None:
+        """
+        Register a module capability.
+        
+        Args:
+            operation: Operation identifier (e.g., "download.track")
+            module_name: Module providing this capability
+            priority: Priority (higher = preferred)
+            required_modules: Other modules this capability depends on
+        """
+        capability = ModuleCapability(
+            operation=operation,
+            module_name=module_name,
+            priority=priority,
+            required_modules=required_modules or [],
+        )
+        
+        if operation not in self._capabilities:
+            self._capabilities[operation] = []
+        
+        self._capabilities[operation].append(capability)
+        
+        # Sort by priority (descending)
+        self._capabilities[operation].sort(
+            key=lambda c: c.priority,
+            reverse=True
+        )
+        
+        logger.info(f"Registered capability: {capability}")
+    
+    def register_health_checker(
+        self,
+        module_name: str,
+        health_checker: Callable,
+    ) -> None:
+        """
+        Register module health check function.
+        
+        Args:
+            module_name: Module name
+            health_checker: Async function that returns True if healthy
+        """
+        self._health_checkers[module_name] = health_checker
+        logger.info(f"Registered health checker for {module_name}")
+    
+    async def check_module_health(self, module_name: str) -> ModuleStatus:
+        """
+        Check if a module is healthy.
+        
+        Args:
+            module_name: Module to check
+            
+        Returns:
+            Module status
+        """
+        checker = self._health_checkers.get(module_name)
+        if not checker:
+            return ModuleStatus.UNKNOWN
+        
+        try:
+            is_healthy = await checker()
+            return ModuleStatus.ACTIVE if is_healthy else ModuleStatus.INACTIVE
+        except Exception as e:
+            logger.error(f"Health check failed for {module_name}: {e}")
+            return ModuleStatus.DEGRADED
+    
+    async def update_module_status(self, module_name: str) -> None:
+        """Update cached module status."""
+        status = await self.check_module_health(module_name)
+        self._module_status[module_name] = status
+        
+        if status != ModuleStatus.ACTIVE:
+            logger.warning(
+                f"Module {module_name} status: {status.value}"
+            )
+    
+    async def monitor_all_modules(self) -> None:
+        """
+        Periodic health monitoring for all registered modules.
+        
+        Hey future me, run this in a background task! It updates status
+        for all modules every minute or so. This lets the router know
+        what's available without checking on every request.
+        """
+        tasks = []
+        for module_name in self._health_checkers:
+            task = self.update_module_status(module_name)
+            tasks.append(task)
+        
+        await asyncio.gather(*tasks, return_exceptions=True)
+    
+    def get_capable_modules(
+        self,
+        operation: str,
+        only_active: bool = True,
+    ) -> List[ModuleCapability]:
+        """
+        Get modules capable of handling an operation.
+        
+        Args:
+            operation: Operation to find modules for
+            only_active: Only return active modules
+            
+        Returns:
+            List of capable modules (sorted by priority)
+        """
+        capabilities = self._capabilities.get(operation, [])
+        
+        if only_active:
+            # Filter by module status
+            capabilities = [
+                cap for cap in capabilities
+                if self._module_status.get(cap.module_name) == ModuleStatus.ACTIVE
+            ]
+        
+        return capabilities
+    
+    async def route_request(
+        self,
+        operation: str,
+        params: Dict[str, Any],
+        fallback_allowed: bool = True,
+    ) -> Any:
+        """
+        Route request to appropriate module.
+        
+        Args:
+            operation: Operation to perform
+            params: Operation parameters
+            fallback_allowed: Allow fallback to lower priority modules
+            
+        Returns:
+            Operation result
+            
+        Raises:
+            ModuleNotAvailableError: No module can handle the operation
+        """
+        capabilities = self.get_capable_modules(operation, only_active=True)
+        
+        if not capabilities:
+            # No active modules for this operation
+            await self._handle_missing_capability(operation)
+            raise ModuleNotAvailableError(
+                f"No module available for operation: {operation}"
+            )
+        
+        # Try modules in priority order
+        for capability in capabilities:
+            module_name = capability.module_name
+            
+            # Check if required modules are available
+            if not await self._check_dependencies(capability):
+                logger.warning(
+                    f"{module_name} cannot perform {operation} - "
+                    f"missing dependencies: {capability.required_modules}"
+                )
+                continue
+            
+            try:
+                # Get module and execute operation
+                result = await self._execute_on_module(
+                    module_name,
+                    operation,
+                    params
+                )
+                
+                logger.info(
+                    f"✓ Routed {operation} to {module_name}"
+                )
+                return result
+                
+            except Exception as e:
+                logger.error(
+                    f"✗ {module_name} failed to handle {operation}: {e}"
+                )
+                
+                if not fallback_allowed:
+                    raise
+                
+                # Try next module (fallback)
+                continue
+        
+        # All capable modules failed
+        raise ModuleOperationError(
+            f"All modules failed to handle operation: {operation}"
+        )
+    
+    async def _check_dependencies(
+        self, capability: ModuleCapability
+    ) -> bool:
+        """Check if all required modules are available."""
+        for required_module in capability.required_modules:
+            status = self._module_status.get(required_module)
+            if status != ModuleStatus.ACTIVE:
+                return False
+        return True
+    
+    async def _execute_on_module(
+        self,
+        module_name: str,
+        operation: str,
+        params: Dict[str, Any],
+    ) -> Any:
+        """
+        Execute operation on specific module.
+        
+        Hey future me, this uses the module registry to get the actual
+        module and call the operation. The module must expose the operation
+        as a method or through its API interface.
+        """
+        from core.registry import module_registry
+        
+        module = module_registry.get_module(module_name)
+        if not module:
+            raise ModuleNotFoundError(f"Module {module_name} not found")
+        
+        # Call operation on module
+        # Modules should expose operations as methods
+        handler = getattr(module, operation.replace(".", "_"), None)
+        if not handler:
+            raise OperationNotSupportedError(
+                f"{module_name} doesn't support {operation}"
+            )
+        
+        return await handler(**params)
+    
+    async def _handle_missing_capability(self, operation: str) -> None:
+        """
+        Handle missing capability with clear logging.
+        
+        Hey future me, this is where we warn the user! If a module is missing,
+        we log it CLEARLY so it shows up in logs, Docker logs, and can be
+        displayed in the UI. Only warn once per operation to avoid spam.
+        """
+        if operation in self._missing_module_warnings:
+            return  # Already warned
+        
+        self._missing_module_warnings.add(operation)
+        
+        # Get all modules that could provide this capability
+        all_capabilities = self._capabilities.get(operation, [])
+        
+        if all_capabilities:
+            inactive_modules = [
+                cap.module_name for cap in all_capabilities
+                if self._module_status.get(cap.module_name) != ModuleStatus.ACTIVE
+            ]
+            
+            logger.warning(
+                f"⚠️  MISSING MODULE WARNING ⚠️\n"
+                f"Operation '{operation}' requires one of these modules:\n"
+                f"  {', '.join([cap.module_name for cap in all_capabilities])}\n"
+                f"Inactive modules: {', '.join(inactive_modules)}\n"
+                f"Please enable required modules to use this feature."
+            )
+        else:
+            logger.warning(
+                f"⚠️  MISSING CAPABILITY WARNING ⚠️\n"
+                f"Operation '{operation}' is not supported by any module.\n"
+                f"This feature may not be available."
+            )
+    
+    def get_module_status_summary(self) -> Dict[str, Any]:
+        """
+        Get summary of all module statuses.
+        
+        Returns:
+            Dictionary with module status information
+        """
+        return {
+            "modules": {
+                module: status.value
+                for module, status in self._module_status.items()
+            },
+            "capabilities": {
+                operation: [cap.module_name for cap in caps]
+                for operation, caps in self._capabilities.items()
+            },
+            "active_modules": [
+                module for module, status in self._module_status.items()
+                if status == ModuleStatus.ACTIVE
+            ],
+            "inactive_modules": [
+                module for module, status in self._module_status.items()
+                if status != ModuleStatus.ACTIVE
+            ],
+        }
+
+# Exceptions
+class ModuleNotAvailableError(Exception):
+    """Raised when no module is available for an operation."""
+    pass
+
+class ModuleNotFoundError(Exception):
+    """Raised when a specific module is not found."""
+    pass
+
+class ModuleOperationError(Exception):
+    """Raised when all modules fail to handle an operation."""
+    pass
+
+class OperationNotSupportedError(Exception):
+    """Raised when a module doesn't support an operation."""
+    pass
+
+# Global router instance
+module_router = ModuleRouter()
+```
+
+### 4.4 Usage Example: Search and Download Flow
+
+```python
+# Example: User searches for a song via Spotify, downloads via Soulseek
+
+# 1. Register capabilities during module startup
+# In Spotify module initialization:
+module_router.register_capability(
+    operation="search.track",
+    module_name="spotify",
+    priority=10,  # High priority for Spotify search
+)
+
+# In Soulseek module initialization:
+module_router.register_capability(
+    operation="download.track",
+    module_name="soulseek",
+    priority=10,
+    required_modules=["spotify"],  # Needs Spotify for track info
+)
+
+# 2. Use the router to coordinate the flow
+async def search_and_download_track(query: str):
+    """
+    Search for track and initiate download.
+    
+    Hey future me, this shows how the router coordinates modules.
+    If Spotify is missing, search fails. If Soulseek is missing,
+    download fails with a clear warning. Both failures are graceful!
+    """
+    
+    try:
+        # Step 1: Search via router
+        search_results = await module_router.route_request(
+            operation="search.track",
+            params={"query": query, "limit": 10}
+        )
+        
+        logger.info(f"✓ Found {len(search_results)} tracks")
+        
+        # Step 2: User selects a track (first result for example)
+        selected_track = search_results[0]
+        
+        # Step 3: Download via router
+        download = await module_router.route_request(
+            operation="download.track",
+            params={
+                "track_id": selected_track["id"],
+                "track_info": selected_track,
+            }
+        )
+        
+        logger.info(f"✓ Download initiated: {download['id']}")
+        return download
+        
+    except ModuleNotAvailableError as e:
+        logger.error(f"✗ Cannot complete operation: {e}")
+        # This error message will show in logs and can be displayed in UI
+        raise
+```
+
+### 4.5 Module Health Checks
+
+Each module must provide a health check function:
+
+```python
+# modules/soulseek/backend/__init__.py
+
+async def health_check() -> bool:
+    """
+    Soulseek module health check.
+    
+    Returns:
+        True if module is healthy and operational
+    """
+    try:
+        # Check slskd connection
+        from .infrastructure.integrations.slskd_client import slskd_client
+        await slskd_client.ping()
+        return True
+    except Exception as e:
+        logger.error(f"Soulseek health check failed: {e}")
+        return False
+
+# Register with router during module initialization
+from core.router import module_router
+
+module_router.register_health_checker("soulseek", health_check)
+```
+
+### 4.6 UI Integration - Missing Module Warnings
+
+The UI should display module status and warnings:
+
+```html
+<!-- modules/dashboard/frontend/widgets/module_status.html -->
+<div class="module-status-widget">
+    <h3>System Modules</h3>
+    
+    <div hx-get="/api/modules/status"
+         hx-trigger="load, every 30s"
+         hx-swap="innerHTML">
+        Loading module status...
+    </div>
+</div>
+
+<!-- API returns this for each module -->
+<div class="module-item" data-module="{{ module.name }}">
+    <div class="module-header">
+        <span class="module-name">{{ module.display_name }}</span>
+        <span class="status-badge status-{{ module.status }}">
+            {{ module.status }}
+        </span>
+    </div>
+    
+    {% if module.status != 'active' %}
+    <div class="module-warning">
+        ⚠️ {{ module.warning_message }}
+    </div>
+    {% endif %}
+    
+    {% if module.capabilities %}
+    <div class="module-capabilities">
+        <small>Provides: {{ module.capabilities|join(', ') }}</small>
+    </div>
+    {% endif %}
+</div>
+```
+
+### 4.7 Logging Integration
+
+Clear, structured logging for missing modules:
+
+```python
+# Configure structured logging
+import logging
+from pythonjsonlogger import jsonlogger
+
+# Create logger with structured format
+logger = logging.getLogger("soulspot.modules")
+logHandler = logging.StreamHandler()
+formatter = jsonlogger.JsonFormatter(
+    fmt="%(asctime)s %(name)s %(levelname)s %(message)s"
+)
+logHandler.setFormatter(formatter)
+logger.addHandler(logHandler)
+
+# When module is missing, this creates structured log entry
+logger.warning(
+    "Module unavailable",
+    extra={
+        "module": "soulseek",
+        "operation": "download.track",
+        "status": "inactive",
+        "impact": "Download functionality unavailable",
+        "action": "Enable Soulseek module to use downloads",
+    }
+)
+```
+
+**Docker logs will show:**
+```json
+{
+  "asctime": "2025-11-21 10:30:00",
+  "name": "soulspot.modules",
+  "levelname": "WARNING",
+  "message": "Module unavailable",
+  "module": "soulseek",
+  "operation": "download.track",
+  "status": "inactive",
+  "impact": "Download functionality unavailable",
+  "action": "Enable Soulseek module to use downloads"
+}
+```
+
+### 4.8 Standalone Module Operation
+
+Each module can run independently:
+
+```python
+# modules/soulseek/main.py (standalone entrypoint)
+
+"""
+Standalone Soulseek module.
+
+Can run independently for development/testing.
+Will warn about missing modules but remain functional for core operations.
+"""
+
+from fastapi import FastAPI
+from .backend.api.routes import router
+from .backend.config.settings import settings
+from core.router import module_router
+
+app = FastAPI(title="Soulseek Module (Standalone)")
+
+# Register routes
+app.include_router(router)
+
+# Register capabilities
+module_router.register_capability(
+    operation="download.track",
+    module_name="soulseek",
+    priority=10,
+    required_modules=[],  # Can work alone for basic downloads
+)
+
+# Start health monitoring
+@app.on_event("startup")
+async def startup():
+    """Start module health monitoring."""
+    import asyncio
+    
+    # Check for optional module dependencies
+    await module_router.monitor_all_modules()
+    
+    # Log module status
+    status = module_router.get_module_status_summary()
+    logger.info(f"Soulseek module started (standalone mode)")
+    logger.info(f"Active modules: {status['active_modules']}")
+    
+    if status['inactive_modules']:
+        logger.warning(
+            f"⚠️  Some modules are inactive: {status['inactive_modules']}\n"
+            f"Enhanced features may be limited."
+        )
+    
+    # Start periodic health monitoring
+    asyncio.create_task(periodic_health_check())
+
+async def periodic_health_check():
+    """Periodic health check task."""
+    while True:
+        await asyncio.sleep(60)  # Every minute
+        await module_router.monitor_all_modules()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
+```
+
+### 4.9 Benefits of Module Router Approach
+
+**✅ Standalone Capability:**
+- Modules can run independently for development/testing
+- Core functionality works even without other modules
+- Clear warnings when optional features unavailable
+
+**✅ Clear Error Messaging:**
+- Structured logs show exactly what's missing
+- UI displays module status and warnings
+- Docker logs contain actionable information
+
+**✅ Flexible Integration:**
+- Multiple modules can provide same capability
+- Priority-based routing for preferred modules
+- Automatic fallback to alternative modules
+
+**✅ Graceful Degradation:**
+- System continues to function with partial module set
+- Features degrade gracefully when modules unavailable
+- No cascading failures
+
+**✅ Dynamic Discovery:**
+- Automatic module discovery via health checks
+- Runtime capability registration
+- Hot-swappable modules (restart individual modules)
+
+---
+
+## 5. Event Schemas
 
 ### 4.1 Schema Definition
 
@@ -614,7 +1299,7 @@ download.completed:
 
 ---
 
-## 5. Cross-Module Data Contracts
+## 6. Cross-Module Data Contracts
 
 ### 5.1 Shared Data Types
 
@@ -697,7 +1382,7 @@ class Track:
 
 ---
 
-## 6. Error Handling
+## 7. Error Handling
 
 ### 6.1 Error Propagation
 
@@ -770,7 +1455,7 @@ async def retry_with_backoff(
 
 ---
 
-## 7. Testing Module Communication
+## 8. Testing Module Communication
 
 ### 7.1 Test Event Bus
 
@@ -872,7 +1557,7 @@ async def test_download_triggers_library_import(
 
 ---
 
-## 8. Best Practices
+## 9. Best Practices
 
 ### 8.1 DO
 
@@ -962,7 +1647,7 @@ async def on_a_event():
 
 ---
 
-## 9. Performance Considerations
+## 10. Performance Considerations
 
 ### 9.1 Event Bus Optimization
 
@@ -1009,7 +1694,7 @@ def get_track_metadata(track_id: str) -> Dict:
 
 ---
 
-## 10. Monitoring and Observability
+## 11. Monitoring and Observability
 
 ### 10.1 Event Metrics
 
@@ -1069,7 +1754,7 @@ async def on_download_completed(event: Event):
 
 ---
 
-## 11. Migration from Current Architecture
+## 12. Migration from Current Architecture
 
 ### 11.1 Current State
 
@@ -1125,7 +1810,7 @@ await event_bus.publish(
 
 ---
 
-## 12. Summary
+## 13. Summary
 
 Module communication in Version 3.0 follows these principles:
 
