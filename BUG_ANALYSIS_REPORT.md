@@ -70,10 +70,10 @@ Exit Code: 0 ✅
 ```bash
 # Geprüfte Muster: [0], [-1], split(":")[0]
 Ergebnis: ✅ Alle Array-Zugriffe sind korrekt abgesichert
-Beispiele:
-- ui.py:639: if track_models and track_models[0].album (✅)
-- id3_tagging_service.py:132: if track.genres: ... track.genres[0] (✅)
-- enrich_metadata.py:133: if results: recording = results[0] (✅)
+Beispiele mit Datei-Referenzen:
+- src/soulspot/api/routers/ui.py:639: if track_models and track_models[0].album (✅)
+- src/soulspot/application/services/postprocessing/id3_tagging_service.py:132: if track.genres: ... track.genres[0] (✅)
+- src/soulspot/application/use_cases/enrich_metadata.py:133: if results: recording = results[0] (✅)
 ```
 
 #### 3.2 Exception Handling
@@ -81,7 +81,10 @@ Beispiele:
 # Geprüft: Leere except-Blöcke, zu breite Exceptions
 Ergebnis: ✅ Keine problematischen Exception-Handler gefunden
 - H-1 (Print-Statements): ✅ Alle durch logger.warning() ersetzt
+  - src/soulspot/api/routers/tracks.py:311 (✅)
 - H-2 (Breite Exceptions): ✅ Spezifische Exceptions (httpx.HTTPError, ValueError)
+  - src/soulspot/application/services/token_manager.py:157 (✅)
+  - src/soulspot/application/use_cases/enrich_metadata.py:135 (✅)
 ```
 
 #### 3.3 Null-Pointer und None-Checks
@@ -96,16 +99,16 @@ Keine "== None" Vorkommen gefunden
 # Geprüft: int(), float() ohne Validierung
 Ergebnis: ✅ Alle Konvertierungen abgesichert
 Beispiele:
-- metadata_merger.py:349: if year_str.isdigit(): release_year = int(year_str) (✅)
-- enrich_metadata.py:256: int(release_date[:4]) if release_date and len(release_date) >= 4 (✅)
+- src/soulspot/application/services/metadata_merger.py:349: if year_str.isdigit(): release_year = int(year_str) (✅)
+- src/soulspot/application/use_cases/enrich_metadata.py:256: int(release_date[:4]) if release_date and len(release_date) >= 4 (✅)
 ```
 
 #### 3.5 Sicherheit
 ```bash
 # Path Traversal (H-5)
 Ergebnis: ✅ PathValidator in allen File-Operationen verwendet
-- artwork_service.py: PathValidator.validate_image_file_path() (✅)
-- library_scanner.py: PathValidator.validate_audio_file_path() (✅)
+- src/soulspot/application/services/postprocessing/artwork_service.py:250: PathValidator.validate_image_file_path() (✅)
+- src/soulspot/application/services/library_scanner.py:97: PathValidator.validate_audio_file_path() (✅)
 
 # SQL Injection
 Ergebnis: ✅ SQLAlchemy ORM korrekt verwendet, keine String-Concatenation in Queries
@@ -118,8 +121,8 @@ Ergebnis: ✅ Konfigurierbar via settings.secure_cookies
 ```bash
 # Global State (K-4)
 Ergebnis: ✅ Alle globalen Singletons mit @lru_cache thread-safe
-- dependencies.py: @lru_cache get_session_store() (✅)
-- widget_template_registry.py: @lru_cache get_widget_template_registry() (✅)
+- src/soulspot/api/dependencies.py: @lru_cache get_session_store() (✅)
+- src/soulspot/application/services/widget_template_registry.py:384: @lru_cache get_widget_template_registry() (✅)
 ```
 
 #### 3.7 Resource Leaks
@@ -212,6 +215,9 @@ Ergebnis: ✅ Alle Singletons korrekt mit @lru_cache
 ### Bereiche für Verbesserung (KEINE BUGS) ⚠️
 
 1. **Test-Coverage:** 48.24% (Ziel: ≥90%) - aber Tests funktionieren korrekt
+   - Gemessen am: 2025-11-21
+   - Quelle: fehler-sammlung.md (basierend auf vorherigen Coverage-Reports)
+   - Befehl zur Reproduktion: `pytest --cov=src --cov-report=term-missing`
 2. **Datei-Größe:** repositories.py 2203 Zeilen - funktioniert, aber schwer wartbar
 3. **CSRF-Protection:** Noch nicht implementiert - ist ein neues Feature, kein Bug
 4. **Dokumentation:** Einige Docstrings fehlen - kein funktionales Problem
