@@ -371,8 +371,9 @@ class Download:
 ```python
 # modules/soulseek/backend/domain/entities/search_result.py
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 from ..value_objects import FileQuality
 

@@ -69,11 +69,12 @@ The Event Bus is the primary mechanism for inter-module communication.
 ```python
 # core/events/event_bus.py
 
-from typing import Callable, Dict, List, Any
-from dataclasses import dataclass
+from typing import Callable, Dict, List, Any, Awaitable, Optional
+from dataclasses import dataclass, field
 from datetime import datetime
 import asyncio
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 

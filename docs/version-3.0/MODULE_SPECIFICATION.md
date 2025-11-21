@@ -1004,7 +1004,7 @@ class {ModuleName}Settings(BaseSettings):
     log_level: str = "INFO"
     
     model_config = SettingsConfigDict(
-        env_prefix="{MODULE}_",
+        env_prefix="{MODULE}_",  # e.g., "SOULSEEK_" for soulseek module (uppercase)
         env_file=".env",
         case_sensitive=False,
     )

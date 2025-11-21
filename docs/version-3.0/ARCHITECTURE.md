@@ -460,6 +460,8 @@ class EntityRepositorySQLAlchemy:
 ```python
 # core/events/event_bus.py
 
+from typing import Callable
+
 class EventBus:
     """
     Central event bus for inter-module communication.
