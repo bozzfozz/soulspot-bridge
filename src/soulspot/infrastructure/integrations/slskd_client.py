@@ -11,6 +11,10 @@ from soulspot.domain.ports import ISlskdClient
 class SlskdClient(ISlskdClient):
     """HTTP client for slskd API operations."""
 
+    # Hey future me, slskd is the Soulseek daemon that does actual P2P downloading. This init
+    # is important: we strip the trailing slash from base_url because httpx gets confused
+    # when you have double slashes in URLs. Learned that the hard way with 404 errors!
+    # Client creation is lazy (in _get_client) to avoid asyncio headaches.
     def __init__(self, settings: SlskdSettings) -> None:
         """
         Initialize slskd client.
@@ -22,6 +26,10 @@ class SlskdClient(ISlskdClient):
         self.base_url = settings.url.rstrip("/")
         self._client: httpx.AsyncClient | None = None
 
+    # Listen up, slskd supports TWO auth methods: API key (preferred) OR basic auth.
+    # API key goes in X-API-Key header. If no API key, fall back to username/password.
+    # NEVER send both - pick one! Timeout is 30s because Soulseek searches can be SLOW
+    # when the network is busy. Don't reduce this or you'll get timeouts during peak hours.
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
         if self._client is None:
@@ -45,12 +53,21 @@ class SlskdClient(ISlskdClient):
             )
         return self._client
 
+    # Hey, cleanup is critical! If you don't close this, you'll leak file descriptors and
+    # eventually hit system limits. Always use this as async context manager or call close()!
     async def close(self) -> None:
         """Close HTTP client."""
         if self._client is not None:
             await self._client.aclose()
             self._client = None
 
+    # Yo future me, Soulseek search is a TWO-STEP process: 1) POST to start search, get ID
+    # 2) GET results by ID. The search happens async on the P2P network, so results trickle in.
+    # 30s timeout is barely enough - if network is slow, you might get ZERO results even though
+    # files exist! Consider increasing timeout for rare/obscure tracks. Also, search quality
+    # varies WILDLY - generic terms return tons of crap, specific terms might find nothing.
+    # Pro tip: Include artist name + track name for best results. The slskd API uses camelCase
+    # (searchText, bitRate) not snake_case - watch out when parsing responses!
     async def search(self, query: str, timeout: int = 30) -> list[dict[str, Any]]:
         """
         Search for files on the Soulseek network.
@@ -101,6 +118,12 @@ class SlskdClient(ISlskdClient):
 
         return files
 
+    # Hey future me, this STARTS a download but doesn't wait for it to finish! It's async.
+    # The download happens in the background via P2P. slskd doesn't give us a clean download_id
+    # so we construct one ourselves: "username/filename". This is a bit hacky but it works.
+    # GOTCHA: If the user is offline or has you blocked, this will succeed here but fail later
+    # during actual transfer. Always check download status afterwards! Also, "files" is an ARRAY
+    # because slskd supports batch downloads, but we only send one file at a time for simplicity.
     async def download(self, username: str, filename: str) -> str:
         """
         Start a download from a user.
@@ -129,6 +152,12 @@ class SlskdClient(ISlskdClient):
         # slskd returns download info, use filename as ID
         return f"{username}/{filename}"
 
+    # Listen future me, slskd has NO "get download by ID" endpoint! We have to fetch ALL
+    # downloads and filter ourselves. This is INEFFICIENT but unavoidable. If you have 100+
+    # active downloads, this gets slow. The download_id format "username/filename" is our
+    # own invention (see download() method). We use split("/", 1) not just split("/") because
+    # filenames can contain slashes! If a download completes or fails, it might disappear from
+    # the list - that's why we return "not_found" state instead of throwing an error.
     async def get_download_status(self, download_id: str) -> dict[str, Any]:
         """
         Get the status of a download.
@@ -180,6 +209,10 @@ class SlskdClient(ISlskdClient):
             "size": 0,
         }
 
+    # Yo, this gets ALL downloads - active, queued, completed, failed, everything. In a busy
+    # system this can be a BIG list. Consider pagination if you're dealing with hundreds of
+    # downloads. The response format matches what we normalize in get_download_status() so at
+    # least that's consistent. Use this sparingly - it's not cheap!
     async def list_downloads(self) -> list[dict[str, Any]]:
         """
         List all downloads.
@@ -214,6 +247,11 @@ class SlskdClient(ISlskdClient):
 
         return result
 
+    # Hey future me, canceling is done via DELETE but the API is weird: username goes in the
+    # path, filename goes as a query param. Why? No idea. Just roll with it. If the download
+    # is already complete or doesn't exist, slskd will 404. Don't let that crash your app -
+    # handle it gracefully. Also, canceling doesn't delete the partial file from disk! You
+    # need to clean that up manually if you care about disk space.
     async def cancel_download(self, download_id: str) -> None:
         """
         Cancel a download.
@@ -238,6 +276,8 @@ class SlskdClient(ISlskdClient):
         )
         response.raise_for_status()
 
+    # Hey, always use this client with "async with SlskdClient(...) as client:" to ensure
+    # proper cleanup. Your future self will thank you when you don't have connection leaks!
     async def __aenter__(self) -> "SlskdClient":
         """Async context manager entry."""
         return self
