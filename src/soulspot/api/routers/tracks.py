@@ -27,6 +27,11 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+# Hey future me, this endpoint kicks off a track download! It uses the SearchAndDownloadTrackUseCase which
+# searches Soulseek, picks best result based on quality preference ("best"=highest bitrate, "any"=first match),
+# and queues the download. If search finds nothing or download fails to start, we return 400 error. The response
+# includes download_id for tracking and search_results_count so you know if search was good (10 results) or
+# weak (1 result = might be wrong file!). This is ASYNC - download happens in background, don't wait for completion!
 @router.post("/{track_id}/download")
 async def download_track(
     track_id: str,
@@ -65,6 +70,11 @@ async def download_track(
     }
 
 
+# Yo, this enriches ONE track with metadata from MusicBrainz (genres, release dates, artwork URLs, etc).
+# The force_refresh flag bypasses cache - only use if metadata is wrong! MusicBrainz has STRICT rate limits
+# (1 req/sec), so this can take 1-3 seconds. If track not found in MB, we return enriched=false but 200 OK
+# (not 404 - track exists in our DB, just no MB data). The enriched_fields list tells you what changed. This
+# updates our DB but doesn't write to file tags - use the PATCH endpoint for that!
 @router.post("/{track_id}/enrich")
 async def enrich_track(
     track_id: str,
@@ -109,6 +119,11 @@ async def enrich_track(
         ) from e
 
 
+# Listen up, this searches Spotify for tracks matching query! Requires access_token because we hit Spotify API
+# directly (not using our DB). The limit param caps results (max 100). We return simplified track objects (id,
+# name, artists, album, duration) - not full Spotify track schema. This is for "search then download" flow or
+# "add to playlist" features. If access_token is expired, Spotify returns 401 and we bubble it up as 500 (should
+# be 401!). The query can be anything: track name, artist, album, or even ISRC code (Spotify is smart!).
 @router.get("/search")
 async def search_tracks(
     query: str = Query(..., description="Search query"),
@@ -222,6 +237,12 @@ async def get_track(
         ) from e
 
 
+# Yo future me, this is the MANUAL metadata editor - update track info by hand! We have an allowed_fields list
+# to prevent users from modifying internal fields (spotify_id, created_at, etc). After updating our DB, we ALSO
+# write to file's ID3 tags using mutagen! This is CRITICAL - if you only update DB, the file still has old tags
+# and re-scans will overwrite your changes! The mutagen code uses add() not set() because we want to REPLACE
+# tags, not append. If file doesn't exist or tag writing fails, we LOG warning but DON'T fail the request (DB
+# update succeeded, that's what matters!). Encoding=3 means UTF-8 for international characters.
 @router.patch("/{track_id}/metadata")
 async def update_track_metadata(
     track_id: str,

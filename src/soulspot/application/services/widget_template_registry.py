@@ -29,6 +29,15 @@ class WidgetTemplateRegistry:
         # Initialize with built-in system widgets
         self._register_system_widgets()
 
+    # Hey this registers built-in system widgets! Hard-coded widget definitions for Active Jobs, Spotify
+    # Search, Missing Tracks, Quick Actions, and Metadata Manager. Each has WidgetTemplateConfig with
+    # name, description, template path, icon, category, config schema, etc. The data_endpoint tells widget
+    # where to fetch content. supports_sse=True means widget subscribes to real-time updates via SSE.
+    # poll_interval determines refresh frequency (0 = no polling, 5 = every 5 seconds). is_system=True
+    # prevents deletion of these core widgets. default_config provides sensible defaults. config_schema
+    # defines what's configurable (select, number, array, etc). This runs in __init__ so widgets are
+    # available immediately. Logs count at end for debugging. Consider loading from JSON files instead
+    # of hard-coding? Makes customization easier without code changes.
     def _register_system_widgets(self) -> None:
         """Register built-in system widgets."""
         # Active Jobs Widget
@@ -315,6 +324,14 @@ class WidgetTemplateRegistry:
             if t.config.category == category and t.is_enabled
         ]
 
+    # Listen, searches for widget templates! Filters by enabled status first (no point showing disabled).
+    # Then applies query search on name and description (case-insensitive via .lower()). Category filter
+    # is exact match (case-sensitive!). Tags filter uses "any match" logic - template included if it has
+    # ANY of the requested tags. Could also do "all match" (template must have ALL tags) - consider making
+    # this configurable? The if conditions cascade - each narrows results further. Returns empty list if
+    # no matches. No pagination - could return all templates if search is broad! Consider limiting results.
+    # Query matching on both name and description is good UX - cast wide net. The query_lower optimization
+    # avoids repeated .lower() calls in comprehension. Clean, simple search implementation.
     def search(
         self,
         query: str = "",

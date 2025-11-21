@@ -33,6 +33,11 @@ class RenamingService:
         self._settings = settings
         self._template = settings.postprocessing.file_naming_template
 
+    # Hey future me: Template-based file renaming - like a mail merge for file paths
+    # Template example: "{Artist CleanName}/{Album CleanTitle}/{track:02d} - {Track CleanTitle}"
+    # Result: "Pink Floyd/The Dark Side of the Moon/01 - Speak to Me.mp3"
+    # WHY support both old and new variable names? Backward compatibility with user templates
+    # GOTCHA: Illegal chars in artist/album names (e.g., "AC/DC") need sanitization or paths break
     def generate_filename(
         self,
         track: Track,
@@ -126,6 +131,11 @@ class RenamingService:
 
         return cleaned
 
+    # Hey future me: File system sanitization - WHY so paranoid about characters?
+    # Windows: Can't use < > : " / \ | ? * or chars 0x00-0x1f (control chars)
+    # macOS/Linux: Can't use / and NUL, but we sanitize more for cross-platform compatibility
+    # Example: "Artist: The Band" becomes "Artist - The Band" so Windows doesn't crash
+    # GOTCHA: We split on "/" first to handle path components separately - don't want to sanitize directory separators
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize filename for filesystem compatibility.
 
@@ -157,6 +167,11 @@ class RenamingService:
 
         return filename
 
+    # Hey future me: The actual file move operation
+    # WHY mkdir with parents=True? Template might create deep paths like "Artist/2023/Album/Disc 1/"
+    # WHY handle existing files? Race condition - another process might have created same file
+    # GOTCHA: We use rename() not copy - if source and dest are on different filesystems, this FAILS
+    # TODO: Add fallback to copy+delete for cross-filesystem moves
     async def rename_file(
         self,
         source_path: Path,

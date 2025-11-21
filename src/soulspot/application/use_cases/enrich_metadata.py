@@ -53,6 +53,11 @@ class EnrichMetadataUseCase(UseCase[EnrichMetadataRequest, EnrichMetadataRespons
     6. Updates entities in repository
     """
 
+    # Hey future me: This is the metadata enrichment workhorse - ONE track from ONE source (MusicBrainz)
+    # WHY MusicBrainz only? It's the canonical source with ISRCs, proper track lengths, etc.
+    # For multi-source enrichment (Spotify + Last.fm + MusicBrainz), see EnrichMetadataMultiSourceUseCase
+    # GOTCHA: We inject ALL three repositories even though we're only enriching one track
+    # WHY? Because MB data includes artist + album info, we might create those too
     def __init__(
         self,
         musicbrainz_client: IMusicBrainzClient,
@@ -73,6 +78,10 @@ class EnrichMetadataUseCase(UseCase[EnrichMetadataRequest, EnrichMetadataRespons
         self._artist_repository = artist_repository
         self._album_repository = album_repository
 
+    # Hey future me: The ISRC lookup dance - this is the fastest and most accurate way to match tracks
+    # WHY try ISRC first? It's a globally unique identifier - like a barcode for recordings
+    # WHY abs(track.duration_ms - mb_length) > 2000? Radio edits vs album versions can differ by seconds
+    # GOTCHA: Not all tracks have ISRCs (especially older/indie stuff), so we fall back to search
     async def _enrich_track_metadata(
         self,
         track: Track,
@@ -110,6 +119,10 @@ class EnrichMetadataUseCase(UseCase[EnrichMetadataRequest, EnrichMetadataRespons
                 )
 
         # Fall back to search if ISRC lookup failed
+        # Hey future me: WHY take first result from search?
+        # MusicBrainz returns best matches first, but it's not perfect
+        # Better would be fuzzy matching on track title + artist name + duration
+        # TODO: Add confidence scoring to avoid false matches
         if not recording:
             try:
                 # Fetch artist name from repository

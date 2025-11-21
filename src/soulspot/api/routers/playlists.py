@@ -23,6 +23,12 @@ from soulspot.infrastructure.persistence.repositories import (
 router = APIRouter()
 
 
+# Hey future me, this is the main playlist import endpoint! Access token comes from SESSION not
+# a header - super important for security. The token dependency will auto-refresh if expired,
+# which is slick but can cause weird timing issues if the refresh fails. fetch_all_tracks=True
+# means we'll fetch EVERY track even if playlist has 1000+ songs - could timeout for huge playlists.
+# Consider adding pagination or background job queueing for massive playlists. Also this returns
+# dict not Pydantic model - less type safety but more flexible for errors array.
 @router.post("/import")
 async def import_playlist(
     playlist_id: str = Query(..., description="Spotify playlist ID"),
@@ -70,6 +76,11 @@ async def import_playlist(
         ) from e
 
 
+# Yo, classic pagination endpoint here. Default 20 items is reasonable but limit is capped at 100
+# to prevent someone requesting 10000 playlists and killing the DB. No cursor-based pagination
+# though - so if someone adds/deletes playlists while paginating you might get duplicates or gaps.
+# The len(playlists) for total is wrong if there are more results! Should do separate count query.
+# Also we're calling str() on URIs which assumes they exist - None would crash. type: ignore needed.
 @router.get("/")
 async def list_playlists(
     skip: int = Query(0, ge=0, description="Number of playlists to skip"),
@@ -148,6 +159,12 @@ async def get_playlist(
         ) from e
 
 
+# Listen up! M3U export iterates through EVERY track and does a DB lookup - super slow for big
+# playlists. Should batch fetch all tracks at once. Also #EXTM3U format is fragile - players expect
+# specific formatting. Duration of -1 means "unknown" which some players handle poorly. File paths
+# are absolute which won't work if you move the library. Consider relative paths or making it
+# configurable. The Response import is INSIDE the function (lazy import) - kind of weird but avoids
+# top-level import. artist/title fallback to Unknown prevents crashes but creates ugly M3U entries.
 @router.get("/{playlist_id}/export/m3u")
 async def export_playlist_m3u(
     playlist_id: str,
@@ -201,6 +218,11 @@ async def export_playlist_m3u(
         ) from e
 
 
+# Hey heads up - CSV export uses io.StringIO which builds ENTIRE CSV in memory before streaming.
+# For 10k track playlists this could eat a lot of RAM. StreamingResponse is used but we're not
+# actually streaming - we build the whole thing then iter it once. Should yield rows instead.
+# CSV writer escapes special chars automatically which is nice. Same N+1 query problem as M3U.
+# The artist/album type: ignore is because Track entity uses relationships, not direct attributes.
 @router.get("/{playlist_id}/export/csv")
 async def export_playlist_csv(
     playlist_id: str,
@@ -321,6 +343,12 @@ async def export_playlist_json(
         ) from e
 
 
+# CAUTION: This function has a weird pattern - uses anext() to get DB session from generator!
+# That's because get_db_session is an async generator for FastAPI dependency injection. The anext()
+# grabs the first yielded session but NEVER calls it again, so cleanup might not happen properly.
+# Should use Depends(get_db_session) instead and let FastAPI handle it. Also does N queries in a
+# loop for track lookups - SUPER inefficient. Should be a single JOIN query. The joinedload is good
+# for eager loading relations though. Track without file_path = missing which makes sense.
 @router.get("/{playlist_id}/missing-tracks")
 async def get_missing_tracks(
     request: Request,
@@ -395,6 +423,12 @@ async def get_missing_tracks(
         ) from e
 
 
+# Yo this is basically a "refresh from Spotify" endpoint. It extracts the Spotify ID from the
+# spotify_uri which is formatted as "spotify:playlist:ACTUAL_ID" - that split(":")[-1] grabs the
+# last part. If the URI format ever changes this breaks silently! Also re-imports the ENTIRE
+# playlist which could be slow. No incremental sync to just get new/removed tracks. The internal
+# playlist_id (UUID) vs Spotify's playlist ID (string) can be confusing - make sure you're using
+# the right one. Setting fetch_all_tracks=True means we always get everything, no pagination.
 @router.post("/{playlist_id}/sync")
 async def sync_playlist(
     playlist_id: str,
@@ -460,6 +494,13 @@ async def sync_playlist(
         ) from e
 
 
+# WARNING: This syncs ALL playlists sequentially - could take FOREVER if you have 100+ playlists!
+# Should be a background job, not a synchronous HTTP request. Will definitely timeout with many
+# playlists. The try/except per playlist is good so one failure doesn't kill the whole batch.
+# Continues on error which is resilient. Results array lets you see what succeeded/failed but could
+# get huge. No rate limiting here - hammering Spotify API could get you throttled. Consider adding
+# delays between playlists or using batch import if Spotify supports it. The str() conversions in
+# results assume values exist - could fail. skipped_count tracks playlists with no Spotify URI.
 @router.post("/sync-all")
 async def sync_all_playlists(
     access_token: str = Depends(get_spotify_token_from_session),
@@ -547,6 +588,12 @@ async def sync_all_playlists(
         ) from e
 
 
+# Important note in the docstring - this IDENTIFIES missing tracks but doesn't actually queue
+# downloads! The actual queueing should happen in frontend or a separate background job. This is
+# half-implemented basically. Uses the same anext() pattern which is sketchy. Returns just the IDs
+# which frontend can then POST to download endpoint. Would be more useful to have a
+# "queue_all=true" param that actually kicks off downloads. Same N+1 query antipattern as other
+# missing-tracks endpoint. Consider consolidating these two similar functions.
 @router.post("/{playlist_id}/download-missing")
 async def download_missing_tracks(
     playlist_id: str,

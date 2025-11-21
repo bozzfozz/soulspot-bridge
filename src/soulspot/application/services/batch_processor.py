@@ -19,6 +19,14 @@ T = TypeVar("T")
 R = TypeVar("R")
 
 
+# Hey future me, this is the batch result dataclass! Uses new Python 3.12+ generic syntax [R] which
+# is cleaner than TypeVar. Holds successful results and failed items with their exceptions. Properties
+# calculate counts on the fly instead of storing - saves memory but recomputes each access. success_rate
+# as percentage is nice for UI display. Division by zero check prevents crash on empty batch. The
+# failed list stores tuples of (item, exception) so you know both WHAT failed and WHY. field(default_factory=list)
+# prevents mutable default argument bug (all instances would share same list!). Immutable after creation
+# which is good for thread safety. This is pure data class, no behavior/methods. Consider adding
+# success/failure predicates or combining multiple batch results for aggregate stats?
 @dataclass
 class BatchResult[R]:
     """Result of a batch operation.
@@ -106,6 +114,14 @@ class BatchProcessor[T, R]:
         self._lock = asyncio.Lock()
         self._last_flush_time = asyncio.get_event_loop().time()
 
+    # Listen up! This is the core batch accumulation logic! add() appends item to pending list. If
+    # auto_flush enabled and batch reaches batch_size, automatically processes and clears batch. Uses
+    # asyncio.Lock to prevent race conditions (two coroutines adding simultaneously). Returns BatchResult
+    # if auto-flushed, None otherwise. The lock context manager ensures only one coroutine modifies
+    # _pending at a time. This is async but could block on lock acquisition if another task holds it.
+    # Consider timeout on lock.acquire() to prevent deadlock? The batch_size check uses >= not == so
+    # you can add multiple items and trigger flush. _flush_internal must be called within lock! No
+    # validation that item is correct type T - Python generics are hints only, not enforced at runtime.
     async def add(self, item: T) -> BatchResult[R] | None:
         """Add an item to the batch.
 
@@ -159,6 +175,14 @@ class BatchProcessor[T, R]:
         async with self._lock:
             return await self._flush_internal()
 
+    # Yo the internal flush logic! Slices first batch_size items from pending, processes them, then
+    # removes from _pending. Must be called within lock (caller's responsibility!). The slicing [:batch_size]
+    # means if you have 150 items and batch_size=50, this processes 50 and leaves 100. Updates last_flush_time
+    # for max_wait_time tracking. Returns empty BatchResult if nothing pending. Calls processor_func which
+    # should return list[R] but we don't validate that! If processor fails completely (raises exception),
+    # marks ALL items as failed with same error. No partial failure handling - it's all or nothing! Consider
+    # processing items individually and collecting per-item results? The batch = self._pending[:batch_size]
+    # creates new list (copy) so modifying batch doesn't affect _pending. Good defensive programming.
     async def _flush_internal(self) -> BatchResult[R]:
         """Internal flush implementation (must be called within lock)."""
         if not self._pending:

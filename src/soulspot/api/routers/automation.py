@@ -56,6 +56,11 @@ class QualityUpgradeRequest(BaseModel):
 
 
 # Watchlist endpoints
+# Hey future me, creating a watchlist is idempotent-ish - if you try to create the same artist twice,
+# the service layer should handle it. The quality_profile defaults to "high" but users can override
+# for specific use cases (e.g., "low" for rare bootlegs where quality doesn't matter). We commit
+# immediately after creation - no batch operations here. If this fails, the whole transaction rolls
+# back. The artist_id parsing can throw ValueError if someone sends garbage - we catch and return 400.
 @router.post("/watchlist")
 async def create_watchlist(
     request: CreateWatchlistRequest,
@@ -99,6 +104,10 @@ async def create_watchlist(
         ) from e
 
 
+# Yo future me, pagination here uses limit/offset - NOT cursor-based! For small datasets this is fine,
+# but if watchlists grow huge (thousands of artists), you'll want cursor pagination to avoid missing
+# rows when data changes between page fetches. The active_only flag is a performance optimization -
+# most UI queries only care about active watchlists, why fetch disabled ones? Defaults to showing all.
 @router.get("/watchlist")
 async def list_watchlists(
     limit: int = 100,
@@ -150,6 +159,10 @@ async def list_watchlists(
         ) from e
 
 
+# Listen up, this is a simple GET by ID. The WatchlistId.from_string can throw ValueError if the ID
+# is malformed (not a valid UUID format), hence the catch block. We return 404 if watchlist doesn't
+# exist - standard REST semantics. Don't cache this response - watchlist stats (releases found, downloads
+# triggered) change frequently when background workers run!
 @router.get("/watchlist/{watchlist_id}")
 async def get_watchlist(
     watchlist_id: str,
@@ -195,6 +208,11 @@ async def get_watchlist(
         ) from e
 
 
+# Hey, this check endpoint is the MANUAL trigger for "check this artist for new releases RIGHT NOW".
+# Normally background workers do this on a schedule, but users want instant gratification! This hits
+# Spotify API so it REQUIRES auth token (hence the dependency). If Spotify is down or rate-limits us,
+# this will fail. The releases list in response might be EMPTY even for active artists - that's normal
+# if there's nothing new since last check. We commit after check to update last_checked_at timestamp.
 @router.post("/watchlist/{watchlist_id}/check")
 async def check_watchlist_releases(
     watchlist_id: str,
@@ -241,6 +259,10 @@ async def check_watchlist_releases(
         ) from e
 
 
+# Yo, DELETE is destructive and PERMANENT - there's no soft delete here! Once you delete a watchlist,
+# all its history (releases found, downloads triggered counts) is GONE. We should probably add a
+# "are you sure?" in the UI. The service layer might cascade-delete related records - check the model
+# relationships. This commits immediately, no undo. Returns 200 even if watchlist didn't exist (idempotent).
 @router.delete("/watchlist/{watchlist_id}")
 async def delete_watchlist(
     watchlist_id: str,
@@ -272,6 +294,11 @@ async def delete_watchlist(
 
 
 # Discography endpoints
+# Listen, this endpoint checks "do we have ALL albums for this artist?" It hits Spotify API to get
+# the complete discography, then compares against our DB. The result tells you what's missing. This
+# can be SLOW for prolific artists (hundreds of albums) - Spotify paginates results. The to_dict()
+# serialization might include large lists of missing albums - consider pagination if this response
+# gets huge! Requires Spotify auth token.
 @router.post("/discography/check")
 async def check_discography(
     request: DiscographyCheckRequest,
@@ -305,6 +332,11 @@ async def check_discography(
         ) from e
 
 
+# Hey future me, this is the "collector's dream" endpoint - show me ALL missing albums across ALL
+# artists! The limit param is CRITICAL - without it, this could try to fetch thousands of artists
+# and take FOREVER. Default 10 is conservative. This hits Spotify API for EACH artist, so it's
+# rate-limit sensitive. If you have 100 artists and set limit=100, expect this to take minutes.
+# Consider adding a timeout or making this async with a job queue for large libraries!
 @router.get("/discography/missing")
 async def get_missing_albums(
     limit: int = 10,
@@ -339,6 +371,11 @@ async def get_missing_albums(
 
 
 # Quality upgrade endpoints
+# Yo, this endpoint finds tracks where you have a crappy MP3 but better quality is available on
+# Soulseek. The min_improvement_score is a threshold (0.0-1.0) - lower means more aggressive upgrades
+# (might upgrade 320kbps to FLAC), higher means only upgrade really bad files (128kbps to anything).
+# The algorithm is in QualityUpgradeService - it scores based on bitrate, format, source quality.
+# Limit=100 prevents massive result sets, but this could still return lots of data!
 @router.post("/quality-upgrades/identify")
 async def identify_quality_upgrades(
     request: QualityUpgradeRequest,
@@ -375,6 +412,10 @@ async def identify_quality_upgrades(
         ) from e
 
 
+# Hey, this gets tracks that were IDENTIFIED for upgrade but not yet processed (downloaded/replaced).
+# This is basically a work queue - the automation workers pick from here. If this list is HUGE, your
+# workers are falling behind! Might indicate Soulseek network issues or rate limiting. The limit
+# prevents overwhelming the response, but you might need pagination if queue grows into thousands.
 @router.get("/quality-upgrades/unprocessed")
 async def get_unprocessed_upgrades(
     limit: int = 100,
@@ -471,6 +512,10 @@ async def create_filter(
         ) from e
 
 
+# Yo, filter listing supports THREE modes: all filters, by type, or enabled only. The enabled_only
+# is what download workers use - they only care about active filters. The type filter (whitelist/
+# blacklist) is for UI organization. NO CACHING HERE - filter changes should take effect immediately!
+# If you cache this, users will be confused why their new filter isn't working.
 @router.get("/filters")
 async def list_filters(
     filter_type: str | None = None,
@@ -572,6 +617,10 @@ async def get_filter(
         raise HTTPException(status_code=500, detail=f"Failed to get filter: {e}") from e
 
 
+# Hey, enable/disable are separate from delete because filters are expensive to configure! Users want
+# to temporarily disable a filter without losing it. This is instant - next download will respect the
+# change. If you disable a whitelist that was blocking everything, downloads will suddenly start working.
+# If you disable a blacklist, junk will start getting through. Think before you click!
 @router.post("/filters/{filter_id}/enable")
 async def enable_filter(
     filter_id: str,
@@ -602,6 +651,9 @@ async def enable_filter(
         ) from e
 
 
+# Yo, this is the opposite of enable - turns filter OFF without deleting it. Same immediate effect
+# as enable - next download operation will skip this filter. Useful for debugging ("is this filter
+# blocking my downloads?") - just temporarily disable it and try again!
 @router.post("/filters/{filter_id}/disable")
 async def disable_filter(
     filter_id: str,
@@ -632,6 +684,10 @@ async def disable_filter(
         ) from e
 
 
+# Yo, PATCH lets you update the pattern without recreating the whole filter. This is important because
+# filters accumulate hit counts and stats - if you delete and recreate, you lose that history! The
+# is_regex flag can be toggled here too - careful, changing a simple string pattern to regex or vice
+# versa completely changes match behavior! Test the new pattern before applying.
 @router.patch("/filters/{filter_id}")
 async def update_filter_pattern(
     filter_id: str,
@@ -666,6 +722,9 @@ async def update_filter_pattern(
         ) from e
 
 
+# Hey, DELETE is permanent - the filter configuration is GONE, including all historical stats and hit
+# counts. Unlike disable, this can't be undone. Make sure users know this is destructive! Returns 200
+# even if filter doesn't exist (idempotent). Commits immediately.
 @router.delete("/filters/{filter_id}")
 async def delete_filter(
     filter_id: str,
@@ -765,6 +824,10 @@ async def create_automation_rule(
         ) from e
 
 
+# Hey, rule listing is like filter listing - supports multiple query modes. The enabled_only is what
+# the automation workers query to find active rules. The trigger filter helps UI show "all rules for
+# new releases" etc. The execution counts (total, successful, failed) are critical for debugging why
+# automation isn't working - if failed_executions is high, check logs!
 @router.get("/rules")
 async def list_automation_rules(
     trigger: str | None = None,
@@ -828,6 +891,10 @@ async def list_automation_rules(
         ) from e
 
 
+# Listen up, this GET returns detailed rule info including execution stats. The last_triggered_at
+# tells you when this rule last fired - if it's None or ancient, maybe the rule is misconfigured or
+# the trigger never happens. The success/fail counts are your debugging friend - high failures mean
+# check logs for what went wrong (Spotify API down? Soulseek timeout? Bug in action logic?).
 @router.get("/rules/{rule_id}")
 async def get_automation_rule(
     rule_id: str,
@@ -882,6 +949,9 @@ async def get_automation_rule(
         ) from e
 
 
+# Yo, enabling a rule means it will start executing on matching events IMMEDIATELY. If this rule has
+# auto_process=true, downloads might start RIGHT NOW if there are pending events! Be ready for sudden
+# activity. This is instant - no polling delay. The automation workers check enabled rules continuously.
 @router.post("/rules/{rule_id}/enable")
 async def enable_automation_rule(
     rule_id: str,
@@ -914,6 +984,10 @@ async def enable_automation_rule(
         ) from e
 
 
+# Hey, disabling stops rule execution immediately - any pending actions WON'T complete! If a download
+# was queued by this rule and you disable it mid-flight, the download might still finish (it's already
+# in the download worker queue), but NEW matches won't trigger. Use this for testing rules without
+# deleting them.
 @router.post("/rules/{rule_id}/disable")
 async def disable_automation_rule(
     rule_id: str,
@@ -946,6 +1020,10 @@ async def disable_automation_rule(
         ) from e
 
 
+# Listen, DELETE is permanent and destroys all rule history (execution counts, last triggered, etc).
+# Any pending actions from this rule might still complete (they're already queued), but no NEW events
+# will match. This is for when you're truly done with a rule. Consider disabling instead if you might
+# want it back later!
 @router.delete("/rules/{rule_id}")
 async def delete_automation_rule(
     rule_id: str,

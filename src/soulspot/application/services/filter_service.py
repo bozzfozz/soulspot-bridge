@@ -24,6 +24,14 @@ class FilterService:
         """
         self.repository = FilterRuleRepository(session)
 
+    # Hey future me, creates whitelist/blacklist filter rules! pattern is string to match (or regex if
+    # is_regex=True). FilterRule is a domain entity (good separation of concerns). Uses repository.add()
+    # to persist to DB. The priority param determines evaluation order (higher = first) which matters when
+    # you have conflicting rules. enabled=True by default means rule is active immediately. No validation
+    # on pattern - could create invalid regex and crash when applied! Should validate regex patterns here.
+    # Description is optional but highly recommended - you'll forget what the rule does in 6 months! Logs
+    # creation which is good for auditing. Returns the created rule for immediate use. FilterRuleId.generate()
+    # creates new UUID - good for distributed systems (no auto-increment ID conflicts).
     async def create_filter(
         self,
         name: str,

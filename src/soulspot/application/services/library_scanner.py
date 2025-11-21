@@ -61,6 +61,14 @@ class LibraryScannerService:
         """
         self.hash_algorithm = hash_algorithm
 
+    # Hey future me, this discovers all audio files in a directory! Uses rglob("*") to recursively find
+    # files with audio extensions (.mp3, .flac, etc). SECURITY CRITICAL: validates each file is within
+    # scan_path using PathValidator to prevent directory traversal attacks! Someone could create symlink
+    # outside allowed dir and try to scan /etc/passwd. The resolve=False param is used because scan_path
+    # is already absolute. Catches validation errors per-file and logs warning (sanitized, no full paths
+    # in logs to prevent info disclosure). Returns empty list on scan errors - might want to raise exception
+    # instead? The AUDIO_EXTENSIONS set should maybe be configurable. No progress callback so you can't
+    # track discovery progress for UI. Good defensive programming with path validation!
     def discover_audio_files(self, scan_path: Path) -> list[Path]:
         """Discover all audio files in the given path.
 
@@ -134,6 +142,14 @@ class LibraryScannerService:
             logger.error(f"Error calculating hash for {file_path}: {e}")
             return ""
 
+    # Listen up - this validates audio file integrity using Mutagen! MutagenFile returns None for
+    # unsupported formats which we catch. Checks audio.info.length > 0 to catch zero-duration files (often
+    # corrupted). Returns tuple of (is_valid, error_message) which is clean API. hasattr() checks are
+    # defensive - not all audio formats have same properties. Generic Exception catch might hide specific
+    # Mutagen errors (like PermissionError for locked files). The "Audio validation error" message wraps
+    # real error but should probably use error.__class__.__name__ for better debugging. No deep validation
+    # like checking if audio data is actually playable - just reads headers. Consider using ffmpeg/ffprobe
+    # for deeper validation? Fast and good enough for most cases though.
     def validate_audio_file(self, file_path: Path) -> tuple[bool, str | None]:
         """Validate audio file integrity.
 
@@ -156,6 +172,14 @@ class LibraryScannerService:
         except Exception as e:
             return False, f"Audio validation error: {str(e)}"
 
+    # Yo this extracts tags from audio files! Handles multiple tag formats (ID3 for MP3, Vorbis for OGG,
+    # MP4 tags for M4A). The for loops checking different key names (TIT2 vs title vs ©nam) are necessary
+    # because different formats use different tag keys. That's super annoying but unavoidable! Extracts
+    # val[0] if it's a list because some tags store multi-values. duration_ms is calculated from info.length
+    # (seconds) * 1000. bitrate and sample_rate are format-specific - not all have them. Default metadata
+    # dict has all None values which is safe. Warning logs on extraction errors are good - you'll want to
+    # know if tags can't be read. Returns dict not dataclass which is flexible but less type safe. No
+    # normalization of tag values (trim whitespace, etc) - might have tags with extra spaces!
     def extract_audio_metadata(self, file_path: Path) -> dict[str, Any]:
         """Extract audio metadata from file.
 

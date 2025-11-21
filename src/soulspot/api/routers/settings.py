@@ -79,6 +79,11 @@ class AllSettings(BaseModel):
     advanced: AdvancedSettings
 
 
+# Hey future me, this endpoint exposes ALL settings to the UI - but we MASK secrets! Notice the "***"
+# for passwords and API keys - NEVER return actual secrets in API responses or they'll leak in browser
+# devtools, logs, error tracking, etc. The settings come from get_settings() which loads from env vars
+# at startup. These are READ-ONLY in runtime - changing them here won't affect running app! For that,
+# you'd need hot-reload or restart. The appearance.theme default is "auto" - actual theme is client-side.
 @router.get("/")
 async def get_all_settings() -> AllSettings:
     """Get all current settings.
@@ -122,6 +127,12 @@ async def get_all_settings() -> AllSettings:
     )
 
 
+# Yo future me, this endpoint is a TODO stub! It ACCEPTS settings but DOESN'T SAVE THEM. If you actually
+# implement this, you have three options: 1) Write to .env file (fragile, needs file permissions), 2) Save
+# to DB config table (persistent, multi-instance safe), 3) External config service (enterprise!). IMPORTANT:
+# Some settings require restart (port changes, DB URL), others can hot-reload (log level, timeouts). Don't
+# let users think settings apply immediately when they don't - the "restart" note is critical! Also validate
+# carefully - bad settings (port 0, invalid URLs) can brick the app!
 @router.post("/")
 async def update_settings(settings_update: AllSettings) -> dict[str, Any]:
     """Update application settings.
@@ -156,6 +167,11 @@ async def update_settings(settings_update: AllSettings) -> dict[str, Any]:
     }
 
 
+# Listen up, reset is also a TODO stub - it SAYS it resets but doesn't actually do anything! Implementing
+# this is DANGEROUS - you could delete user's API keys, break integrations, lose custom config. Add a
+# "are you sure?" modal in UI! The reset should: 1) Clear DB config rows, 2) Delete .env overrides (not
+# the whole .env!), 3) Reload defaults. BUT don't touch database URL or secrets that would lock users out!
+# Maybe have "safe reset" (just UI prefs) vs "full reset" (everything). Restart is REQUIRED after reset.
 @router.post("/reset")
 async def reset_settings() -> dict[str, Any]:
     """Reset all settings to defaults.
@@ -186,6 +202,11 @@ async def reset_settings() -> dict[str, Any]:
     }
 
 
+# Hey, this returns the HARDCODED defaults from the Settings models, not what's currently in use! These
+# are the values you get if .env is empty. Useful for UI to show "what's the default for this field?" or
+# "reset this one field to default". Notice we return empty strings for secrets, NOT actual defaults from
+# Settings classes - we don't want to accidentally leak example secrets or expose hardcoded test values.
+# This is safe to call without auth since it's just public defaults.
 @router.get("/defaults")
 async def get_default_settings() -> AllSettings:
     """Get default settings values.

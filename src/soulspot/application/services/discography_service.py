@@ -69,6 +69,10 @@ class DiscographyService:
         self.session = session
         self.spotify_client = spotify_client
 
+    # Hey future me: Discography completeness check - finds which albums are missing from an artist's catalog
+    # WHY check this? User downloads 3 Pink Floyd albums, but they have 15 studio albums - which 12 are missing?
+    # GOTCHA: Spotify returns compilations, live albums, singles - you might not WANT them all
+    # Consider adding filter for album_type (album vs single vs compilation)
     async def check_discography(
         self, artist_id: ArtistId, access_token: str
     ) -> DiscographyInfo:

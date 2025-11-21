@@ -20,6 +20,13 @@ templates = Jinja2Templates(directory="src/soulspot/templates")
 router = APIRouter(prefix="/ui", tags=["dashboard-ui"])
 
 
+# Hey future me, this renders the main dashboard HTML! page_slug defaults to "default" which is
+# the initial page everyone sees. If page doesn't exist, we auto-create it on the fly - nice UX
+# but could cause race conditions if multiple users hit it simultaneously. No caching here so every
+# request does DB lookups. edit_mode toggle controls whether widget drag-drop is enabled. Templates
+# are Jinja2 - make sure dashboard.html exists or this blows up. Page entity uses id=0 for new pages
+# which is kinda weird - usually you'd let the DB auto-increment. The commit is inline which means
+# if template rendering fails, you still created the page (dangling data).
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_page(
     request: Request,
@@ -57,6 +64,13 @@ async def dashboard_page(
     )
 
 
+# Yo this loads the widget canvas! page_id can be "default" string OR an int - flexible but type
+# unsafe. We manually check and convert which is error-prone. Returns raw HTML string for errors
+# instead of proper HTTPException - HTMX expects HTML responses though so this makes sense. We
+# get instances then look up widget metadata for each - inefficient, should JOIN in single query.
+# widgets_with_meta builds dict manually instead of using Pydantic - more flexible but less type
+# safety. The template needs to handle empty widgets list gracefully. edit_mode passed to template
+# determines if widgets show edit controls (move/resize/delete buttons).
 @router.get("/pages/{page_id}/canvas", response_class=HTMLResponse)
 async def get_canvas(
     request: Request,
@@ -106,6 +120,12 @@ async def get_canvas(
     )
 
 
+# Listen up, this toggles edit mode for the dashboard! Gets current state from form data which is
+# a string "true"/"false" - the == "true" converts to bool. Returns raw HTML with hx-get attribute
+# that tells HTMX to reload the canvas. The edit-mode-active CSS class changes styling. This uses
+# inline HTML string building which is fragile - typos won't be caught until runtime. Should use
+# template. The f-string with nested quotes is hard to read. _session is unused - FastAPI requires
+# the dependency even if not used (keeps dep injection chain intact). Pretty clever use of HTMX!
 @router.post("/dashboard/toggle-edit-mode", response_class=HTMLResponse)
 async def toggle_edit_mode(
     request: Request,
@@ -145,6 +165,13 @@ async def widget_catalog(
     )
 
 
+# WATCH OUT: This creates a new widget instance from form data! page_id defaults to 1 which might
+# not exist - should validate. The type: ignore is needed because FormData.get() returns str | None
+# and we're converting to int without checking. Could crash if form is malformed. Finding next_row
+# by max() is clever but assumes rows are sequential - if you delete a middle row, gaps stay.
+# Default span_cols=6 means half-width which is reasonable. id=0 for new instance is weird again.
+# Returns HTML that triggers HTMX to reload the canvas - slick but means widget won't appear until
+# reload completes. Consider optimistic updates? Commits immediately which is good for consistency.
 @router.post("/widgets/instances", response_class=HTMLResponse)
 async def add_widget_instance(
     request: Request,
@@ -211,6 +238,13 @@ async def delete_widget_instance(
     return HTMLResponse("")
 
 
+# Heads up! Cool use of path param with {direction} variable! FastAPI parses "move-up", "move-down"
+# etc. The direction string is validated manually with if/elif - could use Enum for type safety.
+# Widget movement logic is in the entity (move_up/down/left/right methods) which is good domain
+# modeling. No bounds checking though - could move widget off-grid! Returns empty HTML on 404 which
+# means widget just disappears from UI - might be confusing. The hx-target="#widget-canvas" tells
+# HTMX where to inject the response. Reloads entire canvas for single widget move - inefficient but
+# simple. Consider just updating the moved widget's position in DOM instead of full reload.
 @router.post(
     "/widgets/instances/{instance_id}/move-{direction}", response_class=HTMLResponse
 )
@@ -301,6 +335,12 @@ async def get_widget_config(
     )
 
 
+# Listen, this saves widget config from form submission! Converts entire form_data to dict with
+# dict(form_data) which is simple but means ALL form fields become config - no validation! User
+# could inject arbitrary config keys. update_config method should sanitize. Returns success message
+# as inline HTML - should probably reload the widget to show new config. No error handling for
+# invalid config values - will just silently save bad data. Consider validating against widget's
+# config_schema before saving. The green-600 Tailwind class hardcoded in response HTML is fragile.
 @router.post("/widgets/instances/{instance_id}/config", response_class=HTMLResponse)
 async def save_widget_config(
     instance_id: int,
@@ -352,6 +392,13 @@ async def new_page_modal(request: Request) -> Any:
     )
 
 
+# IMPORTANT: Creates new dashboard pages! Gets name and slug from form - both are required (checks
+# with if not) but doesn't trim whitespace so "  " would pass. Should use .strip() first. Slug
+# uniqueness check is good but there's a race condition - two simultaneous requests could both pass
+# the check then both insert. Need unique constraint in DB. Page id=0 again - really should let DB
+# handle ID generation. Returns JavaScript redirect in HTML which works but feels hacky - should use
+# HTTP redirect header instead. Commits before checking if redirect HTML is valid which could leave
+# orphan pages. is_default=False is correct - don't want auto-created pages becoming default!
 @router.post("/pages", response_class=HTMLResponse)
 async def create_page(
     request: Request,
@@ -388,6 +435,12 @@ async def create_page(
     )
 
 
+# Yo, deletes dashboard pages! The is_default check prevents deleting the default page which is
+# smart - would break the app if default page disappeared. But what about widget instances on the
+# page? They'll be orphaned unless there's CASCADE delete in the DB. Should probably delete or move
+# widgets to another page first. Returns JavaScript redirect on success - same hacky pattern as
+# create_page. Empty HTML response for 404 means the UI won't show any feedback. Consider showing
+# toast notification. No confirmation prompt - user could accidentally nuke their custom dashboard!
 @router.delete("/pages/{page_id}", response_class=HTMLResponse)
 async def delete_page(
     page_id: int,

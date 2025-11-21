@@ -23,6 +23,10 @@ class DownloadWorker:
     5. Handles retries for failed downloads
     """
 
+    # Hey future me, this init sets up the download worker with all its dependencies injected. We create
+    # the SearchAndDownloadTrackUseCase HERE with the injected clients/repos - this is the "composition root"
+    # pattern. Don't call register() in __init__ - that's a separate step so caller controls WHEN the worker
+    # starts processing jobs! If you auto-register, tests become impossible (worker starts immediately).
     def __init__(
         self,
         job_queue: JobQueue,
@@ -45,10 +49,20 @@ class DownloadWorker:
             download_repository=download_repository,
         )
 
+    # Yo, this is the registration step - tells the job queue "when you see a DOWNLOAD job, call my
+    # _handle_download_job method". This is separate from __init__ so you can create the worker without
+    # it immediately consuming jobs (important for startup sequencing!). Call this AFTER the app is fully
+    # initialized and DB is ready. If you call this too early, jobs might fail because dependencies aren't ready.
     def register(self) -> None:
         """Register handler with job queue."""
         self._job_queue.register_handler(JobType.DOWNLOAD, self._handle_download_job)
 
+    # Listen up future me, this is the actual job handler that processes each download job. It extracts
+    # the payload (track_id, search params), builds a SearchAndDownloadTrackRequest, and executes the use
+    # case. If track_id is missing, we raise ValueError which marks the job as FAILED (don't retry - bad data!).
+    # If the use case returns an error_message, we raise Exception which triggers a RETRY (network issues etc).
+    # The return value gets stored in job.result - other code can check download_id/status later. This is
+    # called by the job queue worker pool, NOT directly by your code!
     async def _handle_download_job(self, job: Job) -> Any:
         """Handle a download job.
 
@@ -97,6 +111,12 @@ class DownloadWorker:
             "status": response.status.value,
         }
 
+    # Hey, this is the PUBLIC API for queueing downloads - controllers call this, not _handle_download_job!
+    # It packages up all the download params into a job payload and enqueues it. The job gets picked up
+    # later by _handle_download_job running in the worker pool. The quality_preference ("best", "good", "any")
+    # affects which Soulseek results we pick - "best" = highest bitrate/FLAC, "any" = first result. max_retries
+    # defaults to 3 - if download fails 3 times, job goes to FAILED (no more retries). Priority lets urgent
+    # downloads jump the queue (higher number = higher priority). Returns job_id for tracking.
     async def enqueue_download(
         self,
         track_id: TrackId,
@@ -134,6 +154,13 @@ class DownloadWorker:
             priority=priority,
         )
 
+    # Yo future me, this monitor is a BACKGROUND LOOP that polls slskd for download progress! It runs FOREVER
+    # in an asyncio task, checking every poll_interval seconds (default 10s). It finds RUNNING download jobs,
+    # extracts their slskd_download_id, and queries slskd for status (bytes downloaded, state, errors). The
+    # implementation is STUBBED OUT (pass) - you need to add actual slskd API calls! This is where you'd
+    # update progress bars, detect completed/failed downloads, and trigger post-processing. IMPORTANT: This
+    # is CPU/network intensive if you have hundreds of downloads - consider batching slskd status calls!
+    # If this crashes, downloads become "zombie" jobs - stuck in RUNNING forever. Add health checks!
     async def monitor_downloads(self, poll_interval: int = 10) -> None:
         """Monitor active downloads and update status.
 

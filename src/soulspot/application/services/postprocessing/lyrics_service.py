@@ -42,6 +42,11 @@ class LyricsService:
         self._genius_api_key = genius_api_key
         self._musixmatch_api_key = musixmatch_api_key
 
+    # Hey future me: Lyrics fetching - the three-source fallback chain
+    # WHY LRClib first? It has SYNCED lyrics (LRC format with timestamps) for karaoke/display
+    # WHY Genius requires API key? They limit free tier heavily, need to register
+    # WHY Musixmatch last? They're aggressive about rate limiting and blocking scrapers
+    # GOTCHA: All three return plain text lyrics - formatting/line breaks vary wildly
     async def fetch_lyrics(
         self,
         track: Track,
@@ -89,6 +94,10 @@ class LyricsService:
         logger.warning("No lyrics found for: %s - %s", artist_name, track.title)
         return None, False
 
+    # Hey future me: LRClib lookup - duration matching is key to getting the right version
+    # WHY pass duration? "Bohemian Rhapsody" has radio edit (3:50) vs album version (5:55)
+    # WHY convert to seconds? LRClib API uses seconds, we store milliseconds
+    # WHY prefer synced over plain? Synced lyrics have timestamps - way cooler for display
     async def _fetch_from_lrclib(
         self,
         artist: str,

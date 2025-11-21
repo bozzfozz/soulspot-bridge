@@ -60,6 +60,10 @@ class EnrichMetadataMultiSourceUseCase(
     5. Updates entities in repository
     """
 
+    # Hey future me: Multi-source enrichment - like asking three friends for directions and picking the best answer
+    # Authority hierarchy: Manual overrides > MusicBrainz > Spotify > Last.fm
+    # WHY this order? MusicBrainz is crowd-sourced and curated, Spotify is official but limited, Last.fm is user-tagged
+    # GOTCHA: If sources disagree on basic facts (track title, duration), we trust the hierarchy
     def __init__(
         self,
         track_repository: ITrackRepository,
@@ -157,6 +161,10 @@ class EnrichMetadataMultiSourceUseCase(
             logger.warning("Last.fm metadata fetch failed: %s", e)
             return None
 
+    # Hey future me: The execution flow - fetch from all sources FIRST, then merge ONCE
+    # WHY not merge as we go? We need all data to make informed decisions about conflicts
+    # Example: If Spotify says duration=180s, MusicBrainz says 182s, Last.fm says 185s
+    # The merger can pick the most authoritative or average them - depends on the field
     async def execute(
         self, request: EnrichMetadataMultiSourceRequest
     ) -> EnrichMetadataMultiSourceResponse:

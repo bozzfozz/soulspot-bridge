@@ -49,6 +49,13 @@ class WidgetTemplateSearchRequest(BaseModel):
     tags: list[str] | None = None
 
 
+# Hey future me, this lists all available widget templates! enabled_only filter is useful for hiding
+# disabled/experimental widgets. get_all returns list from registry which is in-memory dict - fast!
+# The big list comprehension unpacks WidgetTemplate into WidgetTemplateResponse Pydantic model which
+# provides API schema validation. Accessing t.config.field directly for each field is verbose - could
+# use **dict unpacking if field names matched. Icon, category, tags come from config object. is_enabled
+# and is_system are top-level template props. This is just a read operation, no mutations, but uses POST
+# for search endpoint (inconsistent). No pagination - could return 100s of templates and blow up response!
 @router.get("", response_model=list[WidgetTemplateResponse])
 async def list_widget_templates(
     enabled_only: bool = False,

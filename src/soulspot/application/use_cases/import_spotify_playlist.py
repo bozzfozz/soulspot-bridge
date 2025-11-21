@@ -66,6 +66,10 @@ class ImportSpotifyPlaylistUseCase(
         self._track_repository = track_repository
         self._artist_repository = artist_repository
 
+    # Hey future me: Spotify playlist import - the entry point for getting music into the system
+    # WHY fetch_all_tracks? Sometimes you just want playlist metadata without pulling 200 tracks
+    # GOTCHA: This creates OR UPDATES tracks - if the track exists by Spotify URI, we update it
+    # This is idempotent - running it twice on same playlist won't create duplicates
     async def execute(
         self, request: ImportSpotifyPlaylistRequest
     ) -> ImportSpotifyPlaylistResponse:
@@ -128,6 +132,13 @@ class ImportSpotifyPlaylistUseCase(
                         tracks_failed += 1
                         errors.append("Skipped item with no track data")
                         continue
+
+                    # Hey future me: The track creation/update logic
+                    # WHY get_by_spotify_uri instead of creating new? We want to UPDATE existing tracks from playlist syncs
+                    # Example: User adds track to playlist A, then adds same track to playlist B
+                    # We should reuse the same track entity and just link it to both playlists
+                    # GOTCHA: If artist doesn't exist, we create it ON THE FLY - this can lead to artist duplicates
+                    # TODO: Add artist deduplication by Spotify URI before creating
 
                     # Get or create artist
                     artist_name = (

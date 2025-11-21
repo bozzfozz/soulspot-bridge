@@ -33,6 +33,11 @@ class ID3TaggingService:
         """
         self._settings = settings
 
+    # Hey future me: ID3 tag writing - the metadata embedding into MP3 files
+    # WHY only MP3? Mutagen's EasyID3 is MP3-specific. For FLAC/M4A we'd need different libraries
+    # WHY validate path? SECURITY - user could pass path to system files
+    # WHY ID3v2.4? It's the modern standard - v2.3 has charset issues, v1 is ancient
+    # GOTCHA: We remove ALL existing artwork before adding new - prevents duplicate APIC frames
     async def write_tags(
         self,
         file_path: Path,
@@ -93,6 +98,10 @@ class ID3TaggingService:
             logger.warning("ID3 tagging only supports MP3 files: %s", file_path)
             return
 
+        # Hey future me: The two-pass approach - EasyID3 for simple tags, then full ID3 for complex stuff
+        # WHY two passes? EasyID3 is user-friendly but limited (no artwork, lyrics, custom frames)
+        # WHY MP3(file_path, ID3=ID3)? This loads the file WITH ID3 support for advanced tags
+        # GOTCHA: If file has no ID3 header, we add_tags() which creates an empty v2.4 tag
         try:
             # Try to load existing tags or create new
             try:

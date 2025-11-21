@@ -31,6 +31,10 @@ class WatchlistService:
         self.repository = ArtistWatchlistRepository(session)
         self.spotify_client = spotify_client
 
+    # Hey future me: Watchlist service - monitors artists for new releases
+    # WHY watchlist? User wants to auto-download new albums from favorite artists
+    # Example: Watch "Tool" - when new album drops, automatically trigger download workflow
+    # GOTCHA: Needs Spotify access token - these expire! Must refresh tokens or workflows fail
     async def create_watchlist(
         self,
         artist_id: ArtistId,
@@ -114,6 +118,11 @@ class WatchlistService:
         await self.repository.delete(watchlist_id)
         logger.info(f"Deleted watchlist {watchlist_id}")
 
+    # Hey future me: New release checking - compares Spotify albums against last known release date
+    # WHY store last_release_date? Avoids re-downloading same album on every check
+    # WHY parse release_date? Spotify returns YYYY-MM-DD or just YYYY - need to handle both
+    # GOTCHA: Spotify returns albums in reverse chronological order - newest first
+    # If band releases 3 albums while we were down, we'll get all 3 as "new"
     async def check_for_new_releases(
         self, watchlist: ArtistWatchlist, access_token: str
     ) -> list[dict[str, Any]]:
