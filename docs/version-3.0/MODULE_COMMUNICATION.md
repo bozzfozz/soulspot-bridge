@@ -907,68 +907,452 @@ class OperationNotSupportedError(Exception):
 module_router = ModuleRouter()
 ```
 
-### 4.4 Usage Example: Search and Download Flow
+### 4.4 Complete Orchestrated Flow: Search and Download
+
+This section shows the complete, choreographed flow of module communication when a user searches for a song and initiates a download.
+
+**Flow Overview:**
+1. User searches via Spotify UI
+2. Spotify returns search results
+3. User clicks download
+4. **Router** finds downloader module (Soulseek)
+5. **Router** sends download request to Soulseek
+6. Soulseek downloads the file
+7. Soulseek reports completion back to **Router**
+8. **Router** notifies Spotify that download is complete
+9. **Router** simultaneously broadcasts completion to other modules (Metadata, Library, etc.)
+10. Modules process in defined order (Metadata enrichment → Library import → etc.)
 
 ```python
-# Example: User searches for a song via Spotify, downloads via Soulseek
+# Example: Complete flow from search to download completion
 
-# 1. Register capabilities during module startup
-# In Spotify module initialization:
+# ============================================================================
+# STEP 1: Module Registration (during startup)
+# ============================================================================
+
+# Spotify module registers its capabilities
 module_router.register_capability(
     operation="search.track",
     module_name="spotify",
-    priority=10,  # High priority for Spotify search
+    priority=10,
 )
 
-# In Soulseek module initialization:
+# Soulseek module registers download capability
 module_router.register_capability(
     operation="download.track",
     module_name="soulseek",
     priority=10,
-    required_modules=["spotify"],  # Needs Spotify for track info
 )
 
-# 2. Use the router to coordinate the flow
-async def search_and_download_track(query: str):
-    """
-    Search for track and initiate download.
+# Metadata module registers enrichment capability
+module_router.register_capability(
+    operation="enrich.metadata",
+    module_name="metadata",
+    priority=10,
+)
+
+# Library module registers import capability
+module_router.register_capability(
+    operation="import.track",
+    module_name="library",
+    priority=10,
+)
+
+
+# ============================================================================
+# STEP 2: User Initiates Search (via Spotify module UI)
+# ============================================================================
+
+async def handle_search_request(query: str):
+    """Handle user search request from Spotify UI."""
     
-    Hey future me, this shows how the router coordinates modules.
-    If Spotify is missing, search fails. If Soulseek is missing,
-    download fails with a clear warning. Both failures are graceful!
+    # User searches via Spotify module
+    search_results = await module_router.route_request(
+        operation="search.track",
+        params={"query": query, "limit": 10}
+    )
+    # Router finds Spotify module → routes search → returns results
+    
+    return search_results
+
+
+# ============================================================================
+# STEP 3: User Clicks Download Button
+# ============================================================================
+
+async def handle_download_request(track_id: str, track_info: dict):
     """
+    Handle download request initiated by user.
+    
+    This is the key orchestration function. The Router coordinates
+    the entire flow: finding downloader, managing download, notifying
+    completion, and triggering post-processing pipeline.
+    """
+    
+    # Router searches for a downloader module
+    logger.info(f"Router: Looking for downloader for track {track_id}")
     
     try:
-        # Step 1: Search via router
-        search_results = await module_router.route_request(
-            operation="search.track",
-            params={"query": query, "limit": 10}
-        )
-        
-        logger.info(f"✓ Found {len(search_results)} tracks")
-        
-        # Step 2: User selects a track (first result for example)
-        selected_track = search_results[0]
-        
-        # Step 3: Download via router
-        download = await module_router.route_request(
+        # Router sends download request to Soulseek
+        download_result = await module_router.route_request(
             operation="download.track",
             params={
-                "track_id": selected_track["id"],
-                "track_info": selected_track,
+                "track_id": track_id,
+                "track_info": track_info,
+                "callback": "router.on_download_complete",  # Callback to router
             }
         )
+        # Router → Soulseek: "Please download this track"
         
-        logger.info(f"✓ Download initiated: {download['id']}")
-        return download
+        logger.info(
+            f"✓ Router: Download initiated via {download_result['module']}, "
+            f"download_id: {download_result['download_id']}"
+        )
         
-    except ModuleNotAvailableError as e:
-        logger.error(f"✗ Cannot complete operation: {e}")
-        # This error message will show in logs and can be displayed in UI
+        return download_result
+        
+    except ModuleNotAvailableError:
+        logger.error("✗ Router: No downloader module available (Soulseek inactive)")
         raise
+
+
+# ============================================================================
+# STEP 4: Soulseek Downloads File (Internal Process)
+# ============================================================================
+
+# In Soulseek module:
+async def download_track(track_id: str, track_info: dict, callback: str):
+    """Soulseek downloads the track."""
+    
+    # Start download
+    download_id = await start_slskd_download(track_info)
+    
+    # Monitor download progress
+    # ... download happens ...
+    
+    # When complete, notify Router via callback
+    await notify_download_complete(download_id, callback)
+    
+    return {"module": "soulseek", "download_id": download_id}
+
+
+# ============================================================================
+# STEP 5: Soulseek Reports Completion to Router
+# ============================================================================
+
+async def notify_download_complete(download_id: str, callback: str):
+    """Soulseek notifies Router that download is complete."""
+    
+    # Get download details
+    download = await get_download(download_id)
+    
+    # Notify Router via callback
+    await module_router.on_download_complete(
+        download_id=download_id,
+        track_id=download.track_id,
+        file_path=download.file_path,
+        source_module="soulseek",
+    )
+    
+    logger.info(f"✓ Soulseek → Router: Download {download_id} complete")
+
+
+# ============================================================================
+# STEP 6: Router Orchestrates Post-Download Processing
+# ============================================================================
+
+class ModuleRouter:
+    """Extended router with download completion orchestration."""
+    
+    async def on_download_complete(
+        self,
+        download_id: str,
+        track_id: str,
+        file_path: str,
+        source_module: str,
+    ):
+        """
+        Router receives download completion notification.
+        
+        This is the orchestration hub! Router coordinates the entire
+        post-download pipeline in the correct order.
+        
+        Hey future me, this is THE critical flow. The order matters:
+        1. Notify source (Spotify) first
+        2. Then trigger metadata enrichment
+        3. Then library import (needs metadata)
+        4. Finally other notifications
+        
+        Each step can fail independently without breaking the chain.
+        """
+        
+        logger.info(f"✓ Router: Download {download_id} completed by {source_module}")
+        
+        # STEP 6A: Notify originating module (Spotify) that download is done
+        try:
+            await self._notify_source_module(track_id, file_path, source_module)
+        except Exception as e:
+            logger.error(f"✗ Router: Failed to notify source module: {e}")
+            # Continue processing even if notification fails
+        
+        # STEP 6B: Trigger post-processing pipeline in order
+        await self._trigger_postprocessing_pipeline(
+            download_id=download_id,
+            track_id=track_id,
+            file_path=file_path,
+        )
+    
+    async def _notify_source_module(
+        self,
+        track_id: str,
+        file_path: str,
+        source_module: str,
+    ):
+        """Notify the source module (Spotify) that download is complete."""
+        
+        # Find which module initiated the download request
+        # (In this case, Spotify)
+        logger.info(f"✓ Router → Spotify: Track {track_id} download complete")
+        
+        # Publish event that Spotify can subscribe to
+        await event_bus.publish(
+            "download.completed.for_source",
+            {
+                "track_id": track_id,
+                "file_path": file_path,
+                "source_module": source_module,
+            }
+        )
+    
+    async def _trigger_postprocessing_pipeline(
+        self,
+        download_id: str,
+        track_id: str,
+        file_path: str,
+    ):
+        """
+        Trigger post-processing pipeline in correct order.
+        
+        ORDER IS IMPORTANT:
+        1. Metadata enrichment (first - others may need it)
+        2. Library import (second - needs metadata)
+        3. Notifications (last - everything is done)
+        """
+        
+        logger.info(f"Router: Starting post-processing pipeline for {track_id}")
+        
+        # STEP 1: Metadata Enrichment
+        metadata = await self._enrich_metadata(file_path)
+        
+        # STEP 2: Library Import (uses metadata from step 1)
+        await self._import_to_library(file_path, metadata)
+        
+        # STEP 3: Send notifications (everything is complete)
+        await self._send_notifications(track_id, file_path)
+        
+        logger.info(f"✓ Router: Post-processing pipeline complete for {track_id}")
+    
+    async def _enrich_metadata(self, file_path: str) -> dict:
+        """Step 1: Enrich metadata via Metadata module."""
+        
+        try:
+            logger.info(f"Router → Metadata: Enriching {file_path}")
+            
+            metadata = await self.route_request(
+                operation="enrich.metadata",
+                params={"file_path": file_path}
+            )
+            
+            logger.info(f"✓ Router ← Metadata: Enrichment complete")
+            return metadata
+            
+        except ModuleNotAvailableError:
+            logger.warning("⚠️  Metadata module unavailable - skipping enrichment")
+            return {}  # Return empty metadata, continue pipeline
+    
+    async def _import_to_library(self, file_path: str, metadata: dict):
+        """Step 2: Import to library via Library module."""
+        
+        try:
+            logger.info(f"Router → Library: Importing {file_path}")
+            
+            await self.route_request(
+                operation="import.track",
+                params={
+                    "file_path": file_path,
+                    "metadata": metadata,  # Uses metadata from step 1
+                }
+            )
+            
+            logger.info(f"✓ Router ← Library: Import complete")
+            
+        except ModuleNotAvailableError:
+            logger.warning("⚠️  Library module unavailable - skipping import")
+            # Continue even if library import fails
+    
+    async def _send_notifications(self, track_id: str, file_path: str):
+        """Step 3: Send notifications via Notification module."""
+        
+        try:
+            logger.info(f"Router → Notifications: Track {track_id} ready")
+            
+            await self.route_request(
+                operation="notify.track_ready",
+                params={
+                    "track_id": track_id,
+                    "file_path": file_path,
+                    "message": "Track downloaded and processed successfully"
+                }
+            )
+            
+            logger.info(f"✓ Router ← Notifications: Notification sent")
+            
+        except ModuleNotAvailableError:
+            logger.warning("⚠️  Notification module unavailable - skipping notifications")
+
+
+# ============================================================================
+# COMPLETE FLOW SUMMARY
+# ============================================================================
+
+"""
+COMPLETE ORCHESTRATED FLOW:
+
+1. USER ACTION: Search for "Beatles" in Spotify UI
+   → Spotify UI → Router → Spotify Module → Returns results
+
+2. USER ACTION: Click download on selected track
+   → Spotify UI → Router (with track info)
+
+3. ROUTER ORCHESTRATION:
+   → Router finds downloader (Soulseek)
+   → Router → Soulseek: "Download this track"
+   → Soulseek starts download
+
+4. SOULSEEK PROCESSING:
+   → Download via slskd
+   → Monitor progress
+   → Complete download
+
+5. COMPLETION CALLBACK:
+   → Soulseek → Router: "Download complete"
+
+6. ROUTER POST-PROCESSING (Orchestrated Order):
+   
+   6a. Notify Source:
+       → Router → Spotify: "Your requested track is downloaded"
+   
+   6b. Process in Order:
+       
+       STEP 1: Metadata Enrichment
+       → Router → Metadata Module
+       → Metadata enriches file (MusicBrainz, Last.fm, etc.)
+       → Metadata → Router: "Enrichment complete"
+       
+       STEP 2: Library Import
+       → Router → Library Module (with metadata from step 1)
+       → Library organizes file, updates database
+       → Library → Router: "Import complete"
+       
+       STEP 3: Notifications
+       → Router → Notification Module
+       → Send user notification "Track ready!"
+       → Notification → Router: "Notification sent"
+
+7. FINAL STATE:
+   → Track is downloaded
+   → Metadata is enriched
+   → File is organized in library
+   → User is notified
+   → All modules can see updated state
+
+IF ANY MODULE IS MISSING:
+   → Router logs clear warning
+   → Skips that step
+   → Continues with available modules
+   → Graceful degradation
+
+EXAMPLE LOG OUTPUT:
+✓ Router: Looking for downloader for track spotify:123
+✓ Router: Download initiated via soulseek, download_id: dl-456
+✓ Soulseek → Router: Download dl-456 complete
+✓ Router → Spotify: Track spotify:123 download complete
+✓ Router: Starting post-processing pipeline for spotify:123
+  Router → Metadata: Enriching /music/beatles-let-it-be.mp3
+  ✓ Router ← Metadata: Enrichment complete
+  Router → Library: Importing /music/beatles-let-it-be.mp3
+  ✓ Router ← Library: Import complete
+  Router → Notifications: Track spotify:123 ready
+  ✓ Router ← Notifications: Notification sent
+✓ Router: Post-processing pipeline complete for spotify:123
+"""
 ```
 
-### 4.5 Module Health Checks
+### 4.5 Processing Order Configuration
+
+The post-processing pipeline order can be configured:
+
+```python
+# core/router/pipeline_config.py
+
+class PostProcessingPipeline:
+    """
+    Configurable post-processing pipeline.
+    
+    Hey future me, this defines the ORDER of operations after download.
+    Order matters! Each step may depend on previous steps.
+    """
+    
+    # Define pipeline steps in order
+    PIPELINE_STEPS = [
+        {
+            "name": "metadata_enrichment",
+            "operation": "enrich.metadata",
+            "required": False,  # Continue if missing
+            "params_builder": lambda ctx: {"file_path": ctx["file_path"]},
+        },
+        {
+            "name": "library_import",
+            "operation": "import.track",
+            "required": False,
+            "params_builder": lambda ctx: {
+                "file_path": ctx["file_path"],
+                "metadata": ctx.get("metadata", {}),  # Use metadata from previous step
+            },
+        },
+        {
+            "name": "notification",
+            "operation": "notify.track_ready",
+            "required": False,
+            "params_builder": lambda ctx: {
+                "track_id": ctx["track_id"],
+                "file_path": ctx["file_path"],
+            },
+        },
+    ]
+    
+    async def execute(self, context: dict):
+        """Execute pipeline steps in order."""
+        
+        for step in self.PIPELINE_STEPS:
+            try:
+                result = await module_router.route_request(
+                    operation=step["operation"],
+                    params=step["params_builder"](context)
+                )
+                
+                # Store result in context for next steps
+                context[step["name"]] = result
+                
+            except ModuleNotAvailableError:
+                if step["required"]:
+                    raise  # Stop if required step fails
+                else:
+                    logger.warning(f"Skipping optional step: {step['name']}")
+                    continue
+```
+
+### 4.6 Module Health Checks
 
 Each module must provide a health check function:
 

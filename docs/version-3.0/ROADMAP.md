@@ -404,6 +404,7 @@ modules/soulseek/tests/integration/test_slskd_integration.py
 - ✅ Use events for loose coupling
 - ✅ Make modules testable in isolation
 - ✅ Version module APIs and events
+- ✅ Use submodules for complex functionality separation
 
 **DON'T:**
 - ❌ Import directly from other modules' implementation
@@ -412,6 +413,40 @@ modules/soulseek/tests/integration/test_slskd_integration.py
 - ❌ Mix frontend and backend in same files
 - ❌ Skip tests or documentation
 - ❌ Break module boundaries for "quick fixes"
+
+### 6.4 Submodules
+
+**When to Use Submodules:**
+- Complex authentication/authorization logic (OAuth, JWT, etc.)
+- Webhook handling that's separate from main API
+- Admin/management interfaces separate from user features
+- Storage/caching layers
+- Background job processing
+
+**Example: Spotify Module with Auth Submodule**
+
+```
+modules/spotify/
+├── submodules/
+│   └── auth/                       # OAuth authentication submodule
+│       ├── backend/
+│       │   ├── api/routes.py       # /spotify/auth/* endpoints
+│       │   ├── application/
+│       │   │   └── services/token_service.py
+│       │   └── domain/
+│       │       └── entities/oauth_token.py
+│       └── tests/
+├── backend/                        # Main Spotify module
+│   └── infrastructure/
+│       └── spotify_client.py       # Uses auth submodule
+└── frontend/
+```
+
+**Submodule Benefits:**
+- Clear separation of cross-cutting concerns
+- Independent testing and versioning
+- Reusable across modules
+- Optional enablement (disable auth submodule if not needed)
 
 ---
 

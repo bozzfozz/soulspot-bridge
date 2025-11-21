@@ -187,6 +187,339 @@ modules/{module_name}/
 - Prefix with `test_`: `test_download_service.py`
 - Mirror source structure: `services/download_service.py` → `tests/unit/test_download_service.py`
 
+### 3.3 Submodules Support
+
+**Overview:**  
+Modules can contain submodules for better organization and separation of concerns. Submodules are self-contained units within a parent module that handle specific functionality.
+
+**Use Cases:**
+- **Authentication Submodule**: Handle OAuth, token management separately from main module logic
+- **Storage Submodule**: Manage file storage, caching independently
+- **Webhook Submodule**: Handle external webhooks in isolation
+- **Admin Submodule**: Separate admin functionality from user-facing features
+
+**Example: Spotify Module with Authentication Submodule**
+
+```
+modules/spotify/
+├── README.md
+├── __init__.py                     # Parent module exports
+│
+├── submodules/                     # ✅ Submodules directory
+│   │
+│   ├── auth/                       # Authentication submodule
+│   │   ├── __init__.py
+│   │   ├── backend/
+│   │   │   ├── api/
+│   │   │   │   ├── routes.py      # /spotify/auth/* routes
+│   │   │   │   └── schemas.py
+│   │   │   ├── application/
+│   │   │   │   └── services/
+│   │   │   │       └── token_service.py
+│   │   │   ├── domain/
+│   │   │   │   └── entities/
+│   │   │   │       └── oauth_token.py
+│   │   │   └── infrastructure/
+│   │   │       └── persistence/
+│   │   │           └── token_repository.py
+│   │   ├── frontend/
+│   │   │   └── pages/
+│   │   │       └── auth_callback.html
+│   │   └── tests/
+│   │
+│   └── webhooks/                   # Webhooks submodule (example)
+│       ├── __init__.py
+│       └── backend/
+│           └── api/
+│               └── routes.py       # /spotify/webhooks/* routes
+│
+├── frontend/                       # Parent module UI
+│   ├── pages/
+│   │   └── playlist_sync.html
+│   └── widgets/
+│       └── playlist_widget.html
+│
+├── backend/                        # Parent module backend
+│   ├── api/
+│   │   ├── routes.py               # Main Spotify routes
+│   │   └── schemas.py
+│   ├── application/
+│   │   └── services/
+│   │       └── playlist_service.py # Uses auth submodule
+│   ├── domain/
+│   │   └── entities/
+│   │       └── playlist.py
+│   └── infrastructure/
+│       └── integrations/
+│           └── spotify_client.py   # Uses auth submodule for tokens
+│
+└── tests/
+    └── integration/
+        └── test_playlist_with_auth.py  # Test parent + submodule
+```
+
+**Submodule Registration and Discovery:**
+
+```python
+# modules/spotify/__init__.py
+
+"""
+Spotify Module with Authentication Submodule.
+
+This module handles Spotify integration including playlist sync,
+track search, and user authentication.
+"""
+
+from .backend.api.routes import router as main_router
+from .submodules.auth import router as auth_router, AuthSubmodule
+from .backend.config.settings import SpotifySettings
+
+__version__ = "1.0.0"
+__description__ = "Spotify integration with OAuth authentication"
+
+class SpotifyModule:
+    """Spotify module with authentication submodule."""
+    
+    name: str = "spotify"
+    version: str = __version__
+    
+    # Submodules
+    submodules: dict = {
+        "auth": AuthSubmodule,  # Authentication submodule
+    }
+    
+    # Combined routers
+    @staticmethod
+    def get_router():
+        """Get combined router with all submodule routes."""
+        from fastapi import APIRouter
+        
+        router = APIRouter(prefix="/spotify")
+        
+        # Include main module routes
+        router.include_router(main_router, tags=["spotify"])
+        
+        # Include submodule routes
+        router.include_router(
+            auth_router,
+            prefix="/auth",
+            tags=["spotify-auth"]
+        )
+        
+        return router
+    
+    @staticmethod
+    def health_check() -> dict:
+        """Check health of module and all submodules."""
+        return {
+            "module": "spotify",
+            "status": "healthy",
+            "submodules": {
+                "auth": AuthSubmodule.health_check(),
+            }
+        }
+
+# Export for easy import
+module = SpotifyModule()
+router = module.get_router()
+```
+
+**Authentication Submodule Definition:**
+
+```python
+# modules/spotify/submodules/auth/__init__.py
+
+"""
+Spotify Authentication Submodule.
+
+Handles OAuth flow, token management, and token refresh.
+Isolated from main Spotify module for better separation of concerns.
+
+Hey future me, this is a SUBMODULE. It's part of Spotify module but
+self-contained. It handles ONLY authentication - getting tokens,
+refreshing them, storing them. The parent Spotify module uses this
+for making API calls.
+"""
+
+from fastapi import APIRouter
+from .backend.api.routes import router as auth_routes
+from .backend.application.services.token_service import TokenService
+
+router = auth_routes
+
+class AuthSubmodule:
+    """Authentication submodule for Spotify."""
+    
+    name: str = "spotify.auth"
+    parent: str = "spotify"
+    version: str = "1.0.0"
+    
+    # Services exposed to parent module
+    token_service: TokenService = TokenService()
+    
+    @staticmethod
+    def health_check() -> dict:
+        """Health check for auth submodule."""
+        return {
+            "submodule": "spotify.auth",
+            "status": "healthy",
+            "has_valid_token": TokenService().has_valid_token(),
+        }
+    
+    @staticmethod
+    def get_capabilities() -> list[str]:
+        """Capabilities provided by this submodule."""
+        return [
+            "oauth.authorize",
+            "oauth.callback",
+            "oauth.refresh_token",
+            "oauth.validate_token",
+        ]
+
+# Export
+submodule = AuthSubmodule()
+```
+
+**Parent Module Using Submodule:**
+
+```python
+# modules/spotify/backend/infrastructure/integrations/spotify_client.py
+
+"""
+Spotify API client.
+
+Uses the auth submodule for token management.
+"""
+
+from ....submodules.auth import submodule as auth_submodule
+import httpx
+
+class SpotifyClient:
+    """
+    Spotify API client.
+    
+    Hey future me, this client uses the AUTH SUBMODULE to get tokens.
+    It doesn't handle auth itself - that's delegated to the submodule.
+    Clean separation!
+    """
+    
+    def __init__(self):
+        self.base_url = "https://api.spotify.com/v1"
+        self.token_service = auth_submodule.token_service
+    
+    async def get_playlists(self, user_id: str) -> list[dict]:
+        """Get user playlists using token from auth submodule."""
+        
+        # Get token from auth submodule
+        token = await self.token_service.get_valid_token()
+        
+        # Make API call
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{self.base_url}/users/{user_id}/playlists",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            return response.json()
+```
+
+**Router Integration:**
+
+```python
+# modules/spotify/submodules/auth/backend/api/routes.py
+
+"""
+Authentication routes for Spotify OAuth.
+
+These routes are mounted at /spotify/auth/* by the parent module.
+"""
+
+from fastapi import APIRouter, Request, HTTPException
+from ..application.services.token_service import TokenService
+
+router = APIRouter()
+token_service = TokenService()
+
+@router.get("/authorize")
+async def authorize():
+    """
+    Initiate OAuth flow.
+    
+    Route: GET /spotify/auth/authorize
+    """
+    auth_url = await token_service.get_authorization_url()
+    return {"authorization_url": auth_url}
+
+@router.get("/callback")
+async def callback(code: str, state: str):
+    """
+    OAuth callback handler.
+    
+    Route: GET /spotify/auth/callback?code=...&state=...
+    """
+    try:
+        token = await token_service.exchange_code_for_token(code, state)
+        return {"status": "success", "message": "Authentication successful"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/refresh")
+async def refresh_token():
+    """
+    Refresh access token.
+    
+    Route: POST /spotify/auth/refresh
+    """
+    token = await token_service.refresh_access_token()
+    return {"status": "success", "expires_in": token.expires_in}
+```
+
+**Benefits of Submodules:**
+
+✅ **Separation of Concerns**: Auth logic isolated from main module  
+✅ **Reusability**: Submodules can be reused across modules  
+✅ **Independent Testing**: Test submodule in isolation  
+✅ **Clear Boundaries**: Each submodule has well-defined responsibility  
+✅ **Easier Maintenance**: Changes to auth don't affect playlist logic  
+✅ **Optional Features**: Submodules can be disabled if not needed  
+
+**Module Router Integration:**
+
+```python
+# Submodules register their capabilities with the router
+
+# In auth submodule initialization:
+module_router.register_capability(
+    operation="oauth.get_token",
+    module_name="spotify.auth",  # Submodule name
+    priority=10,
+)
+
+# Other modules can use auth submodule:
+token = await module_router.route_request(
+    operation="oauth.get_token",
+    params={"service": "spotify"}
+)
+```
+
+**Submodule Communication:**
+
+Submodules can communicate with:
+1. **Parent Module**: Direct import and method calls
+2. **Other Submodules**: Via parent module or event bus
+3. **External Modules**: Via module router or events
+
+```python
+# Parent → Submodule (direct)
+from .submodules.auth import token_service
+token = await token_service.get_token()
+
+# Submodule → Parent (via events)
+await event_bus.publish("spotify.auth.token_refreshed", {...})
+
+# Submodule → Other Module (via router)
+await module_router.route_request("notify.user", {...})
+```
+
 ---
 
 ## 4. Backend Structure

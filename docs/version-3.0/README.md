@@ -147,6 +147,11 @@ Focus on:
 
 ```
 modules/{module_name}/
+├── submodules/        # Optional: self-contained submodules
+│   └── auth/         # e.g., OAuth authentication
+│       ├── backend/
+│       ├── frontend/
+│       └── tests/
 ├── frontend/          # UI components (HTMX templates)
 ├── backend/
 │   ├── api/          # HTTP endpoints
@@ -167,6 +172,7 @@ modules/{module_name}/
 - Modules communicate **only through contracts** (events, registry)
 - Modules can be **developed independently**
 - Modules can be **tested in isolation**
+- Modules can have **submodules** for complex features (e.g., auth, webhooks)
 
 ### 2. Layered Architecture Within Modules
 
