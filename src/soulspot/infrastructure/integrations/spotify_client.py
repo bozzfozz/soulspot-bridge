@@ -19,6 +19,9 @@ class SpotifyClient(ISpotifyClient):
     TOKEN_URL = "https://accounts.spotify.com/api/token"  # nosec B105 - this is a public API endpoint URL, not a password
     API_BASE_URL = "https://api.spotify.com/v1"
 
+    # Hey future me, this init is deceptively simple - we DON'T create the HTTP client here
+    # because we need to be async-friendly. The actual client gets lazy-loaded in _get_client().
+    # If you try to create httpx.AsyncClient here, you'll get weird asyncio loop issues.
     def __init__(self, settings: SpotifySettings) -> None:
         """
         Initialize Spotify client.
@@ -29,18 +32,28 @@ class SpotifyClient(ISpotifyClient):
         self.settings = settings
         self._client: httpx.AsyncClient | None = None
 
+    # Listen up, future me: This is our lazy HTTP client factory. Timeout is 30s because
+    # Spotify can be SLOW sometimes, especially for playlist fetches with tons of tracks.
+    # Don't reduce this timeout unless you like getting random timeouts on big playlists.
     async def _get_client(self) -> httpx.AsyncClient:
         """Get or create HTTP client."""
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=30.0)
         return self._client
 
+    # Hey, this close() is IMPORTANT - if you don't call it, you'll leak connections and
+    # eventually run out of file descriptors. Always use this client as an async context
+    # manager (async with) or explicitly call close() in finally blocks. Trust me on this.
     async def close(self) -> None:
         """Close HTTP client."""
         if self._client is not None:
             await self._client.aclose()
             self._client = None
 
+    # Yo future me, PKCE is that OAuth security dance Spotify requires. This generates a
+    # random 32-byte code verifier. We strip the "=" padding because OAuth specs say so.
+    # The verifier MUST be stored securely - if someone steals it during auth flow, they
+    # can hijack the token exchange. Don't log this value or put it in URLs!
     @staticmethod
     def generate_code_verifier() -> str:
         """
@@ -55,6 +68,9 @@ class SpotifyClient(ISpotifyClient):
             .rstrip("=")
         )
 
+    # Hey, this is the other half of PKCE - we SHA256 hash the verifier to create the
+    # challenge. The challenge goes in the auth URL (public), but only we know the verifier
+    # (secret). Spotify will verify them later. Again, strip "=" padding for OAuth compliance.
     @staticmethod
     def generate_code_challenge(code_verifier: str) -> str:
         """
@@ -69,6 +85,11 @@ class SpotifyClient(ISpotifyClient):
         digest = hashlib.sha256(code_verifier.encode("utf-8")).digest()
         return base64.urlsafe_b64encode(digest).decode("utf-8").rstrip("=")
 
+    # Listen future me, this builds the URL to send users to Spotify for auth. The scopes
+    # listed here are MINIMAL - we only ask for read permissions. If you need write access
+    # (like modifying playlists), you'll need to add more scopes. But remember: users get
+    # scared by too many permissions, so only add what you actually need. The state param
+    # prevents CSRF attacks - ALWAYS validate it matches when the user comes back!
     async def get_authorization_url(self, state: str, code_verifier: str) -> str:
         """
         Generate Spotify OAuth authorization URL.
@@ -101,6 +122,11 @@ class SpotifyClient(ISpotifyClient):
 
         return f"{self.AUTHORIZE_URL}?{urlencode(params)}"
 
+    # Yo future me, this is THE critical step after user auth. We send the code + verifier
+    # to Spotify and get back tokens. IMPORTANT: This code is single-use and expires in 10
+    # minutes! If the user takes forever on the auth screen, this will fail. Also, the
+    # redirect_uri MUST match EXACTLY what we used in get_authorization_url(), or Spotify
+    # will reject it. And yeah, it HAS to be form-urlencoded, not JSON. Don't ask why.
     async def exchange_code(self, code: str, code_verifier: str) -> dict[str, Any]:
         """
         Exchange authorization code for access token.
@@ -133,6 +159,11 @@ class SpotifyClient(ISpotifyClient):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    # Hey future me, access tokens expire after 1 hour. This is how you get a new one without
+    # making the user re-authorize. The refresh token is long-lived (usually doesn't expire).
+    # BUT if the user revokes access or your app gets de-authorized, this will fail with 400.
+    # Handle that gracefully by redirecting them back to the auth flow. Don't spam this
+    # endpoint - only refresh when you actually need a new token, not preemptively!
     async def refresh_token(self, refresh_token: str) -> dict[str, Any]:
         """
         Refresh access token.
@@ -162,6 +193,11 @@ class SpotifyClient(ISpotifyClient):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    # Listen up, this fetches a playlist with ALL its details. Beware: Spotify paginates track
+    # lists after 100 tracks. So if you have a massive playlist (500+ tracks), you'll only get
+    # the first 100 here. You'll need to follow the 'next' URL in the response to get more.
+    # This has bitten me before - don't assume you got everything! Also, private playlists
+    # require the playlist-read-private scope or you'll get 403.
     async def get_playlist(self, playlist_id: str, access_token: str) -> dict[str, Any]:
         """
         Get playlist details.
@@ -185,6 +221,9 @@ class SpotifyClient(ISpotifyClient):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    # Hey, straightforward track fetch. Nothing tricky here. But remember: if a track gets
+    # removed from Spotify (regional licensing, artist request, etc.), this returns 404.
+    # Don't panic - it's not a bug. Just handle it gracefully and mark the track as unavailable.
     async def get_track(self, track_id: str, access_token: str) -> dict[str, Any]:
         """
         Get track details.
@@ -208,6 +247,11 @@ class SpotifyClient(ISpotifyClient):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    # Yo future me, Spotify search is... interesting. It uses their own query syntax with
+    # operators like "artist:" and "album:". The default limit is 20 which is usually fine.
+    # Pro tip: Search quality REALLY improves if you include artist name in the query.
+    # Also, search results are ranked by "popularity" which doesn't always match what you
+    # want - sometimes the obscure live version ranks higher than the studio version. Fun!
     async def search_track(
         self, query: str, access_token: str, limit: int = 20
     ) -> dict[str, Any]:
@@ -241,6 +285,12 @@ class SpotifyClient(ISpotifyClient):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    # Listen future me, this gets an artist's albums AND singles (hence include_groups).
+    # Default limit is 50 but artists like Bob Dylan have 500+ releases (compilations, live,
+    # etc.). You'll need pagination for prolific artists. Also, Spotify groups "appears_on"
+    # separately - we DON'T include those here because that's features/compilations and would
+    # flood the results. If you need those, add "appears_on" to include_groups. You've been
+    # warned: it's a LOT of data for some artists!
     async def get_artist_albums(
         self, artist_id: str, access_token: str, limit: int = 50
     ) -> list[dict[str, Any]]:
@@ -274,6 +324,9 @@ class SpotifyClient(ISpotifyClient):
         result = cast(dict[str, Any], response.json())
         return cast(list[dict[str, Any]], result.get("items", []))
 
+    # Hey future me, these context manager methods let you use this client with
+    # "async with SpotifyClient(...) as client:" syntax. This is THE preferred way
+    # to use this client - it guarantees cleanup even if exceptions happen. Use it!
     async def __aenter__(self) -> "SpotifyClient":
         """Async context manager entry."""
         return self
