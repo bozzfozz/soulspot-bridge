@@ -75,6 +75,11 @@ class WatchlistWorker:
             # Wait for next check
             await asyncio.sleep(self.check_interval_seconds)
 
+    # Hey future me: Watchlist worker - background daemon that polls Spotify for new releases
+    # WHY check every hour? Balance between finding new releases quickly vs API rate limits
+    # WHY separate worker? Long-running process, can't block main application
+    # GOTCHA: If Spotify access token expires, worker silently fails until token refreshed
+    # TODO: Add automatic token refresh or at least alert when token is stale
     async def _check_watchlists(self) -> None:
         """Check all due watchlists for new releases."""
         try:

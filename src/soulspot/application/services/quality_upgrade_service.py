@@ -35,6 +35,11 @@ class QualityUpgradeService:
         """
         self.session = session
 
+    # Hey future me: Improvement score calculation - quantifies how much better the new file would be
+    # Scoring: 40% bitrate improvement + 60% format improvement
+    # WHY weight format more? FLAC->MP3 is huge downgrade even if bitrates similar
+    # Example: 128kbps MP3 -> 320kbps FLAC = 0.4*(320/128-1)*0.4 + (1.0-0.6)*0.6 = ~0.54 improvement
+    # GOTCHA: Score maxes at 1.0 - going from 128kbps to 5000kbps doesn't give bonus points
     def calculate_improvement_score(
         self,
         current_bitrate: int,
@@ -76,6 +81,11 @@ class QualityUpgradeService:
         total_score = min(bitrate_score + format_score, 1.0)
         return round(total_score, 3)
 
+    # Hey future me: Quality upgrade candidate identification - finds tracks that could be upgraded
+    # WHY quality profiles? Not everyone wants lossless - some people are fine with 320kbps MP3
+    # Profile hierarchy: low (128kbps) < medium (192kbps) < high (320kbps) < lossless (FLAC)
+    # GOTCHA: This queries ALL tracks then filters - could be slow on huge libraries (100k+ tracks)
+    # Consider adding index on audio_bitrate and audio_format columns
     async def identify_upgrade_candidates(
         self,
         quality_profile: str = "high",

@@ -113,6 +113,11 @@ class JobQueue:
         """
         self._handlers[job_type] = handler
 
+    # Hey future me: Job queue - in-memory task queue for background work
+    # WHY in-memory? Simple to start, no external dependencies (Redis/RabbitMQ)
+    # WHY priority queue? Urgent tasks (user-initiated) should jump ahead of bulk automation
+    # GOTCHA: In-memory means jobs lost on restart - for production, use persistent queue (Celery/RQ)
+    # Priority sorting: Higher priority number = processed first (max-heap using negative priority)
     async def enqueue(
         self,
         job_type: JobType,
@@ -232,6 +237,10 @@ class JobQueue:
 
         return jobs[:limit]
 
+    # Hey future me: Job execution with retry logic - exponential backoff on failures
+    # WHY exponential backoff? 1s, 2s, 4s delays - gives transient issues time to resolve
+    # Example: Network glitch fails download - retry immediately fails again, but retry after 2s succeeds
+    # GOTCHA: Re-queued jobs go to BACK of queue (by priority) - could delay if queue is full
     async def _process_job(self, job: Job) -> None:
         """Process a single job.
 
@@ -278,6 +287,10 @@ class JobQueue:
         finally:
             self._running_jobs.discard(job.id)
 
+    # Hey future me: Worker loop - the main event loop that processes jobs
+    # WHY respect max_concurrent? slskd has limits, don't DDoS it with 100 simultaneous downloads
+    # WHY sleep intervals (0.1s, 0.5s, 1.0s)? Prevent busy-waiting and CPU spinning
+    # GOTCHA: Shutdown is checked every second max - could delay shutdown up to 1 second
     async def _worker_loop(self) -> None:
         """Worker loop to process jobs from queue."""
         while not self._shutdown:
@@ -287,6 +300,11 @@ class JobQueue:
                     await asyncio.sleep(0.5)
                     continue
 
+                # Hey future me: The concurrency limit enforcement - wait for free slot before taking next job
+                # WHY while loop? Keep checking until slot opens or shutdown requested
+                # WHY 0.1s sleep? Fast enough response without CPU burning
+                # GOTCHA: We wait for slot BEFORE dequeuing - prevents queue from being drained while all workers busy
+                
                 # Wait for available slot
                 while (
                     len(self._running_jobs) >= self._max_concurrent

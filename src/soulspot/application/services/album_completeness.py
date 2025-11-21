@@ -73,6 +73,10 @@ class AlbumCompletenessService:
         self.spotify_client = spotify_client
         self.musicbrainz_client = musicbrainz_client
 
+    # Hey future me: Album completeness checking - finds missing tracks from an album
+    # WHY two clients (Spotify + MusicBrainz)? Spotify has newer stuff, MusicBrainz has obscure/old stuff
+    # Example: Import "OK Computer" with 10 tracks, but album should have 12 - this finds the 2 missing
+    # GOTCHA: Deluxe editions vs standard - Spotify might say 15 tracks, you have standard with 10
     async def get_expected_track_count_from_spotify(
         self, spotify_uri: str, access_token: str
     ) -> int | None:
@@ -118,6 +122,10 @@ class AlbumCompletenessService:
             )
             return None
 
+    # Hey future me: MusicBrainz track counting - sums across all media (discs)
+    # WHY loop through media? Albums can be multi-disc - we need total across ALL discs
+    # Example: "The Wall" has 2 discs with 13+13 tracks = 26 total
+    # GOTCHA: Some releases have bonus DVDs counted as "media" - we count ALL tracks including those
     async def get_expected_track_count_from_musicbrainz(
         self, musicbrainz_id: str
     ) -> int | None:

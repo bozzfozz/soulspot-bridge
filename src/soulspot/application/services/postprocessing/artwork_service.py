@@ -49,6 +49,10 @@ class ArtworkService:
         # Ensure artwork directory exists
         self._artwork_path.mkdir(parents=True, exist_ok=True)
 
+    # Hey future me: Artwork downloading - the album art pipeline
+    # WHY multiple sources? CoverArtArchive is free and high-quality, Spotify as fallback (needs auth token)
+    # WHY resize images? A 5000x5000px JPEG is 15MB - overkill for ID3 tags (most players show 300x300)
+    # GOTCHA: We save artwork to disk AND return bytes for embedding - might want to cache this
     async def download_artwork(
         self,
         track: Track,
@@ -179,6 +183,11 @@ class ArtworkService:
             logger.exception("Error downloading track artwork from Spotify: %s", e)
             return None
 
+    # Hey future me: Image processing - resize and optimize to keep file sizes sane
+    # WHY asyncio.to_thread? PIL is SYNCHRONOUS and blocking - would freeze the event loop
+    # WHY JPEG quality=85? Sweet spot between quality and file size (90+ is diminishing returns)
+    # WHY Lanczos resampling? Best quality downscaling algorithm (slower but worth it)
+    # GOTCHA: We convert all images to RGB - some PNGs with transparency will get black backgrounds
     async def _process_image(self, image_data: bytes) -> bytes:
         """Process and optimize image.
 

@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 class CheckAlbumCompletenessUseCase:
     """Use case for checking album completeness."""
 
+    # Hey future me: This use case is all about finding your incomplete albums
+    # Think of it like checking your vinyl collection - "Wait, I'm missing track 7 on Dark Side of the Moon?!"
+    # WHY two clients? Because sometimes Spotify has the data, sometimes MusicBrainz does
+    # We try Spotify first (faster) then fall back to MusicBrainz (more complete but slower)
     def __init__(
         self,
         session: AsyncSession,
@@ -43,6 +47,11 @@ class CheckAlbumCompletenessUseCase:
         self.service = AlbumCompletenessService(spotify_client, musicbrainz_client)
         self.access_token = access_token
 
+    # Hey future me: The main completeness check - scans ALL your albums
+    # WHY incomplete_only? Nobody cares about the complete ones, save the CPU cycles
+    # WHY min_track_count=3? Singles are 1-2 tracks, we only care about albums/EPs
+    # GOTCHA: This can be slow on huge libraries - we do one DB round-trip per album to get tracks
+    # Consider adding pagination if someone has 10k+ albums
     async def execute(
         self, incomplete_only: bool = True, min_track_count: int = 3
     ) -> list[dict[str, Any]]:
@@ -94,6 +103,12 @@ class CheckAlbumCompletenessUseCase:
                 expected_count = 0
                 source = "unknown"
 
+                # Hey future me: The two-source fallback dance
+                # WHY try Spotify first? It's faster and we probably have the URI from import
+                # WHY check expected_count == 0 before MusicBrainz? Don't waste API calls if Spotify worked
+                # GOTCHA: If both sources say different track counts, we trust whichever we hit first
+                # This can happen with deluxe editions vs standard - might want to handle that later
+                
                 # Try to get expected track count from Spotify
                 if album_model.spotify_uri and self.access_token:
                     spotify_count = (
@@ -160,6 +175,9 @@ class CheckAlbumCompletenessUseCase:
 
         return completeness_results
 
+    # Hey future me: Same logic as execute() but for ONE album
+    # WHY separate method? UI needs to check single albums without scanning the whole library
+    # Could refactor to share code with execute() but it's clearer this way
     async def check_single_album(self, album_id: str) -> dict[str, Any] | None:
         """Check completeness of a single album.
 

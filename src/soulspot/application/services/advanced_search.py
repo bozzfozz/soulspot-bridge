@@ -50,6 +50,10 @@ class AdvancedSearchService:
             "rehearsal",
         ]
 
+    # Hey future me: Advanced search with fuzzy matching - because "bohemian rhapsody" should match "Bohemian Rhapsody (2011 Remaster).flac"
+    # WHY fuzzy matching? Users and uploaders spell things differently, we need tolerance
+    # WHY rapidfuzz.token_set_ratio? It ignores word order and extra words - perfect for music filenames
+    # Example: "Queen Bohemian Rhapsody" matches "Bohemian Rhapsody - Queen - 2011 Remaster"
     def apply_fuzzy_matching(
         self,
         query: str,
@@ -150,6 +154,12 @@ class AdvancedSearchService:
 
         return filtered_results
 
+    # Hey future me: Quality scoring - the "how good is this audio file" calculator
+    # Scoring breakdown (0-100 scale):
+    # - Format: FLAC=40pts, M4A/Opus=30pts, MP3=20pts (lossless > modern lossy > old lossy)
+    # - Bitrate: Normalized to 40pts (320kbps MP3 = 40pts, FLAC 800+kbps = 40pts)
+    # - File size: 20pts (bigger usually means better quality for same format)
+    # WHY different bitrate ranges for FLAC vs MP3? FLAC is variable bitrate, typically 800-1400kbps
     def calculate_quality_score(self, result: SearchResult) -> float:
         """Calculate quality score for a search result.
 
@@ -205,6 +215,11 @@ class AdvancedSearchService:
 
         return min(score, 100.0)
 
+    # Hey future me: Smart scoring - combines fuzzy match + quality + filename cleanliness
+    # Weighting: 50% match quality, 40% audio quality, 10% filename quality
+    # WHY these weights? Doesn't matter if it's FLAC if it's the wrong song!
+    # Example: 100% match + 128kbps MP3 beats 70% match + FLAC
+    # GOTCHA: This assumes search results are somewhat relevant - garbage in, garbage out
     def calculate_smart_score(
         self,
         result: SearchResult,

@@ -76,6 +76,10 @@ class AutoImportService:
             ".alac",
         }
 
+    # Hey future me: Auto-import service - the background daemon that moves completed downloads to music library
+    # WHY poll every 60 seconds? Balance between responsiveness and CPU usage
+    # WHY two paths (download_path and music_path)? Downloads go to temp, music is organized permanent storage
+    # GOTCHA: Files are "complete" only after 5 seconds of no modification - prevents moving partial downloads
     async def start(self) -> None:
         """Start the auto-import service."""
         if self._running:
@@ -167,6 +171,11 @@ class AutoImportService:
 
         return audio_files
 
+    # Hey future me: File completeness check - prevents moving files that are still being written
+    # WHY check modification time? slskd writes files incrementally, we need to wait for it to finish
+    # WHY 5 seconds? Heuristic - if file hasn't changed in 5s, it's probably done
+    # GOTCHA: If download is REALLY slow (1KB/sec), we might move it prematurely
+    # Better approach: Check if file is locked or monitor slskd API for completion status
     def _is_file_complete(self, file_path: Path) -> bool:
         """Check if file is completely downloaded (not being written).
 
@@ -210,6 +219,10 @@ class AutoImportService:
         Args:
             file_path: Path to file to import
         """
+        # Hey future me: The import flow - post-process then move (if needed)
+        # WHY run post-processing first? It might rename/move the file to final destination
+        # WHY check if still in downloads after? Post-processing might have moved it already
+        # GOTCHA: We cleanup empty directories after move - don't leave "/downloads/Artist/Album/" clutter
         try:
             # Try to find the associated track by file path
             # We need to search for tracks that don't have a file_path yet

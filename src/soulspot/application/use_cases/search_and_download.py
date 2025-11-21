@@ -91,6 +91,12 @@ class SearchAndDownloadTrackUseCase(
         # Just use track title - artist lookup would require repository injection
         return track.title
 
+    # Hey future me: The "best file" selection - this is where the magic happens
+    # WHY use_advanced_search? Because "best" means different things:
+    # - Fuzzy matching: "Bohemian Rhapsody" vs "Bohemian Rapsody (2011 Remaster).flac"
+    # - Quality: 320kbps MP3 vs 1411kbps FLAC vs 128kbps MP3
+    # - Exclusions: Not live, not remix, not karaoke versions
+    # GOTCHA: If advanced search returns nothing, we fall back to legacy logic (simpler but dumber)
     def _select_best_file(
         self,
         results: list[dict[str, Any]],
@@ -171,6 +177,10 @@ class SearchAndDownloadTrackUseCase(
 
         # Sort by bitrate (higher is better) and file size
         # Prefer FLAC > 320kbps MP3 > lower quality
+        # Hey future me: Quality scoring logic - FLAC gets 1000 point bonus, then bitrate matters
+        # WHY 1000 bonus? Makes FLAC always win over even 320kbps MP3 (which gets ~0-600 points from bitrate/size)
+        # GOTCHA: This is a heuristic - a corrupted FLAC will score higher than perfect MP3
+        # Consider adding file integrity checks later (mutagen can detect some issues)
         def quality_score(file: dict[str, Any]) -> tuple[int, int, int]:
             """Calculate quality score for ranking search results.
 
@@ -210,6 +220,11 @@ class SearchAndDownloadTrackUseCase(
             # Return any available file
             return audio_files[0] if audio_files else None
 
+    # Hey future me: Search and download - the BIG ONE that ties together search, ranking, and download initiation
+    # WHY advanced_search_service? Fuzzy matching + quality filters + smart scoring
+    # Without it, we'd just take the first result (which might be a 96kbps live recording from 1987)
+    # GOTCHA: This creates a Download entity but doesn't wait for completion
+    # The download happens ASYNC via slskd - use DownloadRepository to track status
     async def execute(
         self, request: SearchAndDownloadTrackRequest
     ) -> SearchAndDownloadTrackResponse:

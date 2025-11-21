@@ -44,6 +44,10 @@ class ScanLibraryUseCase:
         self.settings = settings
         self.scanner_service = scanner_service or LibraryScannerService()
 
+    # Hey future me: Library scanning - the file system crawler that builds our music database
+    # WHY validate_safe_path? CRITICAL security check - users could pass "../../../etc/passwd"
+    # We MUST ensure scan path is inside allowed directories (download_path or music_path)
+    # GOTCHA: This uses OS-level path resolution - symlinks could escape the jail if not careful
     async def execute(self, scan_path: str) -> LibraryScan:
         """Execute library scan.
 
@@ -120,6 +124,11 @@ class ScanLibraryUseCase:
 
             # Scan each file
             file_infos: list[FileInfo] = []
+            # Hey future me: Progress checkpoints every 100 files
+            # WHY 100? Balance between DB writes and showing progress to user
+            # If we commit every file, we kill the DB with transactions
+            # If we only commit at the end, user sees nothing for minutes on big scans
+            # 100 files ≈ every few seconds on modern hardware
             for i, file_path in enumerate(audio_files):
                 try:
                     file_info = self.scanner_service.scan_file(file_path)
@@ -209,6 +218,10 @@ class ScanLibraryUseCase:
         except Exception as e:
             logger.warning(f"Error updating track from scan: {e}")
 
+    # Hey future me: Duplicate detection - finds files with same hash but different paths
+    # WHY save this? User might have "/music/album/song.mp3" and "/downloads/song.mp3" - same file, wasting space
+    # GOTCHA: We create/update FileDuplicateModel records here but don't DELETE files
+    # The user/admin decides which duplicate to keep - we just report them
     async def _save_duplicates(self, duplicates: dict[str, list[FileInfo]]) -> None:
         """Save duplicate file information.
 
