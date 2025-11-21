@@ -7,6 +7,8 @@ from typing import Any
 
 from mutagen import File as MutagenFile  # type: ignore[attr-defined]
 
+from soulspot.infrastructure.security import PathValidator
+
 logger = logging.getLogger(__name__)
 
 # Supported audio file extensions
@@ -67,6 +69,11 @@ class LibraryScannerService:
 
         Returns:
             List of audio file paths
+
+        Note:
+            The scan is constrained to the provided scan_path directory.
+            Files are validated to ensure they remain within the scan_path
+            to prevent path traversal issues.
         """
         audio_files: list[Path] = []
 
@@ -78,10 +85,29 @@ class LibraryScannerService:
             logger.warning(f"Scan path is not a directory: {scan_path}")
             return audio_files
 
+        # Resolve scan_path to absolute path for validation
+        scan_path_resolved = scan_path.resolve()
+
         try:
             for file_path in scan_path.rglob("*"):
                 if file_path.is_file() and file_path.suffix.lower() in AUDIO_EXTENSIONS:
-                    audio_files.append(file_path)
+                    # Validate each discovered file is within scan_path
+                    # Note: resolve=False since scan_path_resolved is already absolute
+                    try:
+                        validated_path = PathValidator.validate_audio_file_path(
+                            file_path, scan_path_resolved, resolve=False
+                        )
+                        audio_files.append(validated_path)
+                    except ValueError as e:
+                        # Log but don't stop scanning if individual file validation fails
+                        # Don't include full path in log to avoid information disclosure
+                        logger.warning(
+                            "Skipping file due to validation failure in %s. "
+                            "Reason: %s",
+                            scan_path_resolved.name,
+                            str(e),
+                        )
+                        continue
         except Exception as e:
             logger.error(f"Error discovering files: {e}")
 
