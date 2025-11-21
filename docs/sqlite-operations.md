@@ -230,14 +230,17 @@ sqlite3 soulspot.db .dump > dump.sql
 
 ### Path Validation
 
-All database file paths are validated to prevent path traversal:
+All database file paths should be validated to prevent path traversal:
 
 ```python
-from soulspot.infrastructure.security import PathValidator
+from soulspot.infrastructure.security import validate_safe_path
+from pathlib import Path
 
-db_path = PathValidator.validate_path_within_base(
+# Validate database file is within expected directory
+db_path = validate_safe_path(
     "soulspot.db",
-    settings.storage.data_path
+    settings.storage.data_path,
+    allowed_extensions={".db", ".sqlite", ".sqlite3"}
 )
 ```
 
