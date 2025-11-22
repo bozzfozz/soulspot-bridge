@@ -319,6 +319,11 @@ class TrackRepository(ITrackRepository):
 
     async def add(self, track: Track) -> None:
         """Add a new track."""
+        # Hey - extract primary genre from genres list for DB storage!
+        # Takes first genre if available, else None. DB stores single genre for filtering.
+        # Check both that list exists AND is not empty before accessing [0]
+        primary_genre = track.genres[0] if (track.genres and len(track.genres) > 0) else None
+
         model = TrackModel(
             id=str(track.id.value),
             title=track.title,
@@ -331,6 +336,7 @@ class TrackRepository(ITrackRepository):
             musicbrainz_id=track.musicbrainz_id,
             isrc=track.isrc,
             file_path=str(track.file_path) if track.file_path else None,
+            genre=primary_genre,
             created_at=track.created_at,
             updated_at=track.updated_at,
         )
@@ -345,6 +351,10 @@ class TrackRepository(ITrackRepository):
         if not model:
             raise EntityNotFoundException("Track", track.id.value)
 
+        # Hey - update genre from entity's genres list (primary genre only)
+        # Check both that list exists AND is not empty before accessing [0]
+        primary_genre = track.genres[0] if (track.genres and len(track.genres) > 0) else None
+
         model.title = track.title
         model.artist_id = str(track.artist_id.value)
         model.album_id = str(track.album_id.value) if track.album_id else None
@@ -355,6 +365,7 @@ class TrackRepository(ITrackRepository):
         model.musicbrainz_id = track.musicbrainz_id
         model.isrc = track.isrc
         model.file_path = str(track.file_path) if track.file_path else None
+        model.genre = primary_genre
         model.updated_at = track.updated_at
 
     async def delete(self, track_id: TrackId) -> None:
@@ -389,6 +400,7 @@ class TrackRepository(ITrackRepository):
             file_path=FilePath.from_string(model.file_path)
             if model.file_path
             else None,
+            genres=[model.genre] if model.genre else [],  # Hey - convert single genre back to list!
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -418,6 +430,7 @@ class TrackRepository(ITrackRepository):
             file_path=FilePath.from_string(model.file_path)
             if model.file_path
             else None,
+            genres=[model.genre] if model.genre else [],
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

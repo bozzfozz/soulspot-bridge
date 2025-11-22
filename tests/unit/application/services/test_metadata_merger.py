@@ -186,7 +186,7 @@ class TestMetadataMerger:
         }
 
         # Act
-        result = metadata_merger.merge_track_metadata(
+        result, conflicts = metadata_merger.merge_track_metadata(
             track=sample_track,
             musicbrainz_data=musicbrainz_data,
         )
@@ -199,6 +199,7 @@ class TestMetadataMerger:
         assert (
             result.metadata_sources["duration_ms"] == MetadataSource.MUSICBRAINZ.value
         )
+        assert conflicts == {}  # No conflicts with single source
 
     def test_merge_track_metadata_from_lastfm(self, metadata_merger, sample_track):
         """Test merging track metadata from Last.fm."""
@@ -213,7 +214,7 @@ class TestMetadataMerger:
         }
 
         # Act
-        result = metadata_merger.merge_track_metadata(
+        result, conflicts = metadata_merger.merge_track_metadata(
             track=sample_track,
             lastfm_data=lastfm_data,
         )
@@ -221,6 +222,7 @@ class TestMetadataMerger:
         # Assert
         assert "electronic" in result.tags
         assert "dance" in result.tags
+        assert conflicts == {}  # No conflicts with single source
 
     def test_merge_track_metadata_with_manual_override(
         self, metadata_merger, sample_track
@@ -234,7 +236,7 @@ class TestMetadataMerger:
         manual_overrides = {"duration_ms": 242000}
 
         # Act
-        result = metadata_merger.merge_track_metadata(
+        result, conflicts = metadata_merger.merge_track_metadata(
             track=sample_track,
             musicbrainz_data=musicbrainz_data,
             manual_overrides=manual_overrides,
@@ -243,6 +245,9 @@ class TestMetadataMerger:
         # Assert
         assert result.duration_ms == 242000  # Manual override wins
         assert result.metadata_sources["duration_ms"] == MetadataSource.MANUAL.value
+        # Hey - should have conflicts since sources disagree!
+        assert "duration_ms" in conflicts
+        assert MetadataSource.MUSICBRAINZ in conflicts["duration_ms"]
 
     def test_merge_artist_metadata(self, metadata_merger, sample_artist):
         """Test merging artist metadata from multiple sources."""
