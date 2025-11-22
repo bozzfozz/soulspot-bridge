@@ -16,6 +16,7 @@ from soulspot.api.dependencies import (
 )
 from soulspot.api.schemas.metadata import (
     EnrichMetadataMultiSourceRequest,
+    MetadataConflict,
     MetadataEnrichmentResponse,
     MetadataSourceEnum,
     ResolveConflictRequest,
@@ -44,11 +45,20 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# Hey, MetadataMerger is the smart engine that combines metadata from multiple sources! It uses the
+# authority hierarchy (Manual > MusicBrainz > Spotify > Last.fm) to decide which value wins when sources
+# disagree. Creates new instance per request - no state to share. The merger handles field-level merging
+# (not just replacing whole objects), conflict detection, and data normalization. Complex logic lives here!
 def get_metadata_merger() -> MetadataMerger:
     """Get metadata merger instance."""
     return MetadataMerger()
 
 
+# Yo, this is the FULL-FEATURED metadata enrichment dependency! Gets metadata from ALL three sources
+# (MusicBrainz, Last.fm, Spotify) and merges them intelligently. Note Last.fm is optional (can be None)
+# - the use case must handle that! The MetadataMerger dependency injects conflict resolution logic.
+# All three repositories (track/artist/album) are needed because enrichment cascades - enriching a track
+# might also update its artist and album metadata. Standard Clean Architecture pattern.
 def get_enrich_use_case(
     track_repository: TrackRepository = Depends(get_track_repository),
     artist_repository: ArtistRepository = Depends(get_artist_repository),
@@ -125,11 +135,37 @@ async def enrich_metadata(
                 detail=f"Track not found: {request.track_id}",
             )
 
+        # Hey - convert conflicts dict to MetadataConflict objects for API response
+        conflict_objects = []
+        for field_name, conflicting_values in response.conflicts.items():
+            # Get current value and source from track
+            current_source_str = response.track.metadata_sources.get(field_name)
+            if not current_source_str:
+                continue  # Skip if no source tracked
+
+            current_source = MetadataSourceEnum(current_source_str)
+            current_value = getattr(response.track, field_name, None)
+
+            # Build conflicting_values dict with MetadataSourceEnum keys
+            conflicting_dict = {
+                MetadataSourceEnum(source): value
+                for source, value in conflicting_values.items()
+            }
+
+            conflict_objects.append(
+                MetadataConflict(
+                    field_name=field_name,
+                    current_value=current_value,
+                    current_source=current_source,
+                    conflicting_values=conflicting_dict,
+                )
+            )
+
         return MetadataEnrichmentResponse(
             track_id=request.track_id,
             enriched_fields=response.enriched_fields,
             sources_used=response.sources_used,
-            conflicts=[],  # TODO: Implement conflict detection - compare values across sources to identify discrepancies
+            conflicts=conflict_objects,  # Hey - now returns actual conflicts!
             errors=response.errors,
         )
 

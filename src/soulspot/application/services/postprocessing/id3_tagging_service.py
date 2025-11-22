@@ -5,7 +5,14 @@ from pathlib import Path
 from typing import Any
 
 from mutagen.easyid3 import EasyID3
-from mutagen.id3 import APIC, ID3, USLT, ID3NoHeaderError  # type: ignore[attr-defined]
+from mutagen.id3 import (  # type: ignore[attr-defined]
+    APIC,
+    ID3,
+    TXXX,
+    UFID,
+    USLT,
+    ID3NoHeaderError,
+)
 from mutagen.mp3 import MP3
 
 from soulspot.config import Settings
@@ -147,7 +154,7 @@ class ID3TaggingService:
             # Save easy tags
             easy_tags.save()
 
-            # Now add advanced tags (artwork, lyrics) using full ID3
+            # Now add advanced tags (artwork, lyrics, MusicBrainz IDs) using full ID3
             audio = MP3(file_path, ID3=ID3)
 
             # Embed artwork
@@ -158,11 +165,14 @@ class ID3TaggingService:
             if lyrics:
                 self._embed_lyrics(audio, lyrics)
 
-            # Add MusicBrainz IDs if available
-            if track.musicbrainz_id:
-                audio.tags.add(
-                    self._create_text_frame("UFID", track.musicbrainz_id.encode())
-                )
+            # Hey - embed MusicBrainz IDs using proper UFID and TXXX frames!
+            # Recording ID goes in UFID (standard), artist/album in TXXX (extended)
+            self.embed_musicbrainz_ids(
+                audio,
+                recording_id=track.musicbrainz_id,
+                artist_id=artist.musicbrainz_id if artist else None,
+                release_id=album.musicbrainz_id if album else None,
+            )
 
             # Save all tags
             audio.save(v2_version=4)
@@ -172,6 +182,10 @@ class ID3TaggingService:
             logger.exception("Error writing ID3 tags to %s: %s", file_path, e)
             raise
 
+    # Hey, artwork embedding - removes old APIC frames then adds new one
+    # WHY delall first? Prevents duplicate artwork frames (wastes space, confuses players)
+    # encoding=3 means UTF-8, type=3 means "Cover (front)" per ID3v2.4 spec
+    # APIC = Attached Picture frame
     def _embed_artwork(self, audio: MP3, artwork_data: bytes) -> None:
         """Embed artwork into audio file.
 
@@ -198,6 +212,10 @@ class ID3TaggingService:
         except Exception as e:
             logger.exception("Error embedding artwork: %s", e)
 
+    # Yo lyrics embedding - USLT frame (Unsynchronised Lyrics/Text)
+    # WHY lang="eng"? ISO 639-2 language code, required by spec
+    # desc="" means no description (could be "chorus", "verse 1", etc)
+    # delall removes old lyrics first
     def _embed_lyrics(self, audio: MP3, lyrics: str) -> None:
         """Embed lyrics into audio file.
 
@@ -223,28 +241,109 @@ class ID3TaggingService:
         except Exception as e:
             logger.exception("Error embedding lyrics: %s", e)
 
-    def _create_text_frame(self, frame_id: str, data: bytes) -> Any:
-        """Create a text frame for ID3 tag.
-
-        This is a placeholder for creating custom ID3 frames.
-        Currently not fully implemented - would use mutagen's specific frame
-        classes like TXXX (user-defined text), UFID (unique file identifier), etc.
+    # Hey future me - creates custom ID3 frames for user-defined text fields!
+    # TXXX is "User defined text information" - stores key-value pairs like custom_rating=5
+    # WHY encoding=3? That's UTF-8 in ID3 spec - supports international characters
+    # desc is the field name/key, text is the value (as list for multi-value support)
+    # Common use: store custom metadata like "custom_genre", "mood", "energy_level"
+    def create_txxx_frame(self, description: str, text: str | list[str]) -> TXXX:
+        """Create a TXXX (user-defined text) ID3 frame.
 
         Args:
-            frame_id: ID3 frame identifier (e.g., 'TXXX', 'UFID')
-            data: Raw frame data bytes
+            description: The description/key for this custom field
+            text: The text value(s) - can be single string or list
 
         Returns:
-            ID3 frame object (implementation pending)
+            TXXX frame object ready to add to ID3 tags
+
+        Example:
+            frame = service.create_txxx_frame("mood", "energetic")
+            audio.tags.add(frame)
+        """
+        # Hey - ensure text is a list for ID3 API
+        text_list = [text] if isinstance(text, str) else text
+
+        return TXXX(  # type: ignore[no-untyped-call]
+            encoding=3,  # UTF-8
+            desc=description,
+            text=text_list,
+        )
+
+    # Listen up - creates UFID frames for unique file identifiers!
+    # UFID stores external database IDs (MusicBrainz, Spotify, etc)
+    # owner is the database namespace (like "http://musicbrainz.org")
+    # data is the actual ID as bytes (convert string to UTF-8 bytes)
+    # This is THE standard way to link MP3 files to external metadata databases
+    def create_ufid_frame(self, owner: str, identifier: str) -> UFID:
+        """Create a UFID (unique file identifier) ID3 frame.
+
+        Args:
+            owner: Database/owner identifier (e.g., "http://musicbrainz.org")
+            identifier: The unique ID for this file in that database
+
+        Returns:
+            UFID frame object ready to add to ID3 tags
+
+        Example:
+            frame = service.create_ufid_frame(
+                "http://musicbrainz.org",
+                "5b11f4ce-a62d-471e-81fc-a69a8278c7da"
+            )
+            audio.tags.add(frame)
+        """
+        return UFID(  # type: ignore[no-untyped-call]
+            owner=owner,
+            data=identifier.encode('utf-8'),
+        )
+
+    # Hey - convenience method to write MusicBrainz IDs to file!
+    # Writes Recording, Artist, and Release IDs using UFID frames
+    # WHY separate method? MusicBrainz IDs are common use case, simplifies caller code
+    # Deletes old frames first to prevent duplicates (delall parameter)
+    def embed_musicbrainz_ids(
+        self,
+        audio: MP3,
+        recording_id: str | None = None,
+        artist_id: str | None = None,
+        release_id: str | None = None,
+    ) -> None:
+        """Embed MusicBrainz IDs into audio file.
+
+        Args:
+            audio: MP3 file object with ID3 tags
+            recording_id: MusicBrainz Recording ID (track ID)
+            artist_id: MusicBrainz Artist ID
+            release_id: MusicBrainz Release ID (album ID)
 
         Note:
-            For MusicBrainz IDs, use mutagen's UFID frame directly.
-            For custom text fields, use TXXX frames.
+            Removes any existing MusicBrainz UFID frames before adding new ones
         """
-        # TODO: Implement custom frame creation using mutagen's frame classes
-        # Example: TXXX(encoding=3, desc='custom_field', text=['value'])
-        pass
+        if not audio.tags:
+            return
 
+        # Remove old MusicBrainz UFID frames
+        audio.tags.delall("UFID:http://musicbrainz.org")
+
+        # Add MusicBrainz Recording ID (track)
+        if recording_id:
+            ufid_frame = self.create_ufid_frame("http://musicbrainz.org", recording_id)
+            audio.tags.add(ufid_frame)
+
+        # Hey - we could also add artist/release IDs but standard is just recording
+        # Most tools only expect one UFID per database. If you need artist/release,
+        # use TXXX frames instead with descriptions like "MUSICBRAINZ_ARTISTID"
+        if artist_id:
+            txxx_frame = self.create_txxx_frame("MUSICBRAINZ_ARTISTID", artist_id)
+            audio.tags.add(txxx_frame)
+
+        if release_id:
+            txxx_frame = self.create_txxx_frame("MUSICBRAINZ_ALBUMID", release_id)
+            audio.tags.add(txxx_frame)
+
+    # Hey tag reader - extracts ID3 tags from MP3 file
+    # Returns dict for easy API serialization
+    # Path validation same as write_tags - security critical
+    # EasyID3 returns lists for multi-value tags (artists, genres) - we flatten single values
     async def read_tags(self, file_path: Path) -> dict[str, Any]:
         """Read ID3 tags from an audio file.
 
