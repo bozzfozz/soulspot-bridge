@@ -5,6 +5,10 @@
 **Created:** 2025-11-21  
 **Purpose:** Modular Architecture Design and Specification
 
+> **📝 Note:** This directory contains **planning documentation** for the future Version 3.0 release.  
+> For current implementation documentation, see the main [docs/](../) directory.  
+> Version 3.0 represents the next major architectural evolution with a fully modular design.
+
 ---
 
 ## Overview
