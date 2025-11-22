@@ -7,7 +7,7 @@ from typing import cast
 from fastapi import Cookie, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from soulspot.application.services.session_store import SessionStore
+from soulspot.application.services.session_store import DatabaseSessionStore, SessionStore
 from soulspot.application.services.token_manager import TokenManager
 from soulspot.application.use_cases.enrich_metadata import EnrichMetadataUseCase
 from soulspot.application.use_cases.import_spotify_playlist import (
@@ -33,19 +33,26 @@ from soulspot.infrastructure.persistence.repositories import (
 )
 
 
-# Listen up future me, @lru_cache makes this a SINGLETON! First call creates SessionStore,
-# subsequent calls return THE SAME INSTANCE. This is thread-safe but NOT multiprocess-safe
-# (each gunicorn worker gets its own singleton). The 3600s timeout means sessions expire after
-# 1 hour - adjust if users complain about getting logged out. If you restart the server, ALL
-# sessions are lost because SessionStore is in-memory. For production, move to Redis!
-@lru_cache
-def get_session_store() -> SessionStore:
-    """Get or create session store singleton (thread-safe).
+# Hey future me, NOW WE GET SESSION STORE FROM APP STATE! The DatabaseSessionStore is initialized
+# during app startup (see main.py lifespan()) and attached to app.state.session_store. This gives
+# us database-backed sessions that persist across restarts. If session_store isn't in app.state,
+# something went wrong during startup - return 503 to indicate server not ready. The DB session
+# factory is already available via get_db_session, which the store uses for persistence!
+def get_session_store(request: Request) -> SessionStore:
+    """Get database-backed session store from app state.
 
     Returns:
-        Session store instance
+        SessionStore instance with database persistence
+
+    Raises:
+        HTTPException: 503 if session store not initialized
     """
-    return SessionStore(session_timeout_seconds=3600)  # 1 hour timeout
+    if not hasattr(request.app.state, 'session_store'):
+        raise HTTPException(
+            status_code=503,
+            detail="Session store not initialized",
+        )
+    return cast(SessionStore, request.app.state.session_store)
 
 
 # Hey, this is a FastAPI dependency - extracts DB from app.state and yields a session. The "async
@@ -102,7 +109,7 @@ async def get_spotify_token_from_session(
             detail="No session found. Please authenticate with Spotify first.",
         )
 
-    session = session_store.get_session(session_id)
+    session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(
             status_code=401,

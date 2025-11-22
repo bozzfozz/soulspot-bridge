@@ -46,7 +46,7 @@ async def authorize(
     code_verifier = SpotifyClient.generate_code_verifier()
 
     # Create session and store state + verifier
-    session = session_store.create_session(
+    session = await session_store.create_session(
         oauth_state=state, code_verifier=code_verifier
     )
 
@@ -111,7 +111,7 @@ async def callback(
             detail="No session found. Please start authorization flow again.",
         )
 
-    session = session_store.get_session(session_id)
+    session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(
             status_code=401,
@@ -185,7 +185,7 @@ async def refresh_token(
     if not session_id:
         raise HTTPException(status_code=401, detail="No session found.")
 
-    session = session_store.get_session(session_id)
+    session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(status_code=401, detail="Invalid or expired session.")
 
@@ -245,7 +245,7 @@ async def get_session_info(
     if not session_id:
         raise HTTPException(status_code=401, detail="No session found.")
 
-    session = session_store.get_session(session_id)
+    session = await session_store.get_session(session_id)
     if not session:
         raise HTTPException(status_code=401, detail="Invalid or expired session.")
 
@@ -283,7 +283,7 @@ async def logout(
         Logout confirmation
     """
     if session_id:
-        session_store.delete_session(session_id)
+        await session_store.delete_session(session_id)
         response.delete_cookie(key=settings.api.session_cookie_name)
         return {"message": "Logged out successfully"}
 
@@ -316,7 +316,7 @@ async def spotify_status(
             "message": "No session found",
         }
 
-    session = session_store.get_session(session_id)
+    session = await session_store.get_session(session_id)
     if not session:
         return {
             "connected": False,
@@ -360,7 +360,7 @@ async def skip_onboarding(
     """
     # Mark onboarding as skipped in session if exists
     if session_id:
-        session = session_store.get_session(session_id)
+        session = await session_store.get_session(session_id)
         if session:
             # We could add a flag here if needed in the future
             # For now, just acknowledge the skip

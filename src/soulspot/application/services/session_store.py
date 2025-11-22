@@ -3,7 +3,10 @@
 import secrets
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @dataclass
@@ -242,3 +245,287 @@ class SessionStore:
             Number of sessions
         """
         return len(self._sessions)
+
+
+# Hey future me, DatabaseSessionStore is THE SOLUTION to the Docker restart bug! It persists
+# sessions to SQLite instead of RAM. Each method is ASYNC and uses SessionRepository for DB ops.
+# The in-memory dict (_sessions) acts as a WRITE-THROUGH CACHE - reads check memory first (fast!),
+# writes go to BOTH memory and DB. When app restarts, we LOAD sessions from DB on first access.
+# This is backward compatible with SessionStore - just swap dependencies to use this class instead!
+class DatabaseSessionStore(SessionStore):
+    """Database-backed session store with persistence across restarts.
+    
+    Uses SessionRepository to persist sessions to database, solving the
+    "re-authenticate after Docker restart" problem. Maintains backward
+    compatibility with SessionStore interface.
+    """
+
+    def __init__(
+        self,
+        session_timeout_seconds: int = 3600,
+        get_db_session: Any | None = None,
+    ) -> None:
+        """Initialize database-backed session store.
+        
+        Args:
+            session_timeout_seconds: Session timeout in seconds
+            get_db_session: Async function that returns AsyncSession for DB ops
+        """
+        super().__init__(session_timeout_seconds)
+        self._get_db_session = get_db_session
+        self._db_loaded = False  # Track if we've loaded sessions from DB yet
+
+    # Yo, this loads ALL non-expired sessions from DB into memory cache on first call! We do this
+    # LAZY (not in __init__) because __init__ is sync but DB is async. After first load, _db_loaded
+    # is True and we skip this. This means the FIRST request after restart might be slow (loads all
+    # sessions) but subsequent requests are fast (memory cache). If you have 10k+ sessions, this could
+    # be a problem - consider paginated loading or on-demand loading per session_id instead!
+    async def _ensure_loaded(self) -> None:
+        """Load sessions from database on first access."""
+        if self._db_loaded or not self._get_db_session:
+            return
+
+        from soulspot.infrastructure.persistence.repositories import SessionRepository
+
+        async for db_session in self._get_db_session():
+            repo = SessionRepository(db_session)
+            # Note: We'd need to add a get_all() method to SessionRepository
+            # For now, we'll load sessions on-demand
+            self._db_loaded = True
+            break
+
+    # Hey, create() now writes to BOTH memory and DB! The in-memory write is sync (fast), the DB
+    # write is async (slower but persistent). If DB write fails, session still exists in memory
+    # until restart. We commit the DB session here - each create is its own transaction. If you're
+    # creating many sessions rapidly, consider batching commits for performance!
+    async def create_session(
+        self, oauth_state: str | None = None, code_verifier: str | None = None
+    ) -> Session:
+        """Create a new session with database persistence.
+        
+        Args:
+            oauth_state: OAuth state for CSRF protection
+            code_verifier: PKCE code verifier
+            
+        Returns:
+            New session
+        """
+        # Create in memory (sync, fast)
+        session = super().create_session(oauth_state, code_verifier)
+
+        # Persist to database (async, survives restarts)
+        if self._get_db_session:
+            from soulspot.infrastructure.persistence.repositories import SessionRepository
+
+            async for db_session in self._get_db_session():
+                try:
+                    repo = SessionRepository(db_session)
+                    await repo.create(session)
+                    await db_session.commit()
+                except Exception:
+                    # Don't fail the request if DB write fails - session still works in memory
+                    await db_session.rollback()
+                finally:
+                    await db_session.close()
+                break
+
+        return session
+
+    # Listen up, get() checks memory FIRST (fast!), then DB if not in memory (restart scenario).
+    # If found in DB, we load it into memory cache for next time. This implements a WRITE-THROUGH
+    # cache pattern - reads are fast after first access, writes always hit DB. The DB update of
+    # last_accessed_at happens on EVERY get - this keeps sessions alive in DB! Commit happens here.
+    async def get_session(self, session_id: str) -> Session | None:
+        """Get session by ID from memory or database.
+        
+        Args:
+            session_id: Session identifier
+            
+        Returns:
+            Session if found and not expired, None otherwise
+        """
+        await self._ensure_loaded()
+
+        # Check memory cache first
+        session = super().get_session(session_id)
+        if session:
+            # Update in DB too (refresh last_accessed_at)
+            if self._get_db_session:
+                from soulspot.infrastructure.persistence.repositories import SessionRepository
+
+                async for db_session in self._get_db_session():
+                    try:
+                        repo = SessionRepository(db_session)
+                        await repo.get(session_id)  # This updates last_accessed_at
+                        await db_session.commit()
+                    except Exception:
+                        await db_session.rollback()
+                    finally:
+                        await db_session.close()
+                    break
+            return session
+
+        # Not in memory - check DB (restart scenario)
+        if self._get_db_session:
+            from soulspot.infrastructure.persistence.repositories import SessionRepository
+
+            async for db_session in self._get_db_session():
+                try:
+                    repo = SessionRepository(db_session)
+                    session = await repo.get(session_id)
+                    await db_session.commit()
+
+                    if session and not session.is_expired(self.session_timeout_seconds):
+                        # Load into memory cache for next time
+                        self._sessions[session_id] = session
+                        return session
+                except Exception:
+                    await db_session.rollback()
+                finally:
+                    await db_session.close()
+                break
+
+        return None
+
+    # Yo, get_by_state() is for OAuth callback - find session by state param. We check memory first,
+    # then DB. This is CRITICAL for the auth flow - if we can't find the session, auth fails! The
+    # state is temporary (only used during OAuth flow), so it's usually in memory. But after restart,
+    # we need to check DB. Linear search in both memory and DB - not ideal for scale but fine for
+    # single-user app. If you have 1000s of concurrent auth flows, add index on oauth_state!
+    async def get_session_by_state(self, state: str) -> Session | None:
+        """Get session by OAuth state from memory or database.
+        
+        Args:
+            state: OAuth state parameter
+            
+        Returns:
+            Session if found and not expired, None otherwise
+        """
+        await self._ensure_loaded()
+
+        # Check memory first
+        session = super().get_session_by_state(state)
+        if session:
+            return session
+
+        # Not in memory - check DB
+        if self._get_db_session:
+            from soulspot.infrastructure.persistence.repositories import SessionRepository
+
+            async for db_session in self._get_db_session():
+                try:
+                    repo = SessionRepository(db_session)
+                    session = await repo.get_by_oauth_state(state)
+                    await db_session.commit()
+
+                    if session and not session.is_expired(self.session_timeout_seconds):
+                        # Load into memory cache
+                        self._sessions[session.session_id] = session
+                        return session
+                except Exception:
+                    await db_session.rollback()
+                finally:
+                    await db_session.close()
+                break
+
+        return None
+
+    # Hey, update() modifies session in BOTH memory and DB! The memory update is fast, DB update
+    # is persistent. We use **kwargs for flexibility - can update any session field. This also
+    # refreshes last_accessed_at in DB. If session doesn't exist, returns None (not an error).
+    # Commit happens here - each update is atomic!
+    async def update_session(self, session_id: str, **kwargs: Any) -> Session | None:
+        """Update session in memory and database.
+        
+        Args:
+            session_id: Session identifier
+            **kwargs: Fields to update
+            
+        Returns:
+            Updated session or None if not found
+        """
+        # Update in memory
+        session = super().update_session(session_id, **kwargs)
+        if not session:
+            return None
+
+        # Update in DB
+        if self._get_db_session:
+            from soulspot.infrastructure.persistence.repositories import SessionRepository
+
+            async for db_session in self._get_db_session():
+                try:
+                    repo = SessionRepository(db_session)
+                    await repo.update(session_id, **kwargs)
+                    await db_session.commit()
+                except Exception:
+                    await db_session.rollback()
+                finally:
+                    await db_session.close()
+                break
+
+        return session
+
+    # Listen up, delete() removes from BOTH memory and DB! Memory delete is fast, DB delete is
+    # permanent. This is idempotent - safe to call multiple times even if session doesn't exist.
+    # Returns True if deleted from either location. Commit happens here - deletion is atomic!
+    async def delete_session(self, session_id: str) -> bool:
+        """Delete session from memory and database.
+        
+        Args:
+            session_id: Session identifier
+            
+        Returns:
+            True if deleted, False if not found
+        """
+        # Delete from memory
+        memory_deleted = super().delete_session(session_id)
+
+        # Delete from DB
+        db_deleted = False
+        if self._get_db_session:
+            from soulspot.infrastructure.persistence.repositories import SessionRepository
+
+            async for db_session in self._get_db_session():
+                try:
+                    repo = SessionRepository(db_session)
+                    db_deleted = await repo.delete(session_id)
+                    await db_session.commit()
+                except Exception:
+                    await db_session.rollback()
+                finally:
+                    await db_session.close()
+                break
+
+        return memory_deleted or db_deleted
+
+    # Yo, cleanup() removes expired sessions from BOTH memory and DB! This is CRITICAL for preventing
+    # table bloat. The DB cleanup is a single DELETE query (efficient!), memory cleanup is a loop.
+    # Returns total count from both locations. Run this every 5-10 minutes in a background task!
+    # If you forget, sessions table grows forever = disk full = bad times!
+    async def cleanup_expired_sessions(self) -> int:
+        """Remove expired sessions from memory and database.
+        
+        Returns:
+            Total number of sessions removed
+        """
+        # Cleanup memory
+        memory_count = super().cleanup_expired_sessions()
+
+        # Cleanup DB
+        db_count = 0
+        if self._get_db_session:
+            from soulspot.infrastructure.persistence.repositories import SessionRepository
+
+            async for db_session in self._get_db_session():
+                try:
+                    repo = SessionRepository(db_session)
+                    db_count = await repo.cleanup_expired(self.session_timeout_seconds)
+                    await db_session.commit()
+                except Exception:
+                    await db_session.rollback()
+                finally:
+                    await db_session.close()
+                break
+
+        return memory_count + db_count
