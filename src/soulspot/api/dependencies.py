@@ -1,13 +1,14 @@
 """Dependency injection for API endpoints."""
 
 from collections.abc import AsyncGenerator
-from functools import lru_cache
 from typing import cast
 
 from fastapi import Cookie, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from soulspot.application.services.session_store import DatabaseSessionStore, SessionStore
+from soulspot.application.services.session_store import (
+    DatabaseSessionStore,
+)
 from soulspot.application.services.token_manager import TokenManager
 from soulspot.application.use_cases.enrich_metadata import EnrichMetadataUseCase
 from soulspot.application.use_cases.import_spotify_playlist import (
@@ -38,21 +39,21 @@ from soulspot.infrastructure.persistence.repositories import (
 # us database-backed sessions that persist across restarts. If session_store isn't in app.state,
 # something went wrong during startup - return 503 to indicate server not ready. The DB session
 # factory is already available via get_db_session, which the store uses for persistence!
-def get_session_store(request: Request) -> SessionStore:
+def get_session_store(request: Request) -> DatabaseSessionStore:
     """Get database-backed session store from app state.
 
     Returns:
-        SessionStore instance with database persistence
+        DatabaseSessionStore instance with database persistence
 
     Raises:
         HTTPException: 503 if session store not initialized
     """
-    if not hasattr(request.app.state, 'session_store'):
+    if not hasattr(request.app.state, "session_store"):
         raise HTTPException(
             status_code=503,
             detail="Session store not initialized",
         )
-    return cast(SessionStore, request.app.state.session_store)
+    return cast(DatabaseSessionStore, request.app.state.session_store)
 
 
 # Hey, this is a FastAPI dependency - extracts DB from app.state and yields a session. The "async
@@ -82,7 +83,7 @@ def get_spotify_client(settings: Settings = Depends(get_settings)) -> SpotifyCli
 # mypy because we checked token is not None but mypy doesn't track that through the if blocks.
 async def get_spotify_token_from_session(
     session_id: str | None = Cookie(None),
-    session_store: SessionStore = Depends(get_session_store),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
     spotify_client: SpotifyClient = Depends(get_spotify_client),
 ) -> str:
     """Get valid Spotify access token from session with automatic refresh.

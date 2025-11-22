@@ -1,6 +1,11 @@
 """Repository implementations for domain entities."""
 
-from typing import Any, TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+
+if TYPE_CHECKING:
+    from soulspot.application.services.session_store import Session
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -2236,7 +2241,6 @@ class WidgetInstanceRepository:
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
-        )
 
 
 # Hey future me, SessionRepository is THE fix for the Docker restart auth bug! It persists
@@ -2247,14 +2251,14 @@ class WidgetInstanceRepository:
 # or the sessions table grows forever. Returns count of deleted sessions for monitoring.
 class SessionRepository:
     """Repository for session persistence.
-    
+
     Handles database operations for user sessions, enabling persistence
     across application restarts. Sessions are automatically refreshed on access.
     """
 
     def __init__(self, session: AsyncSession) -> None:
         """Initialize repository with database session.
-        
+
         Args:
             session: SQLAlchemy async session
         """
@@ -2264,13 +2268,12 @@ class SessionRepository:
     # as the primary key. The commit happens in the calling code (usually the auth endpoint), not here!
     # This is staged INSERT - if something fails before commit, the DB rolls back and session is lost.
     # That's GOOD - we don't want orphaned sessions from failed requests cluttering the DB.
-    async def create(self, session_data: "Session") -> None:
+    async def create(self, session_data: Session) -> None:
         """Create a new session in database.
-        
+
         Args:
             session_data: Session dataclass to persist
         """
-        from soulspot.application.services.session_store import Session
 
         model = SessionModel(
             session_id=session_data.session_id,
@@ -2288,12 +2291,12 @@ class SessionRepository:
     # "sliding expiration" - sessions stay alive as long as they're used. The NOW() is server-side SQL
     # function (not Python datetime) to avoid clock skew issues. If session_id doesn't exist, returns None.
     # scalar_one_or_none() is safe - returns exactly one row or None, never raises if missing.
-    async def get(self, session_id: str) -> "Session | None":
+    async def get(self, session_id: str) -> Session | None:
         """Get session by ID and update last accessed time.
-        
+
         Args:
             session_id: Session identifier
-            
+
         Returns:
             Session dataclass or None if not found
         """
@@ -2309,6 +2312,7 @@ class SessionRepository:
 
         # Update last_accessed_at (sliding expiration)
         from datetime import UTC, datetime
+
         model.last_accessed_at = datetime.now(UTC)
 
         # Convert to dataclass
@@ -2327,13 +2331,13 @@ class SessionRepository:
     # to change via **kwargs. This is flexible but RISKY - no validation that field names are correct!
     # If you typo "access_tokenn", it silently does nothing (hasattr check fails). The refresh of
     # last_accessed_at keeps session alive. If session_id doesn't exist, returns None (not an error).
-    async def update(self, session_id: str, **kwargs: Any) -> "Session | None":
+    async def update(self, session_id: str, **kwargs: Any) -> Session | None:
         """Update session fields.
-        
+
         Args:
             session_id: Session identifier
             **kwargs: Fields to update
-            
+
         Returns:
             Updated session or None if not found
         """
@@ -2353,6 +2357,7 @@ class SessionRepository:
 
         # Update last_accessed_at
         from datetime import UTC, datetime
+
         model.last_accessed_at = datetime.now(UTC)
 
         # Convert to dataclass
@@ -2373,16 +2378,17 @@ class SessionRepository:
     # even if session is already gone). The commit happens in calling code!
     async def delete(self, session_id: str) -> bool:
         """Delete session from database.
-        
+
         Args:
             session_id: Session identifier
-            
+
         Returns:
             True if deleted, False if not found
         """
         stmt = delete(SessionModel).where(SessionModel.session_id == session_id)
         result = await self.session.execute(stmt)
-        return result.rowcount > 0  # type: ignore[attr-defined]
+        rowcount = cast(int, result.rowcount)  # type: ignore[attr-defined]
+        return bool(rowcount > 0)
 
     # Listen future me, cleanup_expired() is ESSENTIAL maintenance! It deletes sessions older than
     # timeout_seconds (default 3600 = 1 hour). The WHERE clause compares last_accessed_at + timeout
@@ -2392,10 +2398,10 @@ class SessionRepository:
     # cleanup, sessions table grows forever = disk full = app crash! Set up alerts if cleanup fails.
     async def cleanup_expired(self, timeout_seconds: int = 3600) -> int:
         """Delete expired sessions from database.
-        
+
         Args:
             timeout_seconds: Session timeout in seconds
-            
+
         Returns:
             Number of sessions deleted
         """
@@ -2404,19 +2410,20 @@ class SessionRepository:
         cutoff_time = datetime.now(UTC) - timedelta(seconds=timeout_seconds)
         stmt = delete(SessionModel).where(SessionModel.last_accessed_at < cutoff_time)
         result = await self.session.execute(stmt)
-        return result.rowcount  # type: ignore[attr-defined]
+        rowcount = cast(int, result.rowcount)  # type: ignore[attr-defined]
+        return int(rowcount or 0)
 
     # Hey, get_by_oauth_state() is for OAuth callback verification. We need to find which session
     # corresponds to the state parameter Spotify sends back. This is a LINEAR SEARCH (SELECT with WHERE)
     # but it's fine because state is unique per session and we only do this once per auth flow. If you
     # have millions of sessions and this gets slow, add an index on oauth_state column. Returns None
     # if no session has that state (probably a replay attack or expired state - reject it!).
-    async def get_by_oauth_state(self, state: str) -> "Session | None":
+    async def get_by_oauth_state(self, state: str) -> Session | None:
         """Get session by OAuth state parameter.
-        
+
         Args:
             state: OAuth state value
-            
+
         Returns:
             Session dataclass or None if not found
         """
@@ -2431,6 +2438,7 @@ class SessionRepository:
 
         # Update last_accessed_at
         from datetime import UTC, datetime
+
         model.last_accessed_at = datetime.now(UTC)
 
         # Convert to dataclass

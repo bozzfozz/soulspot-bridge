@@ -581,7 +581,7 @@ class WidgetInstanceModel(Base):
 # This model replaces the in-memory dict in SessionStore - now sessions persist across restarts!
 class SessionModel(Base):
     """User session with OAuth tokens for persistence across restarts.
-    
+
     Stores Spotify OAuth tokens and session state in database to survive
     container restarts. Sessions are identified by session_id (cookie value).
     """

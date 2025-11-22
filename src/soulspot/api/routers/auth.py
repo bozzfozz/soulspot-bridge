@@ -6,7 +6,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Query, Response
 from fastapi.responses import RedirectResponse
 
 from soulspot.api.dependencies import get_session_store
-from soulspot.application.services.session_store import SessionStore
+from soulspot.application.services.session_store import DatabaseSessionStore
 from soulspot.config import Settings, get_settings
 from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
 
@@ -22,7 +22,7 @@ router = APIRouter()
 async def authorize(
     response: Response,
     settings: Settings = Depends(get_settings),
-    session_store: SessionStore = Depends(get_session_store),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
 ) -> dict[str, Any]:
     """Start OAuth authorization flow with session management.
 
@@ -83,7 +83,7 @@ async def callback(
     redirect_to: str = Query("/", description="Redirect URL after success"),
     session_id: str | None = Cookie(None),
     settings: Settings = Depends(get_settings),
-    session_store: SessionStore = Depends(get_session_store),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
 ) -> RedirectResponse | dict[str, Any]:
     """Handle OAuth callback from Spotify with session verification.
 
@@ -164,7 +164,7 @@ async def callback(
 async def refresh_token(
     session_id: str | None = Cookie(None),
     settings: Settings = Depends(get_settings),
-    session_store: SessionStore = Depends(get_session_store),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
 ) -> dict[str, Any]:
     """Refresh access token using session's refresh token.
 
@@ -228,7 +228,7 @@ async def refresh_token(
 @router.get("/session")
 async def get_session_info(
     session_id: str | None = Cookie(None),
-    session_store: SessionStore = Depends(get_session_store),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
 ) -> dict[str, Any]:
     """Get current session information.
 
@@ -269,7 +269,7 @@ async def logout(
     response: Response,
     settings: Settings = Depends(get_settings),
     session_id: str | None = Cookie(None),
-    session_store: SessionStore = Depends(get_session_store),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
 ) -> dict[str, Any]:
     """Log out and delete session.
 
@@ -298,7 +298,7 @@ async def logout(
 @router.get("/spotify/status")
 async def spotify_status(
     session_id: str | None = Cookie(None),
-    session_store: SessionStore = Depends(get_session_store),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
 ) -> dict[str, Any]:
     """Get Spotify connection status for onboarding flow.
 
@@ -346,7 +346,7 @@ async def spotify_status(
 async def skip_onboarding(
     _response: Response,
     session_id: str | None = Cookie(None),
-    session_store: SessionStore = Depends(get_session_store),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
 ) -> dict[str, Any]:
     """Skip onboarding and proceed to dashboard.
 
