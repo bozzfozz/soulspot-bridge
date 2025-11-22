@@ -1,5 +1,6 @@
 """Automation API endpoints for watchlists, discography, and quality upgrades."""
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,6 +16,7 @@ from soulspot.domain.value_objects import ArtistId, WatchlistId
 from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
 
 router = APIRouter(prefix="/automation", tags=["automation"])
+logger = logging.getLogger(__name__)
 
 
 # Pydantic models for API
@@ -1300,13 +1302,9 @@ async def preview_followed_artists(
         HTTPException: 401 if token invalid, 403 if missing user-follow-read scope
     """
     try:
-        from soulspot.application.services.followed_artists_service import (
-            FollowedArtistsService,
-        )
-
         spotify_client = SpotifyClient(settings.spotify)
         # Note: We don't need a session for preview (no DB writes)
-        # Just pass a dummy service instance to call the client method
+        # Just call the client method directly
         response = await spotify_client.get_followed_artists(
             access_token=access_token,
             limit=min(limit, 50),
