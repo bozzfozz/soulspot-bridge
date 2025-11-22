@@ -321,7 +321,8 @@ class TrackRepository(ITrackRepository):
         """Add a new track."""
         # Hey - extract primary genre from genres list for DB storage!
         # Takes first genre if available, else None. DB stores single genre for filtering.
-        primary_genre = track.genres[0] if track.genres else None
+        # Check both that list exists AND is not empty before accessing [0]
+        primary_genre = track.genres[0] if (track.genres and len(track.genres) > 0) else None
 
         model = TrackModel(
             id=str(track.id.value),
@@ -351,7 +352,8 @@ class TrackRepository(ITrackRepository):
             raise EntityNotFoundException("Track", track.id.value)
 
         # Hey - update genre from entity's genres list (primary genre only)
-        primary_genre = track.genres[0] if track.genres else None
+        # Check both that list exists AND is not empty before accessing [0]
+        primary_genre = track.genres[0] if (track.genres and len(track.genres) > 0) else None
 
         model.title = track.title
         model.artist_id = str(track.artist_id.value)
