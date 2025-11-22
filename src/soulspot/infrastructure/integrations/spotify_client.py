@@ -234,6 +234,47 @@ class SpotifyClient(ISpotifyClient):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    # Hey future me, this fetches the CURRENT USER's playlists using /me/playlists! It returns a
+    # paginated response with 'items' array containing playlist metadata (no tracks yet - just names,
+    # IDs, images, etc.). Spotify limits to max 50 playlists per request, so you MUST handle pagination
+    # via 'next' URL or offset parameter if user has 100+ playlists. The 'total' field tells you how
+    # many playlists exist total. Use this for the "sync playlist library" feature - fetch ALL user
+    # playlists, store metadata in DB, then let user choose which to fully import with tracks!
+    async def get_user_playlists(
+        self, access_token: str, limit: int = 50, offset: int = 0
+    ) -> dict[str, Any]:
+        """
+        Get current user's playlists.
+
+        Args:
+            access_token: OAuth access token
+            limit: Maximum number of playlists to return (1-50, default 50)
+            offset: The index of the first playlist to return (for pagination)
+
+        Returns:
+            Paginated response with:
+            - items: List of playlist objects (metadata only, no full track lists)
+            - next: URL for next page (null if no more pages)
+            - total: Total number of playlists
+            - limit: Requested limit
+            - offset: Requested offset
+
+        Raises:
+            httpx.HTTPError: If the request fails
+        """
+        client = await self._get_client()
+
+        # Clamp limit to Spotify's max of 50
+        limit = min(limit, 50)
+
+        response = await client.get(
+            f"{self.API_BASE_URL}/me/playlists",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"limit": limit, "offset": offset},
+        )
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
     # Hey, straightforward track fetch. Nothing tricky here. But remember: if a track gets
     # removed from Spotify (regional licensing, artist request, etc.), this returns 404.
     # Don't panic - it's not a bug. Just handle it gracefully and mark the track as unavailable.

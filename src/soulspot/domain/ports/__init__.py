@@ -340,6 +340,23 @@ class ISpotifyClient(ABC):
         pass
 
     @abstractmethod
+    async def get_user_playlists(
+        self, access_token: str, limit: int = 50, offset: int = 0
+    ) -> dict[str, Any]:
+        """
+        Get current user's playlists.
+
+        Args:
+            access_token: OAuth access token
+            limit: Maximum number of playlists to return (max 50)
+            offset: The index of the first playlist to return
+
+        Returns:
+            Paginated list of user's playlists with 'items', 'next', 'total' fields
+        """
+        pass
+
+    @abstractmethod
     async def get_track(self, track_id: str, access_token: str) -> dict[str, Any]:
         """
         Get track details.
