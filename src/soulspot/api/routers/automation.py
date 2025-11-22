@@ -1111,3 +1111,210 @@ async def delete_automation_rule(
         raise HTTPException(
             status_code=500, detail=f"Failed to delete automation rule: {e}"
         ) from e
+
+
+# Followed Artists endpoints
+# Hey future me, these endpoints handle the "sync my Spotify followed artists" feature!
+# Users go to Spotify and follow artists they like. We fetch that list and let them create
+# watchlists in bulk. This is MUCH easier than manually adding 50+ artists one by one!
+# GOTCHA: Requires user-follow-read OAuth scope - if user authed before we added that scope,
+# they need to re-authorize! The sync endpoint can take a while (pagination) so consider
+# making it async with progress updates via SSE in future.
+
+
+class SyncFollowedArtistsResponse(BaseModel):
+    """Response from syncing followed artists."""
+
+    total_fetched: int
+    created: int
+    updated: int
+    errors: int
+    artists: list[dict[str, Any]]
+
+
+class BulkCreateWatchlistsRequest(BaseModel):
+    """Request to create watchlists for multiple artists."""
+
+    artist_ids: list[str]
+    check_frequency_hours: int = 24
+    auto_download: bool = True
+    quality_profile: str = "high"
+
+
+# Yo, this is THE main endpoint for followed artists! It hits Spotify API to fetch all artists
+# the user follows, creates/updates Artist entities in our DB, and returns them. This can take
+# 10-30 seconds for users with 100+ followed artists due to pagination. Each Spotify API call
+# fetches max 50 artists, so 200 followed artists = 4 API calls. Progress is logged server-side
+# but user doesn't see it (future: add SSE progress updates). The response includes sync stats
+# and full artist list for UI to display. Requires valid access_token from session - if token
+# expired, this will fail with 401 and user must re-auth.
+@router.post("/followed-artists/sync")
+async def sync_followed_artists(
+    access_token: str = Depends(get_spotify_token_from_session),
+    session: AsyncSession = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
+) -> SyncFollowedArtistsResponse:
+    """Sync followed artists from Spotify to local database.
+
+    Fetches all artists the current user follows on Spotify, creates or updates
+    Artist entities in the database, and returns the complete list with sync statistics.
+
+    Args:
+        access_token: Spotify OAuth access token (from session)
+        session: Database session
+        settings: Application settings
+
+    Returns:
+        Sync statistics and list of all followed artists
+
+    Raises:
+        HTTPException: 401 if token invalid/expired, 500 if sync fails
+    """
+    try:
+        from soulspot.application.services.followed_artists_service import (
+            FollowedArtistsService,
+        )
+
+        spotify_client = SpotifyClient(settings.spotify)
+        service = FollowedArtistsService(session, spotify_client)
+
+        artists, stats = await service.sync_followed_artists(access_token)
+        await session.commit()
+
+        return SyncFollowedArtistsResponse(
+            total_fetched=stats["total_fetched"],
+            created=stats["created"],
+            updated=stats["updated"],
+            errors=stats["errors"],
+            artists=[
+                {
+                    "id": str(artist.id.value),
+                    "name": artist.name,
+                    "spotify_uri": str(artist.spotify_uri) if artist.spotify_uri else None,
+                    "genres": artist.genres,
+                }
+                for artist in artists
+            ],
+        )
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Failed to sync followed artists: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to sync followed artists: {e}"
+        ) from e
+
+
+# Listen up, this is the "create watchlists for all these artists at once" endpoint! After user
+# syncs followed artists and sees the list, they select which ones to watch (checkboxes in UI).
+# Then POST artist_ids here to bulk-create watchlists. This is WAY faster than creating watchlists
+# one-by-one via POST /watchlist! All watchlists get same config (check_frequency, auto_download,
+# quality_profile) - if user wants different settings per artist, they have to create individually.
+# The response includes counts of successful/failed creates. Partial success is OK - if 3 out of 10
+# fail, we still create the 7 that succeeded and report stats. Transaction commits all or nothing!
+@router.post("/followed-artists/watchlists/bulk")
+async def bulk_create_watchlists(
+    request: BulkCreateWatchlistsRequest,
+    session: AsyncSession = Depends(get_db_session),
+) -> dict[str, Any]:
+    """Create watchlists for multiple artists at once.
+
+    Args:
+        request: Bulk watchlist creation request with artist IDs
+        session: Database session
+
+    Returns:
+        Statistics about created watchlists
+
+    Raises:
+        HTTPException: 400 if artist IDs invalid, 500 if creation fails
+    """
+    try:
+        created_count = 0
+        failed_count = 0
+        failed_artists: list[str] = []
+
+        for artist_id_str in request.artist_ids:
+            try:
+                artist_id = ArtistId.from_string(artist_id_str)
+                service = WatchlistService(session)
+
+                # Check if watchlist already exists for this artist
+                existing = await service.get_by_artist(artist_id)
+                if existing:
+                    logger.info(f"Watchlist already exists for artist {artist_id_str}")
+                    continue
+
+                await service.create_watchlist(
+                    artist_id=artist_id,
+                    check_frequency_hours=request.check_frequency_hours,
+                    auto_download=request.auto_download,
+                    quality_profile=request.quality_profile,
+                )
+                created_count += 1
+            except Exception as e:
+                logger.error(f"Failed to create watchlist for artist {artist_id_str}: {e}")
+                failed_count += 1
+                failed_artists.append(artist_id_str)
+
+        await session.commit()
+
+        return {
+            "total_requested": len(request.artist_ids),
+            "created": created_count,
+            "failed": failed_count,
+            "failed_artists": failed_artists,
+        }
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Failed to bulk create watchlists: {e}"
+        ) from e
+
+
+# Hey, this is a lightweight preview endpoint - fetches first page of followed artists (up to 50)
+# WITHOUT syncing to DB! Use this for "quick peek at who I follow" before committing to full sync.
+# Useful for testing OAuth scopes - if this returns 403, user-follow-read scope is missing. If it
+# works, proceed with full sync. The response is raw Spotify API data - artists.items has artist
+# objects, artists.cursors.after has next page cursor, artists.total shows how many total artists
+# user follows. This is FAST (single API call) unlike sync which paginates through all artists.
+@router.get("/followed-artists/preview")
+async def preview_followed_artists(
+    limit: int = 50,
+    access_token: str = Depends(get_spotify_token_from_session),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Preview followed artists from Spotify without syncing to database.
+
+    Quick preview of up to 50 followed artists. Useful for testing OAuth permissions
+    and seeing who you follow before committing to full sync.
+
+    Args:
+        limit: Max artists to fetch (1-50, default 50)
+        access_token: Spotify OAuth access token (from session)
+        settings: Application settings
+
+    Returns:
+        Raw Spotify API response with artist data
+
+    Raises:
+        HTTPException: 401 if token invalid, 403 if missing user-follow-read scope
+    """
+    try:
+        from soulspot.application.services.followed_artists_service import (
+            FollowedArtistsService,
+        )
+
+        spotify_client = SpotifyClient(settings.spotify)
+        # Note: We don't need a session for preview (no DB writes)
+        # Just pass a dummy service instance to call the client method
+        response = await spotify_client.get_followed_artists(
+            access_token=access_token,
+            limit=min(limit, 50),
+        )
+
+        return response
+    except Exception as e:
+        logger.error(f"Failed to preview followed artists: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to preview followed artists: {e}"
+        ) from e

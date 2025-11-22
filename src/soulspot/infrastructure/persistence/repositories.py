@@ -168,6 +168,37 @@ class ArtistRepository(IArtistRepository):
             updated_at=model.updated_at,
         )
 
+    # Hey future me, this gets artist by Spotify URI (spotify:artist:xxxxx). Used when syncing
+    # followed artists from Spotify - we check if artist already exists before creating. The URI
+    # is stored as string in DB but we convert to/from SpotifyUri value object. Returns None if
+    # not found. This is similar to get_by_musicbrainz_id but for Spotify identifiers.
+    async def get_by_spotify_uri(self, spotify_uri: SpotifyUri) -> Artist | None:
+        """Get an artist by Spotify URI.
+
+        Args:
+            spotify_uri: Spotify URI (e.g., spotify:artist:4RbUYWWjEBb4umwqakOEd3)
+
+        Returns:
+            Artist entity if found, None otherwise
+        """
+        stmt = select(ArtistModel).where(ArtistModel.spotify_uri == str(spotify_uri))
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        if not model:
+            return None
+
+        return Artist(
+            id=ArtistId.from_string(model.id),
+            name=model.name,
+            spotify_uri=SpotifyUri.from_string(model.spotify_uri)
+            if model.spotify_uri
+            else None,
+            musicbrainz_id=model.musicbrainz_id,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+        )
+
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[Artist]:
         """List all artists with pagination."""
         stmt = (

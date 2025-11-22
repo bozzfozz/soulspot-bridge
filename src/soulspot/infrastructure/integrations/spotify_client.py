@@ -129,6 +129,7 @@ class SpotifyClient(ISpotifyClient):
                     "playlist-read-collaborative",
                     "user-library-read",
                     "user-read-private",
+                    "user-follow-read",
                 ]
             ),
         }
@@ -377,6 +378,56 @@ class SpotifyClient(ISpotifyClient):
         response.raise_for_status()
         result = cast(dict[str, Any], response.json())
         return cast(list[dict[str, Any]], result.get("items", []))
+
+    # Hey future me, this fetches the CURRENT USER's followed artists from Spotify! It uses the
+    # /me/following endpoint with type=artist. Spotify paginates this with a cursor-based system
+    # (not offset!). The "after" parameter is the last artist ID from previous page - use it to get
+    # next batch. Limit is max 50 per request. Response has "artists.items" array (artist objects),
+    # "artists.cursors.after" (next page cursor), and "artists.total" (total count). IMPORTANT: This
+    # requires user-follow-read scope in OAuth, which we DON'T currently request! You'll need to add
+    # that scope to get_authorization_url() or this will fail with 403. Use this for the "sync followed
+    # artists" feature - fetch all artists user follows on Spotify, then create watchlists for them!
+    async def get_followed_artists(
+        self, access_token: str, limit: int = 50, after: str | None = None
+    ) -> dict[str, Any]:
+        """
+        Get current user's followed artists.
+
+        Args:
+            access_token: OAuth access token
+            limit: Maximum number of artists to return (1-50, default 50)
+            after: The last artist ID retrieved from previous page (for pagination)
+
+        Returns:
+            Paginated response with:
+            - artists.items: List of artist objects (name, id, genres, images, etc.)
+            - artists.cursors.after: Cursor for next page (null if no more pages)
+            - artists.total: Total number of followed artists
+            - artists.limit: Requested limit
+
+        Raises:
+            httpx.HTTPError: If the request fails (403 if missing user-follow-read scope)
+        """
+        client = await self._get_client()
+
+        # Clamp limit to Spotify's max of 50
+        limit = min(limit, 50)
+
+        params: dict[str, str | int] = {
+            "type": "artist",
+            "limit": limit,
+        }
+
+        if after:
+            params["after"] = after
+
+        response = await client.get(
+            f"{self.API_BASE_URL}/me/following",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params=params,
+        )
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
 
     # Hey future me, these context manager methods let you use this client with
     # "async with SpotifyClient(...) as client:" syntax. This is THE preferred way
