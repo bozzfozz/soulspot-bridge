@@ -1,5 +1,6 @@
 """Playlist management endpoints."""
 
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -7,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from soulspot.api.dependencies import (
     get_import_playlist_use_case,
     get_playlist_repository,
+    get_spotify_client,
     get_spotify_token_from_session,
     get_track_repository,
 )
@@ -14,7 +16,10 @@ from soulspot.application.use_cases.import_spotify_playlist import (
     ImportSpotifyPlaylistRequest,
     ImportSpotifyPlaylistUseCase,
 )
-from soulspot.domain.value_objects import PlaylistId
+from soulspot.domain.entities import Playlist, PlaylistSource
+from soulspot.domain.exceptions import ValidationException
+from soulspot.domain.value_objects import PlaylistId, SpotifyUri
+from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
 from soulspot.infrastructure.persistence.repositories import (
     PlaylistRepository,
     TrackRepository,
@@ -23,15 +28,54 @@ from soulspot.infrastructure.persistence.repositories import (
 router = APIRouter()
 
 
+# Hey future me, this helper extracts playlist ID from either a full Spotify URL or a bare ID!
+# Users paste URLs like "https://open.spotify.com/playlist/ABC123" but our API expects just "ABC123".
+# We detect URLs by checking for "://" (protocol indicator) and use SpotifyUri.from_url() to parse.
+# If it's already a bare ID (no protocol), return it as-is. This makes the API user-friendly while
+# keeping backward compatibility. SpotifyUri validates the format so invalid URLs/IDs throw
+# ValidationException which converts to 422 error. DON'T cache results - function is cheap!
+def _extract_playlist_id(playlist_id_or_url: str) -> str:
+    """Extract Spotify playlist ID from either a URL or bare ID.
+
+    This function accepts both:
+    - Full Spotify URLs: https://open.spotify.com/playlist/2ZBCi09CSeWMBOoHZdN6Nl
+    - Bare playlist IDs: 2ZBCi09CSeWMBOoHZdN6Nl
+
+    Args:
+        playlist_id_or_url: Spotify playlist URL or ID
+
+    Returns:
+        Spotify playlist ID (the alphanumeric string)
+
+    Raises:
+        ValidationException: If the URL or ID format is invalid
+    """
+    # If it looks like a URL (contains protocol), parse it
+    # Using "://" to detect URLs is more robust than checking for domain substring
+    if "://" in playlist_id_or_url:
+        spotify_uri = SpotifyUri.from_url(playlist_id_or_url)
+        # Validate it's a playlist URI, not track/album/etc
+        if spotify_uri.resource_type != "playlist":
+            raise ValidationException(
+                f"URL must be a playlist, got {spotify_uri.resource_type}"
+            )
+        return spotify_uri.resource_id
+    # Otherwise assume it's already a bare ID
+    return playlist_id_or_url
+
+
 # Hey future me, this is the main playlist import endpoint! Access token comes from SESSION not
 # a header - super important for security. The token dependency will auto-refresh if expired,
 # which is slick but can cause weird timing issues if the refresh fails. fetch_all_tracks=True
 # means we'll fetch EVERY track even if playlist has 1000+ songs - could timeout for huge playlists.
 # Consider adding pagination or background job queueing for massive playlists. Also this returns
-# dict not Pydantic model - less type safety but more flexible for errors array.
+# dict not Pydantic model - less type safety but more flexible for errors array. NOW accepts both
+# bare playlist IDs AND full Spotify URLs - extracts ID automatically via _extract_playlist_id()!
 @router.post("/import")
 async def import_playlist(
-    playlist_id: str = Query(..., description="Spotify playlist ID"),
+    playlist_id: str = Query(
+        ..., description="Spotify playlist ID or URL (e.g., https://open.spotify.com/playlist/ID)"
+    ),
     fetch_all_tracks: bool = Query(True, description="Fetch all tracks in playlist"),
     access_token: str = Depends(get_spotify_token_from_session),
     use_case: ImportSpotifyPlaylistUseCase = Depends(get_import_playlist_use_case),
@@ -43,8 +87,12 @@ async def import_playlist(
     If you don't have a valid session, you'll receive a 401 error
     and need to authenticate at /auth first.
 
+    Accepts both:
+    - Spotify playlist URLs: https://open.spotify.com/playlist/2ZBCi09CSeWMBOoHZdN6Nl
+    - Bare playlist IDs: 2ZBCi09CSeWMBOoHZdN6Nl
+
     Args:
-        playlist_id: Spotify playlist ID
+        playlist_id: Spotify playlist ID or full URL
         fetch_all_tracks: Whether to fetch all tracks
         access_token: Automatically retrieved from session
         use_case: Import playlist use case
@@ -53,8 +101,11 @@ async def import_playlist(
         Import status and statistics
     """
     try:
+        # Extract ID from URL if needed
+        extracted_id = _extract_playlist_id(playlist_id)
+
         request = ImportSpotifyPlaylistRequest(
-            playlist_id=playlist_id,
+            playlist_id=extracted_id,
             access_token=access_token,
             fetch_all_tracks=fetch_all_tracks,
         )
@@ -73,6 +124,129 @@ async def import_playlist(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to import playlist: {str(e)}"
+        ) from e
+
+
+# Hey future me, this is THE PLAYLIST LIBRARY SYNC endpoint! Unlike single playlist import above,
+# this fetches ALL user playlists from Spotify and stores ONLY the metadata (no tracks yet). Think
+# of it as creating a "catalog" of available playlists - user can browse and later choose which to
+# fully import with tracks. We handle Spotify pagination automatically (max 50 per request), store/
+# update playlist metadata in DB, and mark which are already fully imported vs metadata-only. This
+# is FAST because we're not fetching thousands of tracks - just playlist names, IDs, descriptions,
+# image URLs, and track counts. Perfect for the "browse my playlists" UI!
+@router.post("/sync-library")
+async def sync_playlist_library(
+    access_token: str = Depends(get_spotify_token_from_session),
+    spotify_client: SpotifyClient = Depends(get_spotify_client),
+    playlist_repository: PlaylistRepository = Depends(get_playlist_repository),
+) -> dict[str, Any]:
+    """Sync user's playlist library from Spotify (metadata only, no tracks).
+
+    Fetches all playlists from the authenticated user's Spotify account and
+    stores their metadata in the local database. This creates a "library" of
+    available playlists without downloading any tracks yet. Users can then
+    browse their playlists and choose which ones to fully import later.
+
+    Args:
+        access_token: Automatically retrieved from session
+        spotify_client: Spotify API client
+        playlist_repository: Playlist repository
+
+    Returns:
+        Sync statistics including number of playlists synced and their status
+    """
+    try:
+        all_playlists: list[dict[str, Any]] = []
+        offset = 0
+        limit = 50  # Spotify max
+
+        # Fetch all user playlists with pagination
+        while True:
+            response = await spotify_client.get_user_playlists(
+                access_token=access_token, limit=limit, offset=offset
+            )
+
+            items = response.get("items", [])
+            all_playlists.extend(items)
+
+            # Check if there are more pages - 'next' is authoritative
+            if not response.get("next"):
+                break
+
+            offset += limit
+
+        # Process each playlist
+        synced_count = 0
+        updated_count = 0
+        results = []
+
+        for playlist_data in all_playlists:
+            try:
+                # Use consistent timestamp for this iteration
+                now = datetime.now(UTC)
+
+                # Extract playlist metadata
+                spotify_playlist_id = playlist_data["id"]
+                spotify_uri = SpotifyUri(f"spotify:playlist:{spotify_playlist_id}")
+
+                # Check if playlist already exists
+                existing_playlist = await playlist_repository.get_by_spotify_uri(
+                    spotify_uri
+                )
+
+                if existing_playlist:
+                    # Update existing playlist metadata
+                    existing_playlist.name = playlist_data["name"]
+                    existing_playlist.description = playlist_data.get("description")
+                    existing_playlist.updated_at = now
+                    await playlist_repository.update(existing_playlist)
+                    updated_count += 1
+                    status = "updated"
+                else:
+                    # Create new playlist entry (metadata only, no tracks)
+                    playlist = Playlist(
+                        id=PlaylistId.generate(),
+                        name=playlist_data["name"],
+                        description=playlist_data.get("description"),
+                        source=PlaylistSource.SPOTIFY,
+                        spotify_uri=spotify_uri,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    await playlist_repository.add(playlist)
+                    synced_count += 1
+                    status = "synced"
+
+                results.append(
+                    {
+                        "spotify_id": spotify_playlist_id,
+                        "name": playlist_data["name"],
+                        "track_count": playlist_data["tracks"]["total"],
+                        "status": status,
+                    }
+                )
+
+            except Exception as e:
+                results.append(
+                    {
+                        "spotify_id": playlist_data.get("id", "unknown"),
+                        "name": playlist_data.get("name", "unknown"),
+                        "status": "failed",
+                        "error": str(e),
+                    }
+                )
+
+        return {
+            "message": "Playlist library synced successfully",
+            "total_playlists": len(all_playlists),
+            "synced_count": synced_count,
+            "updated_count": updated_count,
+            "results": results,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to sync playlist library: {str(e)}"
         ) from e
 
 
