@@ -147,6 +147,16 @@ async def callback(
         session.oauth_state = None
         session.code_verifier = None
 
+        # Persist session changes to database
+        await session_store.update_session(
+            session.session_id,
+            access_token=session.access_token,
+            refresh_token=session.refresh_token,
+            token_expires_at=session.token_expires_at,
+            oauth_state=None,
+            code_verifier=None,
+        )
+
         # Redirect to specified URL (default: dashboard)
         return RedirectResponse(url=redirect_to, status_code=302)
     except Exception as e:
@@ -207,6 +217,14 @@ async def refresh_token(
                 "refresh_token", session.refresh_token
             ),  # Use old refresh token if not provided
             expires_in=token_data.get("expires_in", 3600),
+        )
+
+        # Persist session changes to database
+        await session_store.update_session(
+            session.session_id,
+            access_token=session.access_token,
+            refresh_token=session.refresh_token,
+            token_expires_at=session.token_expires_at,
         )
 
         return {

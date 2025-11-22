@@ -145,6 +145,14 @@ async def get_spotify_token_from_session(
                 expires_in=token_data.get("expires_in", 3600),
             )
 
+            # Persist session changes to database
+            await session_store.update_session(
+                session.session_id,
+                access_token=session.access_token,
+                refresh_token=session.refresh_token,
+                token_expires_at=session.token_expires_at,
+            )
+
             return cast(str, token_data["access_token"])
         except Exception as e:
             raise HTTPException(
