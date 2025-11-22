@@ -31,6 +31,54 @@ class MetadataMerger:
         """Get priority value for a metadata source."""
         return MetadataMerger.AUTHORITY_HIERARCHY.get(source, 999)
 
+    # Hey future me - detects when sources disagree on field value!
+    # WHY normalize values? "Rock" vs "rock" isn't a real conflict, just formatting
+    # WHY check empty values? None/"" values don't count as conflicts
+    # Returns dict of {source: value} for all conflicting values EXCEPT the winner
+    # Empty dict means no conflict (all sources agree or only one has data)
+    @staticmethod
+    def _detect_conflicts(
+        field_name: str,
+        values_by_source: dict[MetadataSource, Any],
+        winning_source: MetadataSource,
+    ) -> dict[MetadataSource, Any]:
+        """
+        Detect conflicts between metadata sources for a specific field.
+        
+        Args:
+            field_name: Name of the field being checked
+            values_by_source: Map of source to value for this field
+            winning_source: The source that won based on authority hierarchy
+            
+        Returns:
+            Dict of conflicting sources and their values (excludes winner)
+        """
+        conflicts: dict[MetadataSource, Any] = {}
+        
+        # Get winning value
+        winning_value = values_by_source.get(winning_source)
+        if winning_value is None or (isinstance(winning_value, str) and not winning_value.strip()):
+            return conflicts  # No conflicts if winning value is empty
+            
+        # Check each source for conflicts
+        for source, value in values_by_source.items():
+            if source == winning_source:
+                continue  # Skip the winner
+                
+            # Skip empty values
+            if value is None or (isinstance(value, str) and not value.strip()):
+                continue
+                
+            # Normalize for comparison (case-insensitive for strings)
+            normalized_winning = str(winning_value).strip().lower() if winning_value else ""
+            normalized_value = str(value).strip().lower() if value else ""
+            
+            # If values differ, it's a conflict
+            if normalized_winning != normalized_value:
+                conflicts[source] = value
+                
+        return conflicts
+
     # Yo value selection - picks best value based on source authority
     # WHY check empty strings? API might return "" instead of None for missing data
     # WHY prefer new if current is None? Need to populate empty fields
@@ -157,7 +205,7 @@ class MetadataMerger:
     # tracks which field came from which source - useful for debugging and conflict resolution. Nested dict
     # access like spotify_data.get("external_ids", {}).get("isrc") prevents KeyError if structure missing.
     # List slicing [:10] limits tags to prevent bloat. This modifies Track entity in place and returns it.
-    # No validation that new values are reasonable (negative duration, invalid ISRC format, etc).
+    # NOW also returns conflicts dict showing where sources disagreed!
     def merge_track_metadata(
         self,
         track: Track,
@@ -165,7 +213,7 @@ class MetadataMerger:
         musicbrainz_data: dict[str, Any] | None = None,
         lastfm_data: dict[str, Any] | None = None,
         manual_overrides: dict[str, Any] | None = None,
-    ) -> Track:
+    ) -> tuple[Track, dict[str, dict[MetadataSource, Any]]]:
         """
         Merge track metadata from multiple sources.
 
@@ -177,8 +225,12 @@ class MetadataMerger:
             manual_overrides: Manual metadata overrides
 
         Returns:
-            Updated track entity
+            Tuple of (updated track entity, conflicts dict)
+            Conflicts dict maps field_name -> {source: conflicting_value}
         """
+        # Track detected conflicts
+        detected_conflicts: dict[str, dict[MetadataSource, Any]] = {}
+        
         # Extract metadata from each source
         sources_data: dict[MetadataSource, dict[str, Any]] = {}
 
@@ -223,7 +275,22 @@ class MetadataMerger:
         if manual_overrides:
             sources_data[MetadataSource.MANUAL] = manual_overrides
 
-        # Merge fields based on authority hierarchy
+        # Hey - collect ALL values for each field to detect conflicts!
+        # Build a map of field_name -> {source: value} for comparison
+        field_values: dict[str, dict[MetadataSource, Any]] = {}
+        
+        for source, data in sources_data.items():
+            if "duration_ms" in data and data["duration_ms"]:
+                if "duration_ms" not in field_values:
+                    field_values["duration_ms"] = {}
+                field_values["duration_ms"][source] = data["duration_ms"]
+            
+            if "isrc" in data and data["isrc"]:
+                if "isrc" not in field_values:
+                    field_values["isrc"] = {}
+                field_values["isrc"][source] = data["isrc"]
+
+        # Merge fields based on authority hierarchy and detect conflicts
         for source, data in sources_data.items():
             # Duration
             if "duration_ms" in data and data["duration_ms"]:
@@ -259,7 +326,23 @@ class MetadataMerger:
             if "genres" in data and data["genres"]:
                 track.genres = self._merge_lists(track.genres, data["genres"])
 
-        return track
+        # Detect conflicts after merging
+        for field_name, values_by_source in field_values.items():
+            if len(values_by_source) <= 1:
+                continue  # No conflict if only one source has data
+                
+            # Determine winning source (what's in track.metadata_sources)
+            winning_source_str = track.metadata_sources.get(field_name)
+            if not winning_source_str:
+                continue  # Skip if no winning source tracked
+                
+            winning_source = MetadataSource(winning_source_str)
+            conflicts = self._detect_conflicts(field_name, values_by_source, winning_source)
+            
+            if conflicts:
+                detected_conflicts[field_name] = conflicts
+
+        return track, detected_conflicts
 
     # Hey artist metadata merger - updates Artist entity with data from multiple sources
     # WHY normalize name first? Standardize "ft." format before merging

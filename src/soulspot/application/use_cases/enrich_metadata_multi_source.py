@@ -1,12 +1,12 @@
 """Multi-source metadata enrichment use case."""
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from soulspot.application.services.metadata_merger import MetadataMerger
 from soulspot.application.use_cases import UseCase
-from soulspot.domain.entities import Album, Artist, Track
+from soulspot.domain.entities import Album, Artist, Track, MetadataSource
 from soulspot.domain.ports import (
     IAlbumRepository,
     IArtistRepository,
@@ -45,6 +45,7 @@ class EnrichMetadataMultiSourceResponse:
     enriched_fields: list[str]
     sources_used: list[str]
     errors: list[str]
+    conflicts: dict[str, dict[str, Any]] = field(default_factory=dict)  # Hey - field -> {source: value} conflicts!
 
 
 class EnrichMetadataMultiSourceUseCase(
@@ -190,6 +191,7 @@ class EnrichMetadataMultiSourceUseCase(
                 enriched_fields=[],
                 sources_used=[],
                 errors=[f"Track not found: {request.track_id}"],
+                conflicts={},
             )
 
         # 2. Get artist for context
@@ -225,15 +227,23 @@ class EnrichMetadataMultiSourceUseCase(
                 sources_used.append("Last.fm")
                 enriched_fields.append("lastfm_data_fetched")
 
-        # 4. Merge track metadata
+        # 4. Merge track metadata and collect conflicts
+        track_conflicts: dict[str, dict[str, Any]] = {}
         try:
-            track = self._metadata_merger.merge_track_metadata(
+            track, detected_conflicts = self._metadata_merger.merge_track_metadata(
                 track=track,
                 spotify_data=spotify_data,
                 musicbrainz_data=musicbrainz_data,
                 lastfm_data=lastfm_data,
                 manual_overrides=request.manual_overrides,
             )
+            # Hey - convert MetadataSource enum to string for API serialization
+            for field_name, conflicts_by_source in detected_conflicts.items():
+                track_conflicts[field_name] = {
+                    source.value: value
+                    for source, value in conflicts_by_source.items()
+                }
+            
             await self._track_repository.update(track)
             enriched_fields.append("track_metadata_merged")
         except Exception as e:
@@ -324,4 +334,5 @@ class EnrichMetadataMultiSourceUseCase(
             enriched_fields=enriched_fields,
             sources_used=sources_used,
             errors=errors,
+            conflicts=track_conflicts,  # Hey - return detected conflicts to caller!
         )
