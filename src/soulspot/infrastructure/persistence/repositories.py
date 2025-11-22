@@ -322,7 +322,7 @@ class TrackRepository(ITrackRepository):
         # Hey - extract primary genre from genres list for DB storage!
         # Takes first genre if available, else None. DB stores single genre for filtering.
         primary_genre = track.genres[0] if track.genres else None
-        
+
         model = TrackModel(
             id=str(track.id.value),
             title=track.title,
@@ -352,7 +352,7 @@ class TrackRepository(ITrackRepository):
 
         # Hey - update genre from entity's genres list (primary genre only)
         primary_genre = track.genres[0] if track.genres else None
-        
+
         model.title = track.title
         model.artist_id = str(track.artist_id.value)
         model.album_id = str(track.album_id.value) if track.album_id else None

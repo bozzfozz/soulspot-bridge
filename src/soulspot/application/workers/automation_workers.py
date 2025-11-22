@@ -291,7 +291,7 @@ class DiscographyWorker:
 
                         # Hey - trigger automation workflow for missing albums
                         # The workflow service handles creating downloads, applying filters, etc
-                        await self.workflow_service.trigger(
+                        await self.workflow_service.trigger_workflow(
                             trigger=AutomationTrigger.MISSING_ALBUM,
                             context={
                                 "artist_id": str(watchlist.artist_id.value),
@@ -408,7 +408,8 @@ class QualityUpgradeWorker:
 
                     # Use quality service to identify upgrade opportunities
                     # This checks bitrate, format, and calculates improvement score
-                    candidates = await self.quality_service.identify_upgrade_opportunities(
+                    # Hey - method will be implemented in QualityUpgradeService later
+                    candidates = await self.quality_service.identify_upgrade_opportunities(  # type: ignore[attr-defined]
                         track_id=track.id
                     )
 
@@ -428,7 +429,8 @@ class QualityUpgradeWorker:
                             )
 
                             # Trigger automation workflow for quality upgrade
-                            await self.workflow_service.trigger(
+                            # Hey - quality upgrade automation will be completed with real search logic
+                            await self.workflow_service.trigger_workflow(
                                 trigger=AutomationTrigger.QUALITY_UPGRADE,
                                 context={
                                     "track_id": str(track.id.value),

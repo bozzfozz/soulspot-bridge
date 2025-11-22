@@ -142,16 +142,16 @@ async def enrich_metadata(
             current_source_str = response.track.metadata_sources.get(field_name)
             if not current_source_str:
                 continue  # Skip if no source tracked
-                
+
             current_source = MetadataSourceEnum(current_source_str)
             current_value = getattr(response.track, field_name, None)
-            
+
             # Build conflicting_values dict with MetadataSourceEnum keys
             conflicting_dict = {
                 MetadataSourceEnum(source): value
                 for source, value in conflicting_values.items()
             }
-            
+
             conflict_objects.append(
                 MetadataConflict(
                     field_name=field_name,

@@ -6,7 +6,7 @@ from typing import Any
 
 from soulspot.application.services.metadata_merger import MetadataMerger
 from soulspot.application.use_cases import UseCase
-from soulspot.domain.entities import Album, Artist, Track, MetadataSource
+from soulspot.domain.entities import Album, Artist, Track
 from soulspot.domain.ports import (
     IAlbumRepository,
     IArtistRepository,
@@ -243,7 +243,7 @@ class EnrichMetadataMultiSourceUseCase(
                     source.value: value
                     for source, value in conflicts_by_source.items()
                 }
-            
+
             await self._track_repository.update(track)
             enriched_fields.append("track_metadata_merged")
         except Exception as e:

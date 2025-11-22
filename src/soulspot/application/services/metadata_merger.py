@@ -38,45 +38,45 @@ class MetadataMerger:
     # Empty dict means no conflict (all sources agree or only one has data)
     @staticmethod
     def _detect_conflicts(
-        field_name: str,
+        _field_name: str,  # Hey - kept for documentation, not used in logic
         values_by_source: dict[MetadataSource, Any],
         winning_source: MetadataSource,
     ) -> dict[MetadataSource, Any]:
         """
         Detect conflicts between metadata sources for a specific field.
-        
+
         Args:
-            field_name: Name of the field being checked
+            _field_name: Name of the field being checked (for documentation)
             values_by_source: Map of source to value for this field
             winning_source: The source that won based on authority hierarchy
-            
+
         Returns:
             Dict of conflicting sources and their values (excludes winner)
         """
         conflicts: dict[MetadataSource, Any] = {}
-        
+
         # Get winning value
         winning_value = values_by_source.get(winning_source)
         if winning_value is None or (isinstance(winning_value, str) and not winning_value.strip()):
             return conflicts  # No conflicts if winning value is empty
-            
+
         # Check each source for conflicts
         for source, value in values_by_source.items():
             if source == winning_source:
                 continue  # Skip the winner
-                
+
             # Skip empty values
             if value is None or (isinstance(value, str) and not value.strip()):
                 continue
-                
+
             # Normalize for comparison (case-insensitive for strings)
             normalized_winning = str(winning_value).strip().lower() if winning_value else ""
             normalized_value = str(value).strip().lower() if value else ""
-            
+
             # If values differ, it's a conflict
             if normalized_winning != normalized_value:
                 conflicts[source] = value
-                
+
         return conflicts
 
     # Yo value selection - picks best value based on source authority
@@ -230,7 +230,7 @@ class MetadataMerger:
         """
         # Track detected conflicts
         detected_conflicts: dict[str, dict[MetadataSource, Any]] = {}
-        
+
         # Extract metadata from each source
         sources_data: dict[MetadataSource, dict[str, Any]] = {}
 
@@ -278,13 +278,13 @@ class MetadataMerger:
         # Hey - collect ALL values for each field to detect conflicts!
         # Build a map of field_name -> {source: value} for comparison
         field_values: dict[str, dict[MetadataSource, Any]] = {}
-        
+
         for source, data in sources_data.items():
             if "duration_ms" in data and data["duration_ms"]:
                 if "duration_ms" not in field_values:
                     field_values["duration_ms"] = {}
                 field_values["duration_ms"][source] = data["duration_ms"]
-            
+
             if "isrc" in data and data["isrc"]:
                 if "isrc" not in field_values:
                     field_values["isrc"] = {}
@@ -330,15 +330,15 @@ class MetadataMerger:
         for field_name, values_by_source in field_values.items():
             if len(values_by_source) <= 1:
                 continue  # No conflict if only one source has data
-                
+
             # Determine winning source (what's in track.metadata_sources)
             winning_source_str = track.metadata_sources.get(field_name)
             if not winning_source_str:
                 continue  # Skip if no winning source tracked
-                
+
             winning_source = MetadataSource(winning_source_str)
             conflicts = self._detect_conflicts(field_name, values_by_source, winning_source)
-            
+
             if conflicts:
                 detected_conflicts[field_name] = conflicts
 

@@ -263,7 +263,7 @@ class ID3TaggingService:
         # Hey - ensure text is a list for ID3 API
         text_list = [text] if isinstance(text, str) else text
 
-        return TXXX(
+        return TXXX(  # type: ignore[no-untyped-call]
             encoding=3,  # UTF-8
             desc=description,
             text=text_list,
@@ -291,7 +291,7 @@ class ID3TaggingService:
             )
             audio.tags.add(frame)
         """
-        return UFID(
+        return UFID(  # type: ignore[no-untyped-call]
             owner=owner,
             data=identifier.encode('utf-8'),
         )
@@ -326,19 +326,19 @@ class ID3TaggingService:
 
         # Add MusicBrainz Recording ID (track)
         if recording_id:
-            frame = self.create_ufid_frame("http://musicbrainz.org", recording_id)
-            audio.tags.add(frame)  # type: ignore[no-untyped-call]
+            ufid_frame = self.create_ufid_frame("http://musicbrainz.org", recording_id)
+            audio.tags.add(ufid_frame)
 
         # Hey - we could also add artist/release IDs but standard is just recording
         # Most tools only expect one UFID per database. If you need artist/release,
         # use TXXX frames instead with descriptions like "MUSICBRAINZ_ARTISTID"
         if artist_id:
-            frame = self.create_txxx_frame("MUSICBRAINZ_ARTISTID", artist_id)
-            audio.tags.add(frame)  # type: ignore[no-untyped-call]
+            txxx_frame = self.create_txxx_frame("MUSICBRAINZ_ARTISTID", artist_id)
+            audio.tags.add(txxx_frame)
 
         if release_id:
-            frame = self.create_txxx_frame("MUSICBRAINZ_ALBUMID", release_id)
-            audio.tags.add(frame)  # type: ignore[no-untyped-call]
+            txxx_frame = self.create_txxx_frame("MUSICBRAINZ_ALBUMID", release_id)
+            audio.tags.add(txxx_frame)
 
     # Hey tag reader - extracts ID3 tags from MP3 file
     # Returns dict for easy API serialization
