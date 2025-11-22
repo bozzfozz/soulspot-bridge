@@ -97,9 +97,13 @@ class FollowedArtistsService:
                 # Process each artist from Spotify response
                 for artist_data in items:
                     try:
-                        artist = await self._process_artist_data(artist_data)
+                        artist, was_created = await self._process_artist_data(artist_data)
                         all_artists.append(artist)
                         stats["total_fetched"] += 1
+                        if was_created:
+                            stats["created"] += 1
+                        else:
+                            stats["updated"] += 1
                     except Exception as e:
                         logger.error(
                             f"Failed to process artist {artist_data.get('name', 'unknown')}: {e}"
@@ -132,16 +136,19 @@ class FollowedArtistsService:
     # the Artist entity in DB! We use spotify_uri as unique identifier (better than name since
     # artists can share names). If artist exists, we update the name. If new, we create it.
     # Spotify artist object has: id, name, uri, genres (list), images (list of artwork URLs).
-    # We store genres from Spotify. The created/updated counters are tracked in stats dict above.
-    # This is DEFENSIVE - if Spotify sends weird data (missing fields), we handle gracefully.
-    async def _process_artist_data(self, artist_data: dict[str, Any]) -> Artist:
+    # NOTE: genres are stored in the entity but NOT persisted to DB yet - ArtistModel needs
+    # genres field added in a future migration. This is tracked as technical debt.
+    # Returns tuple (artist, was_created) so caller can track stats properly.
+    async def _process_artist_data(
+        self, artist_data: dict[str, Any]
+    ) -> tuple[Artist, bool]:
         """Process a single artist from Spotify API response.
 
         Args:
             artist_data: Artist data from Spotify API
 
         Returns:
-            Created or updated Artist entity
+            Tuple of (Artist entity, was_created boolean)
 
         Raises:
             ValueError: If artist data is invalid (missing required fields)
@@ -166,21 +173,21 @@ class FollowedArtistsService:
                 existing_artist.update_name(name)
                 await self.artist_repo.update(existing_artist)
                 logger.debug(f"Updated artist name: {name} (id: {spotify_id})")
-            return existing_artist
+            return existing_artist, False  # Not created, was updated
 
         # Create new artist entity
         new_artist = Artist(
             id=ArtistId.generate(),
             name=name,
             spotify_uri=spotify_uri,
-            genres=genres,  # Store genres from Spotify
+            genres=genres,  # NOTE: Stored in entity but not persisted to DB yet
             metadata_sources={"name": "spotify", "genres": "spotify"},
         )
 
         await self.artist_repo.add(new_artist)
         logger.info(f"Created new artist: {name} (id: {spotify_id})")
 
-        return new_artist
+        return new_artist, True  # Was created
 
     # Hey future me, this is a simple utility to get a preview of followed artists WITHOUT
     # syncing to DB! Useful for "show me who I follow on Spotify" without persisting data.

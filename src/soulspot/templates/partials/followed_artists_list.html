@@ -1,0 +1,61 @@
+<!-- Partial template for rendering artists list after sync -->
+{% if artists %}
+    {% for artist in artists %}
+    <div class="card hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+        <label class="cursor-pointer block">
+            <div class="card-body space-y-3">
+                <div class="flex items-start gap-3">
+                    <input type="checkbox" 
+                           class="artist-checkbox mt-1 w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                           data-artist-id="{{ artist.id }}"
+                           onchange="toggleArtist('{{ artist.id }}')">
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-semibold text-gray-900 dark:text-white truncate" title="{{ artist.name }}">
+                            {{ artist.name }}
+                        </h3>
+                        {% if artist.genres and artist.genres|length > 0 %}
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                {% for genre in artist.genres[:3] %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary-100 text-secondary-800 dark:bg-secondary-900/30 dark:text-secondary-300">
+                                        {{ genre }}
+                                    </span>
+                                {% endfor %}
+                                {% if artist.genres|length > 3 %}
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">+{{ artist.genres|length - 3 }} more</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </label>
+    </div>
+    {% endfor %}
+
+    <!-- Hidden div to pass stats data to JavaScript -->
+    <script>
+        // Update stats after artists are rendered
+        window.syncStats = {
+            total_fetched: {{ total_fetched }},
+            created: {{ created }},
+            updated: {{ updated }},
+            errors: {{ errors }}
+        };
+        
+        // Trigger stats update
+        if (window.updateStatsFromPartial) {
+            window.updateStatsFromPartial();
+        }
+
+        // Enable create button
+        const btn = document.getElementById('create-watchlists-btn');
+        if (btn) btn.disabled = false;
+    </script>
+{% else %}
+    <div class="col-span-full text-center py-12">
+        <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+        </svg>
+        <p class="text-gray-600 dark:text-gray-400">No followed artists found</p>
+    </div>
+{% endif %}

@@ -3,7 +3,7 @@
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -1147,35 +1147,45 @@ class BulkCreateWatchlistsRequest(BaseModel):
 # the user follows, creates/updates Artist entities in our DB, and returns them. This can take
 # 10-30 seconds for users with 100+ followed artists due to pagination. Each Spotify API call
 # fetches max 50 artists, so 200 followed artists = 4 API calls. Progress is logged server-side
-# but user doesn't see it (future: add SSE progress updates). The response includes sync stats
-# and full artist list for UI to display. Requires valid access_token from session - if token
-# expired, this will fail with 401 and user must re-auth.
+# but user doesn't see it (future: add SSE progress updates). The response can be HTML (for HTMX)
+# or JSON (for API clients) - we detect HX-Request header. Requires valid access_token from session -
+# if token expired, this will fail with 401 and user must re-auth.
 @router.post("/followed-artists/sync")
 async def sync_followed_artists(
+    request: Request,
     access_token: str = Depends(get_spotify_token_from_session),
     session: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
-) -> SyncFollowedArtistsResponse:
+) -> Any:
     """Sync followed artists from Spotify to local database.
 
     Fetches all artists the current user follows on Spotify, creates or updates
     Artist entities in the database, and returns the complete list with sync statistics.
 
     Args:
+        request: FastAPI request object (to check HX-Request header)
         access_token: Spotify OAuth access token (from session)
         session: Database session
         settings: Application settings
 
     Returns:
-        Sync statistics and list of all followed artists
+        HTML partial for HTMX requests, JSON for API requests
 
     Raises:
         HTTPException: 401 if token invalid/expired, 500 if sync fails
     """
     try:
+        from pathlib import Path
+
+        from fastapi.templating import Jinja2Templates
+
         from soulspot.application.services.followed_artists_service import (
             FollowedArtistsService,
         )
+
+        # Get templates directory
+        _TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates"
+        templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 
         spotify_client = SpotifyClient(settings.spotify)
         service = FollowedArtistsService(session, spotify_client)
@@ -1183,21 +1193,56 @@ async def sync_followed_artists(
         artists, stats = await service.sync_followed_artists(access_token)
         await session.commit()
 
-        return SyncFollowedArtistsResponse(
-            total_fetched=stats["total_fetched"],
-            created=stats["created"],
-            updated=stats["updated"],
-            errors=stats["errors"],
-            artists=[
+        # Check if this is an HTMX request
+        is_htmx = request.headers.get("HX-Request") == "true"
+
+        if is_htmx:
+            # Return HTML partial for HTMX
+            from fastapi.responses import HTMLResponse
+
+            artists_data = [
                 {
                     "id": str(artist.id.value),
                     "name": artist.name,
-                    "spotify_uri": str(artist.spotify_uri) if artist.spotify_uri else None,
+                    "spotify_uri": str(artist.spotify_uri)
+                    if artist.spotify_uri
+                    else None,
                     "genres": artist.genres,
                 }
                 for artist in artists
-            ],
-        )
+            ]
+
+            return templates.TemplateResponse(
+                "partials/followed_artists_list.html",
+                {
+                    "request": request,
+                    "artists": artists_data,
+                    "total_fetched": stats["total_fetched"],
+                    "created": stats["created"],
+                    "updated": stats["updated"],
+                    "errors": stats["errors"],
+                },
+                headers={"Content-Type": "text/html; charset=utf-8"},
+            )
+        else:
+            # Return JSON for API clients
+            return SyncFollowedArtistsResponse(
+                total_fetched=stats["total_fetched"],
+                created=stats["created"],
+                updated=stats["updated"],
+                errors=stats["errors"],
+                artists=[
+                    {
+                        "id": str(artist.id.value),
+                        "name": artist.name,
+                        "spotify_uri": str(artist.spotify_uri)
+                        if artist.spotify_uri
+                        else None,
+                        "genres": artist.genres,
+                    }
+                    for artist in artists
+                ],
+            )
     except Exception as e:
         await session.rollback()
         logger.error(f"Failed to sync followed artists: {e}")

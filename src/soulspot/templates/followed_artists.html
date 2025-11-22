@@ -95,73 +95,15 @@
 <script>
     let selectedArtists = new Set();
 
-    // Handle sync response - called via HTMX
-    document.body.addEventListener('htmx:afterSwap', function(event) {
-        if (event.detail.target.id === 'artists-list') {
-            // Extract stats from response if available
-            const statsData = event.detail.xhr.response;
-            if (statsData) {
-                try {
-                    const data = JSON.parse(statsData);
-                    updateStats(data);
-                    renderArtists(data.artists || []);
-                } catch (e) {
-                    console.error('Failed to parse sync response:', e);
-                }
-            }
-        }
-    });
-
-    function updateStats(data) {
-        if (data.total_fetched !== undefined) {
-            document.getElementById('stat-total').textContent = data.total_fetched;
-            document.getElementById('stat-created').textContent = data.created;
-            document.getElementById('stat-updated').textContent = data.updated;
+    // Function to update stats from partial template
+    window.updateStatsFromPartial = function() {
+        if (window.syncStats) {
+            document.getElementById('stat-total').textContent = window.syncStats.total_fetched;
+            document.getElementById('stat-created').textContent = window.syncStats.created;
+            document.getElementById('stat-updated').textContent = window.syncStats.updated;
             document.getElementById('stats-banner').classList.remove('hidden');
         }
-    }
-
-    function renderArtists(artists) {
-        const container = document.getElementById('artists-list');
-        if (!artists || artists.length === 0) {
-            return;
-        }
-
-        container.innerHTML = artists.map(artist => `
-            <div class="card hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                <label class="cursor-pointer block">
-                    <div class="card-body space-y-3">
-                        <div class="flex items-start gap-3">
-                            <input type="checkbox" 
-                                   class="artist-checkbox mt-1 w-5 h-5 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                                   data-artist-id="${artist.id}"
-                                   onchange="toggleArtist('${artist.id}')">
-                            <div class="flex-1 min-w-0">
-                                <h3 class="font-semibold text-gray-900 dark:text-white truncate" title="${artist.name}">
-                                    ${artist.name}
-                                </h3>
-                                ${artist.genres && artist.genres.length > 0 ? `
-                                    <div class="flex flex-wrap gap-1 mt-2">
-                                        ${artist.genres.slice(0, 3).map(genre => `
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary-100 text-secondary-800 dark:bg-secondary-900/30 dark:text-secondary-300">
-                                                ${genre}
-                                            </span>
-                                        `).join('')}
-                                        ${artist.genres.length > 3 ? `
-                                            <span class="text-xs text-gray-500 dark:text-gray-400">+${artist.genres.length - 3} more</span>
-                                        ` : ''}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                </label>
-            </div>
-        `).join('');
-
-        // Enable Create Watchlists button if artists were loaded
-        document.getElementById('create-watchlists-btn').disabled = false;
-    }
+    };
 
     function toggleArtist(artistId) {
         if (selectedArtists.has(artistId)) {
