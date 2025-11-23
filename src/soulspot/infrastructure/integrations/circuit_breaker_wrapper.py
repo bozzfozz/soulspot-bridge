@@ -175,6 +175,30 @@ class CircuitBreakerSpotifyClient(ISpotifyClient):
         )
         return cast(dict[str, Any], result)
 
+    async def get_user_playlists(
+        self, access_token: str, limit: int = 50, offset: int = 0
+    ) -> dict[str, Any]:
+        """Get current user's playlists."""
+        result = await self._circuit_breaker.call(
+            self._client.get_user_playlists,
+            access_token=access_token,
+            limit=limit,
+            offset=offset,
+        )
+        return cast(dict[str, Any], result)
+
+    async def get_followed_artists(
+        self, access_token: str, limit: int = 50, after: str | None = None
+    ) -> dict[str, Any]:
+        """Get current user's followed artists."""
+        result = await self._circuit_breaker.call(
+            self._client.get_followed_artists,
+            access_token=access_token,
+            limit=limit,
+            after=after,
+        )
+        return cast(dict[str, Any], result)
+
     async def close(self) -> None:
         """Close the underlying client."""
         if hasattr(self._client, "close"):
