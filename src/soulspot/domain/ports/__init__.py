@@ -42,6 +42,11 @@ class IArtistRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_by_spotify_uri(self, spotify_uri: Any) -> Artist | None:
+        """Get an artist by Spotify URI."""
+        pass
+
+    @abstractmethod
     async def update(self, artist: Artist) -> None:
         """Update an existing artist."""
         pass
@@ -340,6 +345,23 @@ class ISpotifyClient(ABC):
         pass
 
     @abstractmethod
+    async def get_user_playlists(
+        self, access_token: str, limit: int = 50, offset: int = 0
+    ) -> dict[str, Any]:
+        """
+        Get current user's playlists.
+
+        Args:
+            access_token: OAuth access token
+            limit: Maximum number of playlists to return (max 50)
+            offset: The index of the first playlist to return
+
+        Returns:
+            Paginated list of user's playlists with 'items', 'next', 'total' fields
+        """
+        pass
+
+    @abstractmethod
     async def get_track(self, track_id: str, access_token: str) -> dict[str, Any]:
         """
         Get track details.
@@ -367,6 +389,23 @@ class ISpotifyClient(ABC):
 
         Returns:
             Search results
+        """
+        pass
+
+    @abstractmethod
+    async def get_followed_artists(
+        self, access_token: str, limit: int = 50, after: str | None = None
+    ) -> dict[str, Any]:
+        """
+        Get current user's followed artists.
+
+        Args:
+            access_token: OAuth access token
+            limit: Maximum number of artists to return (max 50)
+            after: The last artist ID retrieved from previous page (for pagination)
+
+        Returns:
+            Paginated response with 'artists' containing 'items', 'cursors', and 'total' fields
         """
         pass
 
