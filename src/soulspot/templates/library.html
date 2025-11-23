@@ -63,7 +63,7 @@
                 </div>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Artists</p>
-            <p class="stat-value" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ stats.total_artists }}</p>
+            <p class="stat-value">{{ stats.total_artists }}</p>
         </div>
         
         <div class="stat-card card-modern card-hover-lift group">
@@ -75,7 +75,7 @@
                 </div>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Albums</p>
-            <p class="stat-value" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ stats.total_albums }}</p>
+            <p class="stat-value">{{ stats.total_albums }}</p>
         </div>
         
         <div class="stat-card card-modern card-hover-lift group">
@@ -87,7 +87,7 @@
                 </div>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Downloaded</p>
-            <p class="stat-value" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ stats.tracks_with_files }}</p>
+            <p class="stat-value">{{ stats.tracks_with_files }}</p>
         </div>
         
         <div class="stat-card card-modern card-hover-lift group">
@@ -99,14 +99,7 @@
                 </div>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Broken Files</p>
-            <p class="stat-value" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ stats.broken_tracks }}</p>
-        </div>
-    </div>
-                    <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                    </svg>
-                </div>
-            </div>
+            <p class="stat-value">{{ stats.broken_tracks }}</p>
         </div>
     </div>
 
@@ -121,7 +114,7 @@
                 </div>
                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Browse Artists</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    <span class="font-semibold" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ stats.total_artists }}</span> artists
+                    <span class="font-semibold text-purple-600 dark:text-purple-400">{{ stats.total_artists }}</span> artists
                 </p>
                 <div class="flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:translate-x-2 transition-transform">
                     <span class="text-sm font-medium">Explore</span>
@@ -141,7 +134,7 @@
                 </div>
                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Browse Albums</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    <span class="font-semibold" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ stats.total_albums }}</span> albums
+                    <span class="font-semibold text-green-600 dark:text-green-400">{{ stats.total_albums }}</span> albums
                 </p>
                 <div class="flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:translate-x-2 transition-transform">
                     <span class="text-sm font-medium">Explore</span>
@@ -161,7 +154,7 @@
                 </div>
                 <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Browse Tracks</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    <span class="font-semibold" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ stats.total_tracks }}</span> tracks
+                    <span class="font-semibold text-blue-600 dark:text-blue-400">{{ stats.total_tracks }}</span> tracks
                 </p>
                 <div class="flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:translate-x-2 transition-transform">
                     <span class="text-sm font-medium">Explore</span>
