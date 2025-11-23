@@ -179,6 +179,14 @@
   background-clip: text;
 }
 
+/* Ensure gradient text is visible in dark mode with brighter colors */
+@media (prefers-color-scheme: dark) {
+  .stat-value {
+    /* Brighten gradients for dark mode visibility */
+    filter: brightness(1.2) saturate(1.1);
+  }
+}
+
 /* ==========================================================================
    LOADING STATES
    ========================================================================== */
