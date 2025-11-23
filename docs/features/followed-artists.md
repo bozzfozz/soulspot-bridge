@@ -17,7 +17,7 @@ The Spotify Followed Artists feature allows users to sync all artists they follo
 
 ## Access
 
-**URL**: `/ui/automation/followed-artists`
+**URL**: `/automation/followed-artists`
 
 **Requirements**:
 - Active Spotify OAuth session
