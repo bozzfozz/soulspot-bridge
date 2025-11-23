@@ -82,6 +82,27 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
    - Comprehensive testing examples
    - **Blueprint for all modules** - study this carefully
 
+### AI Integration & Automation
+
+8. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - AI Agent Workflows Documentation **NEW**
+   - Comprehensive overview of GitHub Next Agentic Workflows
+   - What are AI Agentic Workflows and core concepts
+   - Complete catalog of available workflows (Issue Triage, CI Doctor, etc.)
+   - Architecture and how workflows function
+   - Integration patterns for SoulSpot Bridge v3.0
+   - Custom workflow templates (Architecture Guardian, Test Coverage Guardian)
+   - Security best practices and implementation guides
+   - **Essential for automating code review, testing, and quality assurance**
+
+9. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Practical Implementation Guide **NEW**
+   - Quick start (5-minute setup)
+   - Step-by-step installation and configuration
+   - Recommended workflows for SoulSpot (prioritized)
+   - Ready-to-use workflow templates for SoulSpot Bridge
+   - Troubleshooting common issues
+   - Monitoring and maintenance guidelines
+   - **Hands-on guide for implementing AI automation**
+
 ---
 
 ## 🎯 Quick Navigation
@@ -131,8 +152,19 @@ Focus on:
 1. [MODULE_SPECIFICATION.md](./MODULE_SPECIFICATION.md) - Section 7 (Testing Requirements)
 2. [SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md) - Section 9 (Testing Strategy)
 3. [ARCHITECTURE.md](./ARCHITECTURE.md) - Section 8 (Testing Strategy)
+4. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - Automated QA workflows
+5. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Test Coverage Guardian setup
 
-**Goal:** Ensure modules meet quality standards
+**Goal:** Ensure modules meet quality standards and leverage automated QA
+
+### For DevOps/Automation Engineers
+
+Essential reading:
+1. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - Complete overview of AI automation
+2. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Hands-on implementation
+3. [ARCHITECTURE.md](./ARCHITECTURE.md) - Section 9 (Configuration) and Section 10 (Deployment)
+
+**Goal:** Implement CI/CD automation and AI-powered workflows
 
 ---
 
@@ -325,6 +357,10 @@ See [ROADMAP.md](./ROADMAP.md) Section 4 for detailed migration strategy.
 - [x] Create MODULE_SPECIFICATION.md
 - [x] Create MODULE_COMMUNICATION.md
 - [x] Create SOULSEEK_MODULE.md example
+- [x] Create UI_DESIGN_SYSTEM.md
+- [x] Create ONBOARDING_FLOW.md
+- [x] Create AI_AGENT_WORKFLOWS.md
+- [x] Create AI_AGENT_WORKFLOWS_IMPLEMENTATION.md
 - [x] Create README.md (this file)
 
 ### Implementation Phase 🔜 PLANNED
