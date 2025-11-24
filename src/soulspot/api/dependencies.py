@@ -75,12 +75,37 @@ def get_spotify_client(settings: Settings = Depends(get_settings)) -> SpotifyCli
     return SpotifyClient(settings.spotify)
 
 
+# Hey future me, this is a helper to parse Bearer tokens consistently! We extract this logic
+# because it's used in TWO places: 1) get_session_id dependency (for every auth'd request),
+# 2) import_session endpoint (alternative to query param). The logic is: if string starts with
+# "bearer " (case-insensitive), strip it and return the rest. Otherwise return the whole string.
+# This avoids duplicating the case-insensitive prefix logic and ensures both code paths behave
+# identically. If you change how Bearer tokens are parsed, change it HERE!
+def parse_bearer_token(authorization: str) -> str:
+    """Parse Authorization header to extract session ID.
+
+    Handles both "Bearer {token}" and raw token formats.
+    Bearer prefix is case-insensitive.
+
+    Args:
+        authorization: Authorization header value
+
+    Returns:
+        Session ID with Bearer prefix removed (if present)
+    """
+    # Remove "Bearer " prefix if present (case-insensitive)
+    if authorization.lower().startswith("bearer "):
+        return authorization[7:].strip()
+    # If no "Bearer " prefix, treat entire value as session ID (lenient)
+    return authorization.strip()
+
+
 # Hey future me, NOW SUPPORTS BOTH COOKIE AND BEARER TOKEN AUTH! This is for multi-device access -
 # users can either use the default session cookie (browser) OR pass session_id via Authorization header
 # (API clients, curl, another browser). We check Authorization first (explicit > implicit), then fall
-# back to cookie. Format is "Authorization: Bearer {session_id}". This makes session IDs PORTABLE across
-# devices but also more vulnerable to theft - MUST use HTTPS! The rest is unchanged - auto-refresh logic
-# works the same regardless of how we got the session_id.
+# back to cookie. The parse_bearer_token() helper handles the "Bearer " prefix extraction consistently.
+# This makes session IDs PORTABLE across devices but also more vulnerable to theft - MUST use HTTPS!
+# The rest is unchanged - auto-refresh logic works the same regardless of how we got the session_id.
 async def get_session_id(
     authorization: str | None = Header(None),
     session_id_cookie: str | None = Cookie(None, alias="session_id"),
@@ -99,11 +124,7 @@ async def get_session_id(
     """
     # Check Authorization header first (explicit auth)
     if authorization:
-        # Remove "Bearer " prefix if present (case-insensitive)
-        if authorization.lower().startswith("bearer "):
-            return authorization[7:].strip()
-        # If no "Bearer " prefix, treat entire header as session ID (lenient)
-        return authorization.strip()
+        return parse_bearer_token(authorization)
 
     # Fall back to cookie (default browser auth)
     return session_id_cookie

@@ -5,7 +5,11 @@ from typing import Any
 from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Query, Response
 from fastapi.responses import RedirectResponse
 
-from soulspot.api.dependencies import get_session_id, get_session_store
+from soulspot.api.dependencies import (
+    get_session_id,
+    get_session_store,
+    parse_bearer_token,
+)
 from soulspot.application.services.session_store import DatabaseSessionStore
 from soulspot.config import Settings, get_settings
 from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
@@ -451,6 +455,7 @@ async def export_session(
 # the SAME security settings as the original /authorize endpoint - HttpOnly, Secure (if HTTPS), etc.
 # This is intentionally permissive - no validation beyond "does session exist" - we trust users know
 # what they're doing. If they import an invalid session_id, they'll just get 401 on next API call.
+# We use the shared parse_bearer_token() helper for consistent Authorization header parsing!
 @router.post("/session/import")
 async def import_session(
     response: Response,
@@ -482,10 +487,7 @@ async def import_session(
     # Allow session_id from either query param or header (header takes precedence)
     session_id = import_session_id
     if authorization:
-        if authorization.lower().startswith("bearer "):
-            session_id = authorization[7:].strip()
-        else:
-            session_id = authorization.strip()
+        session_id = parse_bearer_token(authorization)
 
     # Validate session exists
     session = await session_store.get_session(session_id)
