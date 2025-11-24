@@ -85,7 +85,16 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
    - Deployment instructions
    - **Perfect for developers who want to start immediately**
 
-8. **[ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md)** - Onboarding & Configuration
+8. **[GITHUB_SPARK_PROMPTS.md](./GITHUB_SPARK_PROMPTS.md)** - GitHub Spark AI Prompts **NEW 🤖**
+   - **Ready-to-use prompts** for GitHub Spark to generate the entire app
+   - **10 iterations** covering setup, components, pages, API, testing, deployment
+   - Step-by-step prompt sequence (copy & paste into Spark)
+   - Each prompt builds on the previous one
+   - Covers all features: cards, hooks, routing, real-time updates, testing
+   - **Perfect for using GitHub Spark's AI to build SoulSpot Bridge**
+   - 👉 Start here if you want to use AI to generate the code!
+
+9. **[ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md)** - Onboarding & Configuration
    - **No .env configuration** - guided UI-based setup
    - Step-by-step credential collection with real-time testing
    - Spotify, Soulseek, and optional module configuration
@@ -95,7 +104,7 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
 
 ### Example Implementation
 
-9. **[SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md)** - Reference Implementation
+10. **[SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md)** - Reference Implementation
    - Complete Soulseek module design
    - Domain model (entities, value objects, services)
    - Application layer (services, use cases, DTOs)
@@ -107,7 +116,7 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
 
 ### AI Integration & Automation
 
-10. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - AI Agent Workflows Documentation
+11. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - AI Agent Workflows Documentation
    - Comprehensive overview of GitHub Next Agentic Workflows
    - What are AI Agentic Workflows and core concepts
    - Complete catalog of available workflows (Issue Triage, CI Doctor, etc.)
@@ -117,7 +126,7 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
    - Security best practices and implementation guides
    - **Essential for automating code review, testing, and quality assurance**
 
-11. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Practical Implementation Guide
+12. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Practical Implementation Guide
    - Quick start (5-minute setup)
    - Step-by-step installation and configuration
    - Recommended workflows for SoulSpot (prioritized)
@@ -170,11 +179,12 @@ Essential reading:
 5. [ARCHITECTURE.md](./ARCHITECTURE.md) - Section 7 (Frontend Architecture)
 
 **For GitHub Spark (React + TypeScript) implementation:**
-1. **[GITHUB_SPARK_QUICK_START.md](./GITHUB_SPARK_QUICK_START.md)** - 5-minute setup guide ⚡
-2. **[GITHUB_SPARK_WEB_UI.md](./GITHUB_SPARK_WEB_UI.md)** - Complete React/TypeScript specification ⭐
-3. [UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md) - Reference for design tokens and card concepts
-4. [MODULE_SPECIFICATION.md](./MODULE_SPECIFICATION.md) - Section 5 (Frontend Structure)
-5. [ARCHITECTURE.md](./ARCHITECTURE.md) - Section 7 (Frontend Architecture)
+1. **[GITHUB_SPARK_PROMPTS.md](./GITHUB_SPARK_PROMPTS.md)** - AI prompts to generate the app 🤖⚡
+2. **[GITHUB_SPARK_QUICK_START.md](./GITHUB_SPARK_QUICK_START.md)** - 5-minute manual setup guide ⚡
+3. **[GITHUB_SPARK_WEB_UI.md](./GITHUB_SPARK_WEB_UI.md)** - Complete React/TypeScript specification ⭐
+4. [UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md) - Reference for design tokens and card concepts
+5. [MODULE_SPECIFICATION.md](./MODULE_SPECIFICATION.md) - Section 5 (Frontend Structure)
+6. [ARCHITECTURE.md](./ARCHITECTURE.md) - Section 7 (Frontend Architecture)
 
 **Goal:** Build consistent, accessible UI using card components (either HTMX or React)
 
@@ -395,6 +405,7 @@ See [ROADMAP.md](./ROADMAP.md) Section 4 for detailed migration strategy.
 - [x] Create AI_AGENT_WORKFLOWS_IMPLEMENTATION.md
 - [x] Create GITHUB_SPARK_WEB_UI.md (React + TypeScript specification)
 - [x] Create GITHUB_SPARK_QUICK_START.md (Quick start guide)
+- [x] Create GITHUB_SPARK_PROMPTS.md (AI prompts for Spark)
 - [x] Create README.md (this file)
 
 ### Implementation Phase 🔜 PLANNED
