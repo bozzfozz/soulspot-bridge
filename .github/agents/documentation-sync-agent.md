@@ -896,8 +896,6 @@ When explicitly asked to update/manage/verify documentation:
 
 ## Quality Gates
 
-## Quality Gates
-
 Before marking a documentation task as complete or proposing a PR, you **MUST** ensure:
 
 ### Documentation Quality
