@@ -134,9 +134,11 @@ class FollowedArtistsService:
 
     # Yo future me, this processes a single artist from Spotify API response and creates/updates
     # the Artist entity in DB! We use spotify_uri as unique identifier (better than name since
-    # artists can share names). If artist exists, we update the name and genres. If new, we create it.
-    # Spotify artist object has: id, name, uri, genres (list), images (list of artwork URLs).
+    # artists can share names). If artist exists, we update the name, genres, and image_url. If new, we create it.
+    # Spotify artist object has: id, name, uri, genres (list), images (list of artwork URLs in different sizes).
     # Genres are now persisted to DB as JSON text (migration dd18990ggh48 adds genres/tags columns).
+    # Images array typically has 3 sizes: 640x640, 320x320, 160x160. We pick the medium one (index 1, ~320px)
+    # for display in the followed artists UI. If no images exist, image_url stays None (indie artists often lack images).
     # Returns tuple (artist, was_created) so caller can track stats properly.
     async def _process_artist_data(
         self, artist_data: dict[str, Any]
@@ -155,6 +157,7 @@ class FollowedArtistsService:
         spotify_id = artist_data.get("id")
         name = artist_data.get("name")
         genres = artist_data.get("genres", [])
+        images = artist_data.get("images", [])
 
         if not spotify_id or not name:
             raise ValueError(
@@ -163,11 +166,20 @@ class FollowedArtistsService:
 
         spotify_uri = SpotifyUri.from_string(f"spotify:artist:{spotify_id}")
 
+        # Hey future me - extract image URL from Spotify images array! Spotify returns images sorted
+        # by size (largest first). We pick medium size (usually index 1, ~320x320) for good balance
+        # between quality and load time. If only one image exists (rare), use it. If no images, None.
+        image_url = None
+        if images:
+            # Prefer medium-sized image (index 1), fallback to first available
+            preferred_image = images[1] if len(images) > 1 else images[0]
+            image_url = preferred_image.get("url")
+
         # Check if artist already exists by Spotify URI
         existing_artist = await self.artist_repo.get_by_spotify_uri(spotify_uri)
 
         if existing_artist:
-            # Update existing artist (name or genres might have changed on Spotify)
+            # Update existing artist (name, genres, or image_url might have changed on Spotify)
             needs_update = False
             if existing_artist.name != name:
                 existing_artist.update_name(name)
@@ -175,6 +187,10 @@ class FollowedArtistsService:
             if existing_artist.genres != genres:
                 existing_artist.genres = genres
                 existing_artist.metadata_sources["genres"] = "spotify"
+                needs_update = True
+            if existing_artist.image_url != image_url:
+                existing_artist.image_url = image_url
+                existing_artist.metadata_sources["image_url"] = "spotify"
                 needs_update = True
 
             if needs_update:
@@ -187,8 +203,13 @@ class FollowedArtistsService:
             id=ArtistId.generate(),
             name=name,
             spotify_uri=spotify_uri,
+            image_url=image_url,
             genres=genres,  # Persisted to DB as JSON text
-            metadata_sources={"name": "spotify", "genres": "spotify"},
+            metadata_sources={
+                "name": "spotify",
+                "genres": "spotify",
+                "image_url": "spotify",
+            },
         )
 
         await self.artist_repo.add(new_artist)

@@ -72,6 +72,7 @@ class ArtistRepository(IArtistRepository):
     # session.commit() (handled by dependency). If artist.id already exists in DB, you'll get
     # IntegrityError on commit - this method doesn't check! Use get_by_id first if you care.
     # Hey - genres/tags are serialized as JSON strings for SQLite compatibility!
+    # Hey - image_url is stored directly as string (Spotify CDN URL)!
     async def add(self, artist: Artist) -> None:
         """Add a new artist."""
         model = ArtistModel(
@@ -79,6 +80,7 @@ class ArtistRepository(IArtistRepository):
             name=artist.name,
             spotify_uri=str(artist.spotify_uri) if artist.spotify_uri else None,
             musicbrainz_id=artist.musicbrainz_id,
+            image_url=artist.image_url,
             genres=json.dumps(artist.genres) if artist.genres else None,
             tags=json.dumps(artist.tags) if artist.tags else None,
             created_at=artist.created_at,
@@ -98,6 +100,7 @@ class ArtistRepository(IArtistRepository):
         model.name = artist.name
         model.spotify_uri = str(artist.spotify_uri) if artist.spotify_uri else None
         model.musicbrainz_id = artist.musicbrainz_id
+        model.image_url = artist.image_url
         model.genres = json.dumps(artist.genres) if artist.genres else None
         model.tags = json.dumps(artist.tags) if artist.tags else None
         model.updated_at = artist.updated_at
@@ -115,6 +118,7 @@ class ArtistRepository(IArtistRepository):
     # the domain Artist object with all its value objects (ArtistId, SpotifyUri). The if/else on
     # spotify_uri handles nullable field - can't call SpotifyUri.from_string(None)!
     # Hey - genres/tags are deserialized from JSON strings!
+    # Hey - image_url is stored directly as string (no conversion needed)!
     async def get_by_id(self, artist_id: ArtistId) -> Artist | None:
         """Get an artist by ID."""
         stmt = select(ArtistModel).where(ArtistModel.id == str(artist_id.value))
@@ -131,6 +135,7 @@ class ArtistRepository(IArtistRepository):
             if model.spotify_uri
             else None,
             musicbrainz_id=model.musicbrainz_id,
+            image_url=model.image_url,
             genres=json.loads(model.genres) if model.genres else [],
             tags=json.loads(model.tags) if model.tags else [],
             created_at=model.created_at,
@@ -153,6 +158,7 @@ class ArtistRepository(IArtistRepository):
             if model.spotify_uri
             else None,
             musicbrainz_id=model.musicbrainz_id,
+            image_url=model.image_url,
             genres=json.loads(model.genres) if model.genres else [],
             tags=json.loads(model.tags) if model.tags else [],
             created_at=model.created_at,
@@ -175,6 +181,7 @@ class ArtistRepository(IArtistRepository):
             if model.spotify_uri
             else None,
             musicbrainz_id=model.musicbrainz_id,
+            image_url=model.image_url,
             genres=json.loads(model.genres) if model.genres else [],
             tags=json.loads(model.tags) if model.tags else [],
             created_at=model.created_at,
@@ -208,6 +215,7 @@ class ArtistRepository(IArtistRepository):
             if model.spotify_uri
             else None,
             musicbrainz_id=model.musicbrainz_id,
+            image_url=model.image_url,
             genres=json.loads(model.genres) if model.genres else [],
             tags=json.loads(model.tags) if model.tags else [],
             created_at=model.created_at,
@@ -230,6 +238,7 @@ class ArtistRepository(IArtistRepository):
                 if model.spotify_uri
                 else None,
                 musicbrainz_id=model.musicbrainz_id,
+                image_url=model.image_url,
                 genres=json.loads(model.genres) if model.genres else [],
                 tags=json.loads(model.tags) if model.tags else [],
                 created_at=model.created_at,
