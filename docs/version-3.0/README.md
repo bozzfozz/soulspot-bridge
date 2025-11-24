@@ -54,15 +54,29 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
    - Event schemas and versioning
    - **Module Router/Orchestrator** with complete orchestrated flow
 
-5. **[UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md)** - UI/UX Design System **NEW**
+5. **[UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md)** - UI/UX Design System (HTMX)
    - **Card-based UI catalog** (7 core card types)
    - Design tokens (spacing, typography, colors)
    - Component specifications with HTMX integration
    - Responsive grid system
    - Accessibility requirements
-   - **Reference for all UI development** to prevent "UI garbage"
+   - **Reference for HTMX-based UI development** to prevent "UI garbage"
 
-6. **[ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md)** - Onboarding & Configuration **NEW**
+6. **[GITHUB_SPARK_WEB_UI.md](./GITHUB_SPARK_WEB_UI.md)** - GitHub Spark Web UI Specification **NEW ✨**
+   - **Complete React + TypeScript UI specification** for GitHub Spark
+   - Comprehensive component library (all 7 card types as React components)
+   - TypeScript type definitions for all API contracts
+   - Custom React hooks for API, SSE, and state management
+   - Module-specific page implementations (Dashboard, Soulseek, Spotify, Library)
+   - Routing, navigation, and authentication patterns
+   - Real-time updates with Server-Sent Events
+   - Testing strategy (unit, integration, E2E)
+   - Build & deployment configuration (Vite)
+   - Migration guide from HTMX to React
+   - Performance optimization and accessibility
+   - **Production-ready specification for GitHub Spark implementation**
+
+7. **[ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md)** - Onboarding & Configuration
    - **No .env configuration** - guided UI-based setup
    - Step-by-step credential collection with real-time testing
    - Spotify, Soulseek, and optional module configuration
@@ -72,7 +86,7 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
 
 ### Example Implementation
 
-7. **[SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md)** - Reference Implementation
+8. **[SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md)** - Reference Implementation
    - Complete Soulseek module design
    - Domain model (entities, value objects, services)
    - Application layer (services, use cases, DTOs)
@@ -84,7 +98,7 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
 
 ### AI Integration & Automation
 
-8. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - AI Agent Workflows Documentation **NEW**
+9. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - AI Agent Workflows Documentation
    - Comprehensive overview of GitHub Next Agentic Workflows
    - What are AI Agentic Workflows and core concepts
    - Complete catalog of available workflows (Issue Triage, CI Doctor, etc.)
@@ -94,7 +108,7 @@ This directory contains the complete architectural design for SoulSpot Bridge Ve
    - Security best practices and implementation guides
    - **Essential for automating code review, testing, and quality assurance**
 
-9. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Practical Implementation Guide **NEW**
+10. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Practical Implementation Guide
    - Quick start (5-minute setup)
    - Step-by-step installation and configuration
    - Recommended workflows for SoulSpot (prioritized)
@@ -138,13 +152,21 @@ Essential reading:
 ### For Developers (Frontend)
 
 Essential reading:
+
+**For HTMX-based implementation (current):**
 1. **[UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md)** - Complete card catalog and design tokens
 2. [MODULE_SPECIFICATION.md](./MODULE_SPECIFICATION.md) - Section 5 (Frontend Structure)
 3. [SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md) - Section 8 (Frontend Components)
 4. **[ONBOARDING_FLOW.md](./ONBOARDING_FLOW.md)** - Credential collection UI patterns
 5. [ARCHITECTURE.md](./ARCHITECTURE.md) - Section 7 (Frontend Architecture)
 
-**Goal:** Build consistent, accessible UI using card components
+**For GitHub Spark (React + TypeScript) implementation:**
+1. **[GITHUB_SPARK_WEB_UI.md](./GITHUB_SPARK_WEB_UI.md)** - Complete React/TypeScript specification ⭐
+2. [UI_DESIGN_SYSTEM.md](./UI_DESIGN_SYSTEM.md) - Reference for design tokens and card concepts
+3. [MODULE_SPECIFICATION.md](./MODULE_SPECIFICATION.md) - Section 5 (Frontend Structure)
+4. [ARCHITECTURE.md](./ARCHITECTURE.md) - Section 7 (Frontend Architecture)
+
+**Goal:** Build consistent, accessible UI using card components (either HTMX or React)
 
 ### For QA/Testers
 
@@ -361,6 +383,7 @@ See [ROADMAP.md](./ROADMAP.md) Section 4 for detailed migration strategy.
 - [x] Create ONBOARDING_FLOW.md
 - [x] Create AI_AGENT_WORKFLOWS.md
 - [x] Create AI_AGENT_WORKFLOWS_IMPLEMENTATION.md
+- [x] Create GITHUB_SPARK_WEB_UI.md (React + TypeScript specification)
 - [x] Create README.md (this file)
 
 ### Implementation Phase 🔜 PLANNED
