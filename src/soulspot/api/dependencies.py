@@ -3,7 +3,7 @@
 from collections.abc import AsyncGenerator
 from typing import cast
 
-from fastapi import Cookie, Depends, HTTPException, Request
+from fastapi import Cookie, Depends, Header, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from soulspot.application.services.session_store import (
@@ -75,16 +75,51 @@ def get_spotify_client(settings: Settings = Depends(get_settings)) -> SpotifyCli
     return SpotifyClient(settings.spotify)
 
 
-# Hey future me, this is THE CORE AUTH DEPENDENCY for all Spotify API endpoints! It does THREE things:
-# 1) Checks session cookie exists and is valid, 2) Extracts access token from session, 3) AUTO-REFRESHES
-# expired tokens using the refresh_token. This is super convenient - endpoints just inject this and get
-# a VALID token without thinking about expiration! BUT the auto-refresh can fail if refresh_token is
-# invalid/revoked - then HTTPException 401 forces user to re-auth. The cast() at the end is needed for
-# mypy because we checked token is not None but mypy doesn't track that through the if blocks.
+# Hey future me, NOW SUPPORTS BOTH COOKIE AND BEARER TOKEN AUTH! This is for multi-device access -
+# users can either use the default session cookie (browser) OR pass session_id via Authorization header
+# (API clients, curl, another browser). We check Authorization first (explicit > implicit), then fall
+# back to cookie. Format is "Authorization: Bearer {session_id}". This makes session IDs PORTABLE across
+# devices but also more vulnerable to theft - MUST use HTTPS! The rest is unchanged - auto-refresh logic
+# works the same regardless of how we got the session_id.
+async def get_session_id(
+    authorization: str | None = Header(None),
+    session_id_cookie: str | None = Cookie(None, alias="session_id"),
+) -> str | None:
+    """Extract session ID from either Authorization header or cookie.
+
+    Supports multi-device authentication by allowing session ID in bearer token format.
+    Header takes precedence over cookie for explicit auth.
+
+    Args:
+        authorization: Authorization header (format: "Bearer {session_id}")
+        session_id_cookie: Session ID from cookie
+
+    Returns:
+        Session ID or None if not found in either source
+    """
+    # Check Authorization header first (explicit auth)
+    if authorization:
+        # Remove "Bearer " prefix if present (case-insensitive)
+        if authorization.lower().startswith("bearer "):
+            return authorization[7:].strip()
+        # If no "Bearer " prefix, treat entire header as session ID (lenient)
+        return authorization.strip()
+
+    # Fall back to cookie (default browser auth)
+    return session_id_cookie
+
+
+# Hey future me, this is THE CORE AUTH DEPENDENCY for all Spotify API endpoints! It does FOUR things now:
+# 1) Checks session ID from EITHER cookie OR Authorization header (multi-device support!),
+# 2) Validates session exists and is not expired, 3) Extracts access token from session,
+# 4) AUTO-REFRESHES expired tokens using the refresh_token. This is super convenient - endpoints just
+# inject this and get a VALID token without thinking about expiration! The new get_session_id() dependency
+# allows users to access from multiple devices by sharing their session_id via API clients. BUT session IDs
+# are now MORE SENSITIVE - they can be copied/stolen! Require HTTPS in production!
 async def get_spotify_token_from_session(
     session_store: DatabaseSessionStore = Depends(get_session_store),
     spotify_client: SpotifyClient = Depends(get_spotify_client),
-    session_id: str | None = Cookie(None, alias="session_id"),
+    session_id: str | None = Depends(get_session_id),
 ) -> str:
     """Get valid Spotify access token from session with automatic refresh.
 
@@ -92,8 +127,10 @@ async def get_spotify_token_from_session(
     user's session. If the token is expired, it will automatically refresh it
     using the refresh token.
 
+    Supports multi-device access via both cookie and Authorization header.
+
     Args:
-        session_id: Session ID from cookie
+        session_id: Session ID from cookie or Authorization header
         session_store: Session store instance
         spotify_client: Spotify client for token refresh
 
