@@ -832,7 +832,7 @@ def check_terminology_consistency():
 ### Next Scheduled Maintenance
 - **Daily:** Continuous monitoring
 - **Weekly:** December 1, 2025
-- **Monthly:** January 1, 2025
+- **Monthly:** January 1, 2026
 ```
 
 ---
