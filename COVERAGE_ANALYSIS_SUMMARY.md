@@ -1,5 +1,3 @@
-# AI-Model: Claude 3.5 Sonnet
-
 # Test Coverage Analysis Summary
 
 **Generated:** 2025-11-24  

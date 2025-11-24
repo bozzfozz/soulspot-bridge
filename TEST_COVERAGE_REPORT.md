@@ -1,5 +1,3 @@
-# AI-Model: Claude 3.5 Sonnet
-
 # 🧪 Test Coverage Report - SoulSpot Bridge
 
 **Generated:** 2025-11-24  
@@ -42,8 +40,6 @@ The codebase is currently at **52.57% coverage**, significantly below the 80% mi
 
 ```python
 # tests/unit/application/services/test_followed_artists_service.py
-# AI-Model: Claude 3.5 Sonnet
-
 """Tests for FollowedArtistsService - syncing followed artists from Spotify."""
 
 import pytest
@@ -287,8 +283,6 @@ async def test_preview_followed_artists(service, mock_spotify_client):
 
 ```python
 # tests/integration/api/test_auth_endpoints.py
-# AI-Model: Claude 3.5 Sonnet
-
 """Integration tests for authentication endpoints - SECURITY CRITICAL!"""
 
 import pytest
@@ -582,8 +576,6 @@ async def test_spotify_status_connected(mock_session_store):
 
 ```python
 # tests/unit/application/services/postprocessing/test_id3_tagging_service.py
-# AI-Model: Claude 3.5 Sonnet
-
 """Tests for ID3TaggingService - metadata embedding into audio files."""
 
 import pytest
