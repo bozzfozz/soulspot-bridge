@@ -63,6 +63,10 @@ class ArtistModel(Base):
     musicbrainz_id: Mapped[str | None] = mapped_column(
         String(36), nullable=True, unique=True, index=True
     )
+    # Hey future me - image_url stores the artist's profile picture from Spotify CDN!
+    # Typically 320x320 resolution. String(512) allows for long URLs. Nullable because
+    # not all artists have images. This is added after genres/tags migration.
+    image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     # Hey future me - genres and tags are stored as JSON text (SQLite compatible)!
     # The app layer serializes/deserializes list[str] to/from JSON string.
     # Example: '["rock", "alternative", "indie"]'. Nullable because existing artists

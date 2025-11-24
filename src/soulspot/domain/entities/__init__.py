@@ -38,6 +38,10 @@ class MetadataSource(str, Enum):
 # metadata_sources dict tracks which fields came from which APIs (e.g., {"name": "spotify", "genres":
 # "musicbrainz"}). genres and tags are lists (not sets!) to preserve order. created_at/updated_at
 # default to UTC now - ALWAYS use UTC in domain, convert to local time in presentation layer only!
+# Hey future me - image_url stores the artist's profile picture from Spotify! Spotify returns an array
+# of images in different sizes (640x640, 320x320, 160x160). We pick the medium-sized one (usually 320px)
+# for display in the followed artists UI. This field is nullable because not all artists have images
+# (especially indie/underground artists). The URL points to Spotify's CDN - it's stable and cacheable.
 @dataclass
 class Artist:
     """Artist entity representing a music artist."""
@@ -47,6 +51,7 @@ class Artist:
     spotify_uri: SpotifyUri | None = None
     musicbrainz_id: str | None = None
     lastfm_url: str | None = None
+    image_url: str | None = None
     genres: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
     metadata_sources: dict[str, str] = field(default_factory=dict)

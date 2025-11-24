@@ -1205,6 +1205,7 @@ async def sync_followed_artists(
                     "spotify_uri": str(artist.spotify_uri)
                     if artist.spotify_uri
                     else None,
+                    "image_url": artist.image_url,
                     "genres": artist.genres,
                 }
                 for artist in artists
@@ -1236,6 +1237,7 @@ async def sync_followed_artists(
                         "spotify_uri": str(artist.spotify_uri)
                         if artist.spotify_uri
                         else None,
+                        "image_url": artist.image_url,
                         "genres": artist.genres,
                     }
                     for artist in artists

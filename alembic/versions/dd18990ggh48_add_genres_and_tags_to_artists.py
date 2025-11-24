@@ -28,7 +28,7 @@ def upgrade() -> None:
     """
     # Add genres as TEXT column (stores JSON array like '["rock", "alternative", "indie"]')
     op.add_column('artists', sa.Column('genres', sa.Text(), nullable=True))
-    
+
     # Add tags as TEXT column (stores JSON array for additional metadata tags)
     op.add_column('artists', sa.Column('tags', sa.Text(), nullable=True))
 
