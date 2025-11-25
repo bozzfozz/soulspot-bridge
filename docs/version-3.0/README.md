@@ -80,9 +80,19 @@ This directory contains the complete architectural design for SoulSpot Version 3
    - Prioritized recommendations for improvement
    - **Must-read** for architectural decision-making
 
+### Adoption Guide
+
+8. **[ADOPTION_RECOMMENDATIONS.md](./ADOPTION_RECOMMENDATIONS.md)** - Was übernehmen? **NEW**
+   - Konkrete Empfehlungen für aktuelle Version
+   - 🟢 Quick Wins: Error Messaging, Design Tokens, Dokumentationsstil
+   - 🟡 Mittelfristig: Status Cards, Onboarding Wizard, Circuit Breaker
+   - 🔴 Nicht übernehmen: Event Bus, Module Router, Schema Registry
+   - Priorisierte Umsetzungsreihenfolge
+   - **Entscheidungshilfe** für v3.0 Feature-Adoption
+
 ### Example Implementation
 
-8. **[SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md)** - Reference Implementation
+9. **[SOULSEEK_MODULE.md](./SOULSEEK_MODULE.md)** - Reference Implementation
    - Complete Soulseek module design
    - Domain model (entities, value objects, services)
    - Application layer (services, use cases, DTOs)
@@ -94,7 +104,7 @@ This directory contains the complete architectural design for SoulSpot Version 3
 
 ### AI Integration & Automation
 
-9. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - AI Agent Workflows Documentation **NEW**
+10. **[AI_AGENT_WORKFLOWS.md](./AI_AGENT_WORKFLOWS.md)** - AI Agent Workflows Documentation **NEW**
    - Comprehensive overview of GitHub Next Agentic Workflows
    - What are AI Agentic Workflows and core concepts
    - Complete catalog of available workflows (Issue Triage, CI Doctor, etc.)
@@ -104,7 +114,7 @@ This directory contains the complete architectural design for SoulSpot Version 3
    - Security best practices and implementation guides
    - **Essential for automating code review, testing, and quality assurance**
 
-10. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Practical Implementation Guide **NEW**
+11. **[AI_AGENT_WORKFLOWS_IMPLEMENTATION.md](./AI_AGENT_WORKFLOWS_IMPLEMENTATION.md)** - Practical Implementation Guide **NEW**
    - Quick start (5-minute setup)
    - Step-by-step installation and configuration
    - Recommended workflows for SoulSpot (prioritized)

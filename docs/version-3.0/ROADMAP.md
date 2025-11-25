@@ -1181,6 +1181,7 @@ The Soulseek module serves as the **reference implementation** and template for 
 - **[UI Design System](./UI_DESIGN_SYSTEM.md)** - NEW
 - **[Onboarding Flow](./ONBOARDING_FLOW.md)** - NEW
 - **[Architectural Lessons & Recommendations](./ARCHITECTURAL_LESSONS.md)** - NEW
+- **[Adoption Recommendations](./ADOPTION_RECOMMENDATIONS.md)** - NEW
 - [Current Architecture](../project/architecture.md)
 
 ---
