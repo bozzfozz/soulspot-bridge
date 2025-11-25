@@ -184,7 +184,24 @@ async def list_artists(
     )
 
 
-# Yo, get a single artist by ID. Useful for detail views. Returns 404 if not found.
+@router.get("/count", response_model=dict[str, int])
+async def count_artists(
+    session: AsyncSession = Depends(get_db_session),
+) -> dict[str, int]:
+    """Get total count of artists in the database.
+
+    Args:
+        session: Database session
+
+    Returns:
+        Dictionary with total_count key
+    """
+    repo = ArtistRepository(session)
+    total = await repo.count_all()
+
+    return {"total_count": total}
+
+
 @router.get("/{artist_id}", response_model=ArtistResponse)
 async def get_artist(
     artist_id: str,
@@ -217,10 +234,6 @@ async def get_artist(
     return _artist_to_response(artist)
 
 
-# Listen up - this DELETES an artist from our DB. Cascade delete will also remove
-# their albums and tracks! This is destructive. The 204 response means "deleted
-# successfully, nothing to return". Use this when user wants to remove an artist
-# they no longer follow. Returns 404 if artist doesn't exist (idempotent-ish).
 @router.delete("/{artist_id}", status_code=204)
 async def delete_artist(
     artist_id: str,
@@ -254,23 +267,3 @@ async def delete_artist(
     await session.commit()
 
     logger.info(f"Deleted artist: {artist.name} (id: {artist_id})")
-
-
-# Hey future me - quick count endpoint for stats/dashboards. No pagination needed,
-# just returns the total. Lightweight query using SQL COUNT.
-@router.get("/count", response_model=dict[str, int])
-async def count_artists(
-    session: AsyncSession = Depends(get_db_session),
-) -> dict[str, int]:
-    """Get total count of artists in the database.
-
-    Args:
-        session: Database session
-
-    Returns:
-        Dictionary with total_count key
-    """
-    repo = ArtistRepository(session)
-    total = await repo.count_all()
-
-    return {"total_count": total}
