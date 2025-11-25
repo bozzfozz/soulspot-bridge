@@ -11,6 +11,7 @@ This documentation is organized by purpose to help you find what you need quickl
 
 ```
 docs/
+├── features/         # Feature-specific documentation
 ├── project/          # Project-level documentation
 ├── guides/           # User and developer guides
 │   ├── user/        # End-user documentation
@@ -47,6 +48,19 @@ Deploying or maintaining SoulSpot? Start here:
 ---
 
 ## 📚 Documentation Sections
+
+### Feature Documentation (`features/`)
+Complete documentation for all implemented features:
+- **[Feature Overview](features/README.md)** - Index of all features
+- **[Playlist Management](features/playlist-management.md)** - Import, sync, export playlists
+- **[Download Management](features/download-management.md)** - Download queue and operations
+- **[Metadata Enrichment](features/metadata-enrichment.md)** - Multi-source metadata from Spotify/MusicBrainz/Last.fm
+- **[Automation & Watchlists](features/automation-watchlists.md)** - Artist watchlists and automation rules
+- **[Followed Artists](features/followed-artists.md)** - Spotify followed artists sync
+- **[Library Management](features/library-management.md)** - Scans, duplicates, broken files
+- **[Authentication](features/authentication.md)** - Spotify OAuth and session management
+- **[Track Management](features/track-management.md)** - Track search, download, metadata editing
+- **[Settings](features/settings.md)** - Application configuration
 
 ### Project Documentation (`project/`)
 Core project information and guidelines:
@@ -156,6 +170,7 @@ Outdated or superseded documentation - see [Archived README](archived/README.md)
 - [Deployment Guide](guides/developer/deployment-guide.md)
 
 **Using Features**
+- [Feature Overview](features/README.md)
 - [User Guide](guides/user/user-guide.md)
 - [Advanced Search Guide](guides/user/advanced-search-guide.md)
 
