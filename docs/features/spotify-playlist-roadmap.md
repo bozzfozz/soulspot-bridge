@@ -315,19 +315,21 @@ async def should_sync_playlist(playlist_id: str) -> bool:
 
 ## 🛠️ Nächste Schritte (Empfehlung)
 
-### Phase 1: Metadaten-Erweiterung (2-3 Wochen)
+> **Hinweis:** Zeitschätzungen basieren auf Vollzeit-Entwicklung (40h/Woche) durch einen Backend-Entwickler.
+
+### Phase 1: Metadaten-Erweiterung (~2-3 Entwickler-Wochen)
 1. `PlaylistModel` um `snapshot_id`, `owner`, `images` erweitern
 2. Alembic Migration erstellen
 3. `SpotifyClient` Response-Handling anpassen
 4. Tests schreiben
 
-### Phase 2: Playlist-Items (3-4 Wochen)
+### Phase 2: Playlist-Items (~3-4 Entwickler-Wochen)
 1. `PlaylistItemModel` erstellen
 2. `position`, `added_at`, `added_by` speichern
 3. Incremental Sync via `snapshot_id` implementieren
 4. Integration Tests
 
-### Phase 3: Edge Cases (1-2 Wochen)
+### Phase 3: Edge Cases (~1-2 Entwickler-Wochen)
 1. Lokale Tracks (`is_local`) behandeln
 2. Nicht verfügbare Tracks (`track: null`) behandeln
 3. UI-Hinweise implementieren
