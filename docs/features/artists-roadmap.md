@@ -1,4 +1,4 @@
-# Artists Roadmap
+# Spotify Artist API Roadmap
 
 > **Version:** 1.0  
 > **Last Updated:** 2025-11-25
@@ -7,257 +7,244 @@
 
 ## Übersicht
 
-Diese Dokumentation beschreibt den aktuellen Stand der Artists-Funktionalität in SoulSpot: Was wurde bereits implementiert, was können wir schon machen, und was fehlt noch?
+Diese Dokumentation beschreibt, welche **Spotify Web API Artist-Endpunkte** wir bereits nutzen, welche Features wir daraus gebaut haben, und welche zusätzlichen Möglichkeiten noch existieren.
 
 ---
 
-## 🟢 Was wurde schon implementiert?
+## 🟢 Genutzte Spotify Artist API Endpunkte
 
-### Domain-Layer
+### 1. Get User's Followed Artists
+**Spotify Endpoint:** `GET /me/following?type=artist`
 
-| Komponente | Status | Beschreibung |
-|------------|--------|--------------|
-| `Artist` Entity | ✅ | Vollständige Domain-Entity mit ID, Name, Spotify URI, MusicBrainz ID, image_url, genres, tags |
-| `ArtistId` Value Object | ✅ | UUID-basiertes Value Object für Artist-IDs |
-| `SpotifyUri` Value Object | ✅ | Validiertes Value Object für Spotify URIs |
-| `IArtistRepository` Port | ✅ | Interface für Artist-Datenzugriff (CRUD + Lookups) |
+| Status | ✅ Implementiert |
+|--------|-----------------|
+| **SoulSpot Methode** | `SpotifyClient.get_followed_artists()` |
+| **Datei** | `src/soulspot/infrastructure/integrations/spotify_client.py` |
+| **OAuth Scope** | `user-follow-read` |
 
-### Infrastruktur-Layer
+**Was wir daraus gebaut haben:**
 
-| Komponente | Status | Beschreibung |
-|------------|--------|--------------|
-| `ArtistModel` (SQLAlchemy) | ✅ | ORM-Modell mit allen Feldern inkl. JSON-genres/tags |
-| `ArtistRepository` | ✅ | SQLAlchemy-Implementierung mit allen CRUD-Operationen |
-| DB-Migrationen | ✅ | Alle relevanten Migrationen vorhanden (genres, tags, image_url) |
-| Indizes | ✅ | Performante Indizes auf name, spotify_uri, musicbrainz_id |
+| Feature | Beschreibung |
+|---------|--------------|
+| Followed Artists Sync | Alle gefolgten Künstler von Spotify importieren |
+| Bulk-Watchlist-Erstellung | Watchlists für viele Artists auf einmal erstellen |
+| Artist-Datenbank | Speicherung von Name, Genres, Bildern in lokaler DB |
 
-### API-Endpunkte
-
-| Endpunkt | Methode | Status | Beschreibung |
-|----------|---------|--------|--------------|
-| `/api/automation/followed-artists/sync` | POST | ✅ | Synchronisiert alle gefolgten Artists von Spotify |
-| `/api/automation/followed-artists/preview` | GET | ✅ | Schnelle Vorschau ohne DB-Speicherung |
-| `/api/automation/followed-artists/watchlists/bulk` | POST | ✅ | Bulk-Erstellung von Watchlists |
-| `/api/automation/watchlist` | POST | ✅ | Einzelne Watchlist erstellen |
-| `/api/automation/watchlist` | GET | ✅ | Watchlists auflisten |
-| `/api/automation/watchlist/{id}` | GET | ✅ | Watchlist-Details abrufen |
-| `/api/automation/watchlist/{id}` | DELETE | ✅ | Watchlist löschen |
-| `/api/automation/watchlist/{id}/check` | POST | ✅ | Manueller Release-Check |
-| `/api/automation/discography/check` | POST | ✅ | Discographie-Vollständigkeit prüfen |
-| `/api/automation/discography/missing` | GET | ✅ | Fehlende Alben aller Artists |
-
-### Services
-
-| Service | Status | Beschreibung |
-|---------|--------|--------------|
-| `FollowedArtistsService` | ✅ | Sync von Spotify-gefolgten Artists |
-| `WatchlistService` | ✅ | CRUD für Artist-Watchlists |
-| `DiscographyService` | ✅ | Discographie-Vollständigkeit prüfen |
-| `SpotifyClient.get_followed_artists` | ✅ | API-Methode für gefolgte Artists |
-
-### UI-Komponenten
-
-| Komponente | Status | Beschreibung |
-|------------|--------|--------------|
-| Followed Artists Page | ✅ | `/automation/followed-artists` Seite |
-| Artist-Grid | ✅ | Grid-Darstellung mit Bildern und Genres |
-| Bulk-Watchlist-UI | ✅ | Mehrfachauswahl für Watchlist-Erstellung |
-| HTMX-Partials | ✅ | `partials/followed_artists_list.html` |
-
-### Watchlist-System
-
-| Feature | Status | Beschreibung |
-|---------|--------|--------------|
-| `ArtistWatchlist` Entity | ✅ | Domain-Entity für Artist-Überwachung |
-| `ArtistWatchlistModel` (DB) | ✅ | SQLAlchemy-Modell mit Status, Frequenz, Stats |
-| `ArtistWatchlistRepository` | ✅ | Repository mit list_due_for_check() |
-| Release-Detection | ✅ | Erkennung neuer Releases via Spotify API |
-| Auto-Download | ✅ | Automatischer Download bei neuen Releases |
+**API Response-Felder die wir nutzen:**
+- `artists.items[].id` - Spotify Artist ID
+- `artists.items[].name` - Artist Name
+- `artists.items[].genres` - Genre-Liste
+- `artists.items[].images` - Profilbilder
+- `artists.items[].uri` - Spotify URI
+- `artists.cursors.after` - Pagination-Cursor
 
 ---
 
-## 🔵 Was können wir schon machen?
+### 2. Get Artist's Albums
+**Spotify Endpoint:** `GET /artists/{id}/albums`
 
-### Artist-Synchronisation
+| Status | ✅ Implementiert |
+|--------|-----------------|
+| **SoulSpot Methode** | `SpotifyClient.get_artist_albums()` |
+| **Datei** | `src/soulspot/infrastructure/integrations/spotify_client.py` |
+| **OAuth Scope** | Kein spezieller Scope nötig |
 
-1. **Gefolgte Artists von Spotify importieren**
-   - Alle gefolgten Künstler werden automatisch abgerufen
-   - Pagination für 100+ Artists unterstützt
-   - Genres, Tags und Bilder werden mit-importiert
-   - Neue Artists werden erstellt, existierende aktualisiert
+**Was wir daraus gebaut haben:**
 
-2. **Preview ohne Speicherung**
-   - Schneller Test der OAuth-Berechtigung
-   - Vorschau auf bis zu 50 Artists
-   - Keine Datenbank-Änderungen
+| Feature | Beschreibung |
+|---------|--------------|
+| Discographie-Check | Vergleich unserer Bibliothek mit Spotify-Discographie |
+| Neue Releases erkennen | Watchlists prüfen auf neue Alben/Singles |
+| Missing Albums | Fehlende Alben identifizieren |
 
-### Watchlist-Management
+**API Response-Felder die wir nutzen:**
+- `items[].id` - Album ID
+- `items[].name` - Album Name
+- `items[].album_type` - album, single, compilation
+- `items[].release_date` - Erscheinungsdatum
+- `items[].images` - Coverbilder
 
-1. **Bulk-Watchlist-Erstellung**
-   - Mehrere Artists gleichzeitig auswählen
-   - Einheitliche Settings (Frequenz, Auto-Download, Qualität)
-   - Schnelle Einrichtung für hunderte Artists
-
-2. **Individuelle Watchlist-Konfiguration**
-   - Check-Frequenz (default: 24 Stunden)
-   - Auto-Download an/aus
-   - Qualitätsprofil (low, medium, high, lossless)
-
-3. **Release-Überwachung**
-   - Automatische Checks nach Zeitplan
-   - Manueller Check per API-Aufruf
-   - Statistiken zu gefundenen Releases und Downloads
-
-### Discographie-Analyse
-
-1. **Vollständigkeitsprüfung**
-   - Vergleich mit Spotify-Discographie
-   - Erkennung fehlender Alben/Singles
-   - Pro-Artist oder für alle Artists
-
-2. **Missing Albums Overview**
-   - Übersicht aller Artists mit fehlenden Alben
-   - Limitierte Abfrage zur Performance-Optimierung
+**Parameter die wir setzen:**
+- `include_groups=album,single` (ohne appears_on, compilation)
+- `limit=50` (max pro Request)
 
 ---
 
-## 🟠 Was fehlt noch?
+## 🟠 Nicht genutzte Spotify Artist API Endpunkte
 
-### Artist-spezifische API-Endpunkte (Priorität: Hoch)
+### 1. Get Artist
+**Spotify Endpoint:** `GET /artists/{id}`
 
-| Endpunkt | Beschreibung | Schwierigkeit |
-|----------|--------------|---------------|
-| `GET /api/artists` | Liste aller Artists mit Pagination | ⭐ Einfach |
-| `GET /api/artists/{id}` | Artist-Details abrufen | ⭐ Einfach |
-| `GET /api/artists/{id}/albums` | Alben eines Artists | ⭐ Einfach |
-| `GET /api/artists/{id}/tracks` | Tracks eines Artists | ⭐ Einfach |
-| `PUT /api/artists/{id}` | Artist-Daten aktualisieren | ⭐⭐ Mittel |
-| `DELETE /api/artists/{id}` | Artist löschen (mit Cascade-Warnung) | ⭐⭐ Mittel |
-| `GET /api/artists/search` | Artist-Suche (Name, Genre) | ⭐⭐ Mittel |
+| Status | ❌ Nicht implementiert |
+|--------|------------------------|
+| **Nutzen** | Detaillierte Artist-Infos abrufen |
+| **Schwierigkeit** | ⭐ Einfach |
 
-### Artist-UI-Erweiterungen (Priorität: Mittel)
+**Verfügbare Daten:**
+- `followers.total` - Anzahl Follower
+- `popularity` - Popularitäts-Score (0-100)
+- `genres` - Genre-Liste (aktueller als bei followed artists)
+- `images` - Profilbilder in verschiedenen Auflösungen
+- `external_urls` - Links zu Spotify
 
-| Feature | Beschreibung | Schwierigkeit |
-|---------|--------------|---------------|
-| Artist-Detailseite | `/artists/{id}` mit allen Infos | ⭐⭐ Mittel |
-| Artist-Bibliothek | Grid/Liste aller lokalen Artists | ⭐⭐ Mittel |
-| Genre-Filter | Filter nach Genre in Artist-Liste | ⭐⭐ Mittel |
-| Artist-Statistiken | Tracks, Alben, Downloads pro Artist | ⭐⭐ Mittel |
-| Artist-Timeline | Chronologische Ansicht der Releases | ⭐⭐⭐ Komplex |
-
-### Artist-Metadaten-Enrichment (Priorität: Mittel)
-
-| Feature | Beschreibung | Schwierigkeit |
-|---------|--------------|---------------|
-| MusicBrainz-Sync | Artist-Daten von MusicBrainz anreichern | ⭐⭐ Mittel |
-| Last.fm-Tags | Genre-Tags von Last.fm importieren | ⭐⭐ Mittel |
-| Discogs-Integration | Zusätzliche Metadaten von Discogs | ⭐⭐⭐ Komplex |
-| Artist-Biographie | Bio-Text von verschiedenen Quellen | ⭐⭐⭐ Komplex |
-| Ähnliche Artists | Related Artists Empfehlungen | ⭐⭐⭐ Komplex |
-
-### Automatisierung (Priorität: Mittel)
-
-| Feature | Beschreibung | Schwierigkeit |
-|---------|--------------|---------------|
-| Automatischer Artist-Sync | Regelmäßiger Sync gefolgter Artists | ⭐⭐ Mittel |
-| Unfollow-Erkennung | Artists erkennen, denen nicht mehr gefolgt wird | ⭐ Einfach |
-| Artist-Import aus Playlist | Artists aus Playlist-Tracks extrahieren | ⭐⭐ Mittel |
-| Artist-Merge | Duplikate zusammenführen | ⭐⭐⭐ Komplex |
-
-### Erweiterte Features (Priorität: Niedrig)
-
-| Feature | Beschreibung | Schwierigkeit |
-|---------|--------------|---------------|
-| Artist-Kategorien | Benutzerdefinierte Kategorien/Tags | ⭐⭐ Mittel |
-| Artist-Notizen | Persönliche Notizen zu Artists | ⭐ Einfach |
-| Favoriten | Lieblings-Artists markieren | ⭐ Einfach |
-| Artist-Export | Export der Artist-Bibliothek | ⭐⭐ Mittel |
-| Statistik-Dashboard | Charts zu Artist-Aktivität | ⭐⭐⭐ Komplex |
+**Mögliche Features:**
+| Feature | Beschreibung |
+|---------|--------------|
+| Artist Popularity Score | Popularität anzeigen für Sortierung/Filter |
+| Follower Count | "10M Followers" Badge im UI |
+| Aktuelle Genre-Tags | Genres vom aktuellen Artist-Profil |
 
 ---
 
-## Technische Schulden
+### 2. Get Several Artists
+**Spotify Endpoint:** `GET /artists?ids={ids}`
 
-### Repository-Layer
+| Status | ❌ Nicht implementiert |
+|--------|------------------------|
+| **Nutzen** | Mehrere Artists auf einmal abrufen |
+| **Schwierigkeit** | ⭐ Einfach |
 
-| Item | Beschreibung | Priorität |
-|------|--------------|-----------|
-| `count_all()` fehlt | ArtistRepository hat keine count-Methode | ⭐⭐ Mittel |
-| Batch-Operationen | `add_batch()` für Performance bei Bulk-Imports | ⭐⭐ Mittel |
-| Search-Methode | `search_by_name()` mit LIKE/ILIKE | ⭐⭐ Mittel |
-
-### Tests
-
-| Item | Beschreibung | Priorität |
-|------|--------------|-----------|
-| Repository-Tests | Unit-Tests für ArtistRepository | ⭐⭐⭐ Hoch |
-| API-Integrationstests | Tests für Followed-Artists-Endpoints | ⭐⭐⭐ Hoch |
-| Service-Tests | Tests für FollowedArtistsService | ⭐⭐ Mittel |
-
-### Performance
-
-| Item | Beschreibung | Priorität |
-|------|--------------|-----------|
-| Caching | Artist-Daten cachen für schnellere Lookups | ⭐⭐ Mittel |
-| Lazy Loading | Beziehungen (albums, tracks) lazy laden | ⭐⭐ Mittel |
-| Bulk-Queries | N+1 Problem bei Artist-Listen vermeiden | ⭐⭐⭐ Hoch |
+**Mögliche Features:**
+| Feature | Beschreibung |
+|---------|--------------|
+| Batch-Updates | Viele Artists auf einmal aktualisieren (max 50 IDs) |
+| Performance | Weniger API-Calls beim Refresh |
+| Bulk-Import | Schnelleres Importieren von Playlist-Artists |
 
 ---
 
-## Implementierungs-Empfehlungen
+### 3. Get Artist's Top Tracks
+**Spotify Endpoint:** `GET /artists/{id}/top-tracks`
 
-### Phase 1: Basis-API (1-2 Tage)
+| Status | ❌ Nicht implementiert |
+|--------|------------------------|
+| **Nutzen** | Die beliebtesten Songs eines Artists |
+| **Schwierigkeit** | ⭐ Einfach |
 
-```
-1. GET /api/artists - Liste aller Artists
-2. GET /api/artists/{id} - Artist-Details
-3. GET /api/artists/{id}/albums - Alben
-4. GET /api/artists/{id}/tracks - Tracks
-5. GET /api/artists/search?q= - Suche
-```
+**Verfügbare Daten:**
+- `tracks[]` - Liste der Top 10 Tracks
+- `tracks[].popularity` - Track-Popularität
+- `tracks[].preview_url` - 30-Sekunden Vorschau
 
-### Phase 2: Artist-UI (2-3 Tage)
+**Mögliche Features:**
+| Feature | Beschreibung |
+|---------|--------------|
+| "Top Tracks" Ansicht | Die besten Songs eines Artists anzeigen |
+| Smart Download | Automatisch die Top Tracks downloaden |
+| Vorschau-Player | 30s Preview vor dem Download |
+| Prioritized Downloads | Beliebte Songs zuerst herunterladen |
 
-```
-1. /artists - Artist-Bibliothek Übersicht
-2. /artists/{id} - Artist-Detailseite
-3. Genre-Filter und Sortierung
-4. Artist-Statistiken Widget
-```
+---
 
-### Phase 3: Metadaten-Enrichment (3-5 Tage)
+### 4. Get Artist's Related Artists
+**Spotify Endpoint:** `GET /artists/{id}/related-artists`
 
-```
-1. MusicBrainz Artist-Lookup
-2. Last.fm Tags-Integration
-3. Automatisches Enrichment bei Import
-4. Manueller Refresh per Button
-```
+| Status | ❌ Nicht implementiert |
+|--------|------------------------|
+| **Nutzen** | Ähnliche Künstler finden |
+| **Schwierigkeit** | ⭐⭐ Mittel |
 
-### Phase 4: Erweiterte Features (ongoing)
+**Verfügbare Daten:**
+- `artists[]` - Liste von 20 ähnlichen Artists
+- Vollständige Artist-Objekte (Name, Genres, Bilder, etc.)
 
+**Mögliche Features:**
+| Feature | Beschreibung |
+|---------|--------------|
+| "Similar Artists" | "Wenn dir X gefällt, probier auch Y" |
+| Artist Discovery | Neue Musik entdecken basierend auf Favoriten |
+| Auto-Watchlist | Ähnliche Artists automatisch zur Watchlist hinzufügen |
+| Genre-Exploration | Durch verwandte Artists neue Genres erkunden |
+
+---
+
+### 5. Search for Artists
+**Spotify Endpoint:** `GET /search?type=artist`
+
+| Status | ⚠️ Indirekt (nur Tracks) |
+|--------|--------------------------|
+| **Nutzen** | Artists auf Spotify suchen |
+| **Schwierigkeit** | ⭐ Einfach |
+
+**Aktuell:** Wir haben `search_track()` implementiert, aber nicht `search_artist()`.
+
+**Mögliche Features:**
+| Feature | Beschreibung |
+|---------|--------------|
+| Artist-Suche | Direkt nach Artists suchen |
+| Add to Watchlist | Gefundene Artists zur Watchlist hinzufügen |
+| Quick-Import | Artist finden und sofort Discographie downloaden |
+
+---
+
+## 🔵 Feature-Ideen basierend auf Spotify API
+
+### Kurzfristig (Einfach zu implementieren)
+
+| Feature | Spotify Endpoint | Aufwand |
+|---------|------------------|---------|
+| Artist-Details anzeigen | `GET /artists/{id}` | ⭐ 2h |
+| Top Tracks laden | `GET /artists/{id}/top-tracks` | ⭐ 2h |
+| Artist-Suche | `GET /search?type=artist` | ⭐ 2h |
+| Batch Artist-Update | `GET /artists?ids={ids}` | ⭐ 3h |
+
+### Mittelfristig (Neue Features)
+
+| Feature | Spotify Endpoint | Aufwand |
+|---------|------------------|---------|
+| Related Artists | `GET /artists/{id}/related-artists` | ⭐⭐ 4h |
+| Artist Discovery Page | Mehrere Endpoints | ⭐⭐ 1 Tag |
+| Popularity-basierte Sortierung | `GET /artists/{id}` | ⭐⭐ 4h |
+| Smart Download (Top Tracks first) | `GET /artists/{id}/top-tracks` | ⭐⭐ 6h |
+
+### Langfristig (Komplexe Features)
+
+| Feature | Spotify Endpoint | Aufwand |
+|---------|------------------|---------|
+| Genre-Netzwerk | Related Artists + Genres | ⭐⭐⭐ 2-3 Tage |
+| Auto-Discovery | Related + Top Tracks | ⭐⭐⭐ 2-3 Tage |
+| Trend-Analyse | Popularity über Zeit | ⭐⭐⭐ 3-5 Tage |
+
+---
+
+## Implementierungs-Priorität
+
+### Prio 1: Artist Details (`GET /artists/{id}`)
+```python
+# SpotifyClient - Neu hinzufügen
+async def get_artist(self, artist_id: str, access_token: str) -> dict[str, Any]:
+    """Get detailed artist information including popularity and followers."""
 ```
-1. Artist-Kategorien
-2. Favoriten-System
-3. Erweiterte Statistiken
-4. Export-Funktionen
+**Begründung:** Gibt uns Popularity-Score und Follower-Count für bessere UI.
+
+### Prio 2: Top Tracks (`GET /artists/{id}/top-tracks`)
+```python
+async def get_artist_top_tracks(self, artist_id: str, access_token: str, market: str = "DE") -> list[dict[str, Any]]:
+    """Get artist's top 10 tracks by popularity."""
 ```
+**Begründung:** Sehr nützlich für "Smart Downloads" und Track-Vorschau.
+
+### Prio 3: Related Artists (`GET /artists/{id}/related-artists`)
+```python
+async def get_related_artists(self, artist_id: str, access_token: str) -> list[dict[str, Any]]:
+    """Get artists similar to the given artist."""
+```
+**Begründung:** Ermöglicht Artist Discovery und Empfehlungen.
 
 ---
 
 ## Verwandte Dokumentation
 
-- [Followed Artists](./followed-artists.md) - Detailed guide for followed artists feature
-- [Automation & Watchlists](./automation-watchlists.md) - Watchlist system details
-- [Metadata Enrichment](./metadata-enrichment.md) - Metadata sources and enrichment
-- [Download Management](./download-management.md) - Download queue and processing
+- [Followed Artists](./followed-artists.md) - Followed Artists Sync Feature
+- [Automation & Watchlists](./automation-watchlists.md) - Watchlist System
+- [Spotify Web API Docs](https://developer.spotify.com/documentation/web-api/reference/#category-artists) - Offizielle Spotify Docs
 
 ---
 
 ## Changelog
 
-### 2025-11-25 - Initial Roadmap
+### 2025-11-25 - Spotify API Focus
 
-- Erstellung der initialen Roadmap-Dokumentation
-- Auflistung aller implementierten Features
-- Definition der fehlenden Features und Priorisierung
+- Dokumentation überarbeitet: Fokus auf Spotify Web API Artist Endpoints
+- Auflistung genutzter vs. nicht genutzter Endpoints
+- Feature-Ideen basierend auf verfügbaren API-Daten
