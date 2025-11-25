@@ -65,7 +65,7 @@ Identifiziere Tracks für Qualitäts-Upgrades:
    - **Qualitätsprofil**: `low`, `medium`, `high`, `lossless`
 5. Klicke auf **Create**
 
-> **Hinweis aus Quellcode:** Qualitätsprofile sind strikt validiert: nur `low`, `medium`, `high`, `lossless` sind erlaubt. Andere Werte führen zu einem Validierungsfehler.
+> **Hinweis:** Watchlist-Qualitätsprofile (`low`, `medium`, `high`, `lossless`) unterscheiden sich von den Download-Qualitätseinstellungen (`best`, `good`, `any`). Watchlists definieren die Mindestqualität für automatische Downloads, während die Download-Einstellungen die Suchreihenfolge bestimmen.
 
 ### Filter erstellen
 
@@ -400,7 +400,7 @@ graph TD
   "filter_type": "whitelist",
   "target": "format",
   "pattern": "flac",
-  "priority": 100
+  "priority": 2
 }
 ```
 
@@ -413,7 +413,7 @@ graph TD
   "target": "keyword",
   "pattern": "bootleg|unofficial|live",
   "is_regex": true,
-  "priority": 50
+  "priority": 1
 }
 ```
 

@@ -7,7 +7,9 @@
 
 ## Übersicht
 
-Die Settings-Verwaltung ermöglicht das Anzeigen und (zukünftig) Bearbeiten der Anwendungskonfiguration. Die Einstellungen sind in Kategorien gruppiert: Allgemein, Integrationen, Download, Darstellung und Erweitert.
+Die Settings-Verwaltung ermöglicht das Anzeigen der Anwendungskonfiguration. Die Einstellungen sind in Kategorien gruppiert: Allgemein, Integrationen, Download, Darstellung und Erweitert.
+
+> ⚠️ **Hinweis:** Die Bearbeitung von Einstellungen über die API ist derzeit nur lesend implementiert. Änderungen über die UI werden akzeptiert, aber nicht persistent gespeichert. Verwende die `.env` Datei für dauerhafte Konfigurationsänderungen.
 
 ---
 

@@ -290,15 +290,15 @@ Gibt Details zur Vollständigkeit eines Albums zurück.
 
 ### Was wird gescannt?
 
-Gemäß `LibraryScannerService` und `ScanLibraryUseCase`:
+Gemäß `LibraryScannerService`:
 
 - Alle Audio-Dateien (MP3, FLAC, M4A, OGG, etc.)
-- Metadaten aus ID3-Tags (via mutagen)
+- Metadaten aus ID3-Tags
 - Datei-Integrität (Header-Validierung)
 - File-Hashes für Duplikaterkennung
 - Technische Audio-Infos: Bitrate, Sample-Rate, Format, Dauer
 
-> **Aus Quellcode:** Der Scan-Pfad wird mit `validate_safe_path()` validiert. Es sind nur Pfade innerhalb von `download_path` oder `music_path` erlaubt (Sicherheitsmaßnahme gegen Directory-Traversal).
+> **Hinweis:** Der Scan-Pfad wird validiert. Es sind nur Pfade innerhalb der konfigurierten Download- und Musik-Verzeichnisse erlaubt.
 
 ### Scan-Dauer
 
@@ -307,7 +307,7 @@ Die Scan-Dauer hängt ab von:
 - Festplatten-Geschwindigkeit
 - Ob Duplikat-Checks aktiviert sind
 
-> **Aus Quellcode:** Der Scan speichert Fortschritt alle 100 Dateien in die Datenbank (siehe `ScanLibraryUseCase`). Dies ermöglicht Echtzeit-Progress-Updates ohne zu viele DB-Schreibvorgänge.
+> **Hinweis:** Der Scan speichert regelmäßig Fortschrittsupdates in die Datenbank für Echtzeit-Statusanzeige.
 
 ---
 

@@ -325,10 +325,10 @@ graph TD
 ### Batch-Download mit Priorisierung
 
 ```bash
-# 1. Tracks zur Queue hinzufügen mit hoher Priorität
+# 1. Tracks zur Queue hinzufügen mit hoher Priorität (P0)
 curl -X POST "/api/downloads/batch" \
   -H "Content-Type: application/json" \
-  -d '{"track_ids": ["id1", "id2"], "priority": 100}'
+  -d '{"track_ids": ["id1", "id2"], "priority": 0}'
 
 # 2. Status überwachen
 curl "/api/downloads/status"

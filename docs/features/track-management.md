@@ -219,18 +219,15 @@ Aktualisiert Track-Metadaten.
 
 ### "best" (Standard)
 
-Sucht nach der höchsten verfügbaren Qualität. Der Quellcode verwendet ein Scoring-System:
+Sucht nach der höchsten verfügbaren Qualität. Das System verwendet ein Scoring-Algorithmus:
 
-```python
-# Aus search_and_download.py:
-def quality_score(file):
-    format_bonus = 1000 if filename.endswith(".flac") else 0
-    return (format_bonus, bitrate, size)
-```
+- FLAC-Dateien erhalten einen signifikanten Bonus
+- Höhere Bitrate wird bevorzugt
+- Größere Dateien werden bei gleicher Qualität bevorzugt
 
 Priorität:
-1. FLAC (erhält 1000 Bonus-Punkte)
-2. Höhere Bitrate
+1. FLAC (Lossless)
+2. Höhere Bitrate (z.B. 320kbps vor 256kbps)
 3. Größere Dateigröße
 
 ### "good"
