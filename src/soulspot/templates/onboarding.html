@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle skip button
     document.body.addEventListener('htmx:afterRequest', function(evt) {
-        if (evt.detail.pathInfo && evt.detail.pathInfo.requestPath === '/api/onboarding/skip') {
+        if (evt.detail.pathInfo?.requestPath === '/api/onboarding/skip') {
             if (evt.detail.successful) {
                 // Redirect to dashboard
                 window.location.href = '/';

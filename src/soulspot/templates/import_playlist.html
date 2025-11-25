@@ -90,6 +90,33 @@
 </div>
 
 <script>
+// Hey future me, this helper generates the "Connect Spotify" UI consistently across all handlers.
+// We show this when: no session, 401 error, or parsing errors. The gradient + glow-on-hover
+// makes it visually prominent so users know they need to authenticate. Keep this in sync with
+// the templates for dashboard and onboarding!
+function getConnectSpotifyHTML() {
+    return `
+        <div class="card-modern border-2 border-primary-200 dark:border-primary-800 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 animate-slide-up">
+            <div class="p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-lg text-primary-900 dark:text-primary-100">Connect Spotify</p>
+                        <p class="text-sm text-primary-700 dark:text-primary-300">Connect your Spotify account to start importing playlists</p>
+                    </div>
+                    <a href="/auth" class="btn btn-gradient btn-modern focus-visible-ring shadow-lg glow-on-hover">
+                        Connect Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // Enhanced authentication status display with modern UI
 document.body.addEventListener('htmx:afterSwap', function(evt) {
     if (evt.detail.target.id === 'auth-status') {
@@ -161,33 +188,6 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
         }
     }
 });
-
-// Hey future me, this helper generates the "Connect Spotify" UI consistently across all handlers.
-// We show this when: no session, 401 error, or parsing errors. The gradient + glow-on-hover
-// makes it visually prominent so users know they need to authenticate. Keep this in sync with
-// the templates for dashboard and onboarding!
-function getConnectSpotifyHTML() {
-    return `
-        <div class="card-modern border-2 border-primary-200 dark:border-primary-800 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 animate-slide-up">
-            <div class="p-6">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center shadow-lg flex-shrink-0">
-                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                    <div class="flex-1">
-                        <p class="font-bold text-lg text-primary-900 dark:text-primary-100">Connect Spotify</p>
-                        <p class="text-sm text-primary-700 dark:text-primary-300">Connect your Spotify account to start importing playlists</p>
-                    </div>
-                    <a href="/auth" class="btn btn-gradient btn-modern focus-visible-ring shadow-lg glow-on-hover">
-                        Connect Now
-                    </a>
-                </div>
-            </div>
-        </div>
-    `;
-}
 
 // Handle 401 errors for auth-status check (multi-device access scenario!)
 // Hey future me, THIS IS THE FIX for the "Checking authentication status..." bug! When a user
