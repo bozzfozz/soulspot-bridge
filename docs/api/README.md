@@ -43,6 +43,17 @@ Control and monitor download operations from the Soulseek network.
 - Retry logic
 - Bandwidth controls
 
+### [Spotify Artist API](spotify-artist-api.md)
+Integration with Spotify Web API for artist metadata synchronization.
+
+**Key Features:**
+- Artist metadata sync from Spotify
+- Field mapping and data model documentation
+- Authentication flows (Client Credentials, PKCE)
+- Rate limiting and exponential backoff
+- On-demand and periodic sync strategies
+- Database schema reference
+
 ---
 
 ## API Access
