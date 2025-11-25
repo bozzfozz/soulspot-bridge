@@ -43,6 +43,15 @@ Control and monitor download operations from the Soulseek network.
 - Retry logic
 - Bandwidth controls
 
+### [Spotify Album API](spotify-album-api.md)
+Documentation for Spotify Album API integration including endpoints, data models, and sync strategies.
+
+**Key Features:**
+- Album metadata fetching (single and batch)
+- DB schema design for album storage
+- UPC-based deduplication strategy
+- Release date precision handling
+- Rate limiting and error handling
 ### [Spotify Metadata Reference](spotify-metadata-reference.md)
 Comprehensive reference for Spotify API metadata fields used in Soulspot.
 
