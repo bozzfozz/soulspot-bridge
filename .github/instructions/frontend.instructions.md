@@ -1,5 +1,5 @@
 ---
-applyTo: "{src/soulspot/templates/**/*,src/soulspot/static/**/*,*.html,*.css,*.js}"
+applyTo: "src/soulspot/templates/**/*.html"
 ---
 
 # Frontend Guidelines

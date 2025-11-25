@@ -7,7 +7,7 @@ applyTo: "**/*.py"
 ## Type Hints (Strict Mode)
 - All public functions MUST have explicit type hints for parameters and return values.
 - `mypy` is configured with `strict = true` in `pyproject.toml`.
-- Use `Optional[T]` or `T | None` for nullable types.
+- Use `T | None` (Python 3.10+) or `Optional[T]` for nullable types — both are valid.
 
 ## Async Code
 - This codebase uses async SQLAlchemy with `aiosqlite`.
