@@ -43,6 +43,15 @@ Control and monitor download operations from the Soulseek network.
 - Retry logic
 - Bandwidth controls
 
+### [Spotify Tracks API](spotify-tracks.md)
+Integration with Spotify Web API for track/song data management.
+
+**Key Features:**
+- Track metadata fetching and storage
+- Audio features integration
+- ISRC-based deduplication
+- Batch sync strategies
+- Field mappings and schema recommendations
 ### [Spotify Artist API](spotify-artist-api.md)
 Integration with Spotify Web API for artist metadata synchronization.
 
