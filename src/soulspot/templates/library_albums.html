@@ -61,7 +61,11 @@
         {% if albums %}
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" data-stagger>
             {% for album in albums %}
-            <div class="card-modern card-hover-lift group album-card">
+            <div class="card-modern card-hover-lift group album-card"
+                 data-title="{{ album.title|lower }}"
+                 data-artist="{{ album.artist|lower }}"
+                 data-year="{{ album.year or 0 }}"
+                 data-track-count="{{ album.track_count }}">
                 <a href="/ui/library/albums/{{ album.artist|urlencode }}::{{ album.title|urlencode }}" class="block p-4">
                     <!-- Album Cover Placeholder -->
                     <div class="aspect-square mb-3 bg-gradient-to-br from-success-400 to-success-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
@@ -117,25 +121,20 @@
 <script>
 // Hey future me - this handles client-side search AND sorting for albums. Search filters by title/artist,
 // sort reorders the grid dynamically. Both work together so you can search THEN sort the results.
-// The sort uses data attributes on the cards to avoid re-parsing text. The debounce prevents spam.
+// Uses data attributes on cards for reliable sorting (no DOM parsing needed). The debounce prevents spam.
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('album-search');
     const sortFilter = document.getElementById('sort-filter');
     const albumsGrid = document.querySelector('#albums-list [data-stagger]');
     
-    // Helper to get sort value from album card
+    // Helper to get sort value from album card data attributes
     function getSortValue(card, field) {
-        const title = card.querySelector('h3')?.textContent?.trim() || '';
-        const artist = card.querySelector('p')?.textContent?.trim() || '';
-        const trackCount = parseInt(card.querySelector('.flex.items-center.gap-1')?.textContent?.trim()) || 0;
-        const year = parseInt(card.querySelector('.font-medium:last-child')?.textContent?.trim()) || 0;
-        
         switch(field) {
-            case 'title': return title.toLowerCase();
-            case 'artist': return artist.toLowerCase();
-            case 'year': return year;
-            case 'tracks': return trackCount;
-            default: return title.toLowerCase();
+            case 'title': return card.getAttribute('data-title') || '';
+            case 'artist': return card.getAttribute('data-artist') || '';
+            case 'year': return parseInt(card.getAttribute('data-year')) || 0;
+            case 'tracks': return parseInt(card.getAttribute('data-track-count')) || 0;
+            default: return card.getAttribute('data-title') || '';
         }
     }
     
@@ -147,10 +146,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const [sortField, sortDir] = sortValue.split('-');
         const albumCards = Array.from(document.querySelectorAll('.album-card'));
         
-        // Filter by search term
+        // Filter by search term using data attributes
         albumCards.forEach(card => {
-            const albumTitle = card.querySelector('h3')?.textContent?.toLowerCase() || '';
-            const artistName = card.querySelector('p')?.textContent?.toLowerCase() || '';
+            const albumTitle = card.getAttribute('data-title') || '';
+            const artistName = card.getAttribute('data-artist') || '';
             
             if (albumTitle.includes(searchTerm) || artistName.includes(searchTerm)) {
                 card.style.display = '';

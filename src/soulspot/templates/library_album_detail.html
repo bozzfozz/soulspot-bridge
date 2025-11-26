@@ -122,7 +122,7 @@
                 </div>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Downloaded</p>
-            <p class="stat-value" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <p class="stat-value text-success-600 dark:text-success-400">
                 {{ downloaded_count }}
             </p>
         </div>
@@ -136,7 +136,7 @@
                 </div>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Missing</p>
-            <p class="stat-value" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <p class="stat-value text-warning-600 dark:text-warning-400">
                 {{ missing_count }}
             </p>
         </div>
@@ -150,7 +150,7 @@
                 </div>
             </div>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Broken</p>
-            <p class="stat-value" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <p class="stat-value text-danger-600 dark:text-danger-400">
                 {{ broken_count }}
             </p>
         </div>
@@ -269,7 +269,7 @@
                                     </button>
                                     {% endif %}
                                     <button class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 focus-visible-ring rounded"
-                                            hx-get="/ui/tracks/{{ track.id }}/metadata-editor"
+                                            hx-get="/tracks/{{ track.id }}/metadata-editor"
                                             hx-target="#metadata-modal"
                                             hx-swap="innerHTML"
                                             aria-label="Edit metadata for {{ track.title }}">
@@ -399,8 +399,12 @@ function downloadAllMissing() {
 }
 
 function queueDownloads(trackIds, successMessage) {
+    // Track success and failure counts
+    let successCount = 0;
+    let failureCount = 0;
+    
     // Queue downloads for all track IDs
-    trackIds.forEach(trackId => {
+    const downloadPromises = trackIds.map(trackId => 
         fetch(`/api/tracks/${trackId}/download`, {
             method: 'POST',
             headers: {
@@ -409,24 +413,63 @@ function queueDownloads(trackIds, successMessage) {
         })
         .then(response => {
             if (!response.ok) {
+                failureCount++;
                 console.error(`Failed to queue download for track ${trackId}`);
+                return { success: false, trackId };
             }
+            successCount++;
+            return { success: true, trackId };
         })
         .catch(error => {
+            failureCount++;
             console.error(`Error queuing download for track ${trackId}:`, error);
-        });
-    });
+            return { success: false, trackId };
+        })
+    );
     
-    // Show success message
-    if (window.toastManager) {
-        window.toastManager.success(successMessage);
-    } else {
-        const successMsg = document.createElement('div');
-        successMsg.className = 'fixed top-4 right-4 bg-success-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        successMsg.textContent = successMessage;
-        document.body.appendChild(successMsg);
-        setTimeout(() => successMsg.remove(), 3000);
-    }
+    // Wait for all requests to complete and show appropriate message
+    Promise.all(downloadPromises).then(() => {
+        if (failureCount === 0) {
+            // All successful
+            if (window.toastManager) {
+                window.toastManager.success(successMessage);
+            } else {
+                showSuccessMessage(successMessage);
+            }
+        } else if (successCount === 0) {
+            // All failed
+            const errorMsg = `Failed to queue ${failureCount} track(s) for download. Please try again.`;
+            if (window.toastManager) {
+                window.toastManager.error(errorMsg);
+            } else {
+                showErrorMessage(errorMsg);
+            }
+        } else {
+            // Partial success
+            const partialMsg = `Queued ${successCount} track(s), ${failureCount} failed`;
+            if (window.toastManager) {
+                window.toastManager.warning(partialMsg);
+            } else {
+                showSuccessMessage(partialMsg);
+            }
+        }
+    });
+}
+
+function showSuccessMessage(message) {
+    const successMsg = document.createElement('div');
+    successMsg.className = 'fixed top-4 right-4 bg-success-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    successMsg.textContent = message;
+    document.body.appendChild(successMsg);
+    setTimeout(() => successMsg.remove(), 3000);
+}
+
+function showErrorMessage(message) {
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'fixed top-4 right-4 bg-danger-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    errorMsg.textContent = message;
+    document.body.appendChild(errorMsg);
+    setTimeout(() => errorMsg.remove(), 5000);
 }
 
 // Search filter for tracks within album
