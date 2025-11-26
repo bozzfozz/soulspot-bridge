@@ -1,15 +1,15 @@
 # Multi-stage build for SoulSpot Bridge
 FROM python:3.12-slim AS builder
 
-# Hey future me – GIT_BRANCH ermöglicht es, beim Build einen bestimmten Branch
-# aus dem Repository zu klonen, anstatt die lokalen Dateien zu verwenden.
-# Wenn GIT_BRANCH leer ist (Standard), werden lokale Dateien kopiert.
-# Wenn GIT_BRANCH gesetzt ist, wird das Repo geklont und der Branch ausgecheckt.
-# Beispiel: docker build --build-arg GIT_BRANCH=develop .
+# Hey future me – GIT_BRANCH allows building from a specific branch by cloning
+# the repository, instead of using local files.
+# If GIT_BRANCH is empty (default), local files are copied.
+# If GIT_BRANCH is set, the repo is cloned and that branch is checked out.
+# Example: docker build --build-arg GIT_BRANCH=develop .
 ARG GIT_BRANCH=""
 ARG GIT_REPO="https://github.com/bozzfozz/soulspot.git"
 
-# Install build dependencies (git wird nur installiert wenn GIT_BRANCH gesetzt ist)
+# Install build dependencies (git is always needed for poetry to detect version)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
@@ -31,8 +31,9 @@ COPY alembic.ini ./
 COPY docker/ ./docker/
 
 # Clone from repository if GIT_BRANCH is set, overwriting local files
-# Hier ist der Trick: Wenn GIT_BRANCH gesetzt ist, überschreiben wir die
-# lokal kopierten Dateien mit denen aus dem geklonten Branch.
+# When GIT_BRANCH is set, we overwrite the locally copied files with those
+# from the cloned branch. This allows building from any branch without
+# needing to checkout locally first.
 ARG GIT_BRANCH
 ARG GIT_REPO
 RUN if [ -n "${GIT_BRANCH}" ]; then \

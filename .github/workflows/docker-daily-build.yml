@@ -67,6 +67,9 @@ jobs:
             type=sha,prefix=${{ steps.branch.outputs.safe_name }}-{{date 'YYYYMMDD'}}-
       
       - name: Build and push Docker image
+        # Note: We don't pass GIT_BRANCH build-arg because the checkout step above
+        # already checks out the specified branch, so local files are from that branch.
+        # The GIT_BRANCH arg is for users building locally without checkout.
         uses: docker/build-push-action@v5
         with:
           context: .
