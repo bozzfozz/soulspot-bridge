@@ -1,30 +1,33 @@
 # 📚 Dokumentation - Wartungs-Übersicht
 
-**Status:** 🟠 Needs Maintenance (Audit Complete)  
+**Status:** ✅ **CRITICAL ISSUES FIXED** (2025-11-26)  
 **Last Audit:** 2025-11-26  
 **Files Audited:** 127+ Markdown-Dateien  
-**Directories:** 11
+**Directories:** 11 (Archive directories consolidated)
 
 ---
 
-## 🚨 Aktuelle Probleme
+## ✅ Critical Issues RESOLVED
 
-### 🔴 CRITICAL (Diese Woche)
-| Problem | Impact | Fix |
-|---------|--------|-----|
-| `docs/archive/` + `docs/archived/` parallel | Verwirrung | Consolidate |
-| 3+ Versionierungs-Systeme | Version Chaos | Standardize to v0.1.0 |
-| Roadmaps zeigen alte Phases | Outdated | Update with Phase 1-5 Complete |
-| Stale Docs (>7 Tage) | Outdated Info | Update timestamps |
+| Issue | Status | When | How |
+|-------|--------|------|-----|
+| Duplicate Archive Dirs | ✅ FIXED | 2025-11-26 | Consolidated to single `archived/` with index |
+| Version Chaos | ✅ FIXED | 2025-11-26 | CHANGELOG clarified (v0.1.0 current, v0.0.x archived) |
+| Stale Roadmaps | ✅ FIXED | 2025-11-26 | frontend + backend roadmaps updated with Phase 1-5 Complete |
+| v3.0 Confusion | ✅ FIXED | 2025-11-26 | STATUS.md clarified as Planning Only (Q1 2026) |
 
-### 🟡 MEDIUM (Dieses Wochenende)
-| Problem | Count | Fix |
-|---------|-------|-----|
-| Broken Internal Links | ~12 | Link Checker |
-| `/ui/` route references | ~8 | Find & Replace |
-| `/api/v1/` route references | ~5 | Find & Replace |
+---
 
-### 🟢 LOW (Nächster Sprint)
+## 🚨 Remaining Issues
+
+### 🟡 MEDIUM (This Week)
+| Problem | Count | Impact | Fix |
+|---------|-------|--------|-----|
+| Broken Internal Links | ~12 | Some docs link to non-existent files | Link checker + manual review |
+| `/ui/` route references | ~8 | Pre-restructure routes | Find & Replace `/ui/` → `/` |
+| `/api/v1/` route references | ~5 | Pre-restructure routes | Find & Replace `/api/v1/` → `/api/` |
+
+### 🟢 LOW (Next Sprint)
 | Problem | Impact | Timeline |
 |---------|--------|----------|
 | PWA Icons missing | UI Polish | Nach Phase 2 Testing |

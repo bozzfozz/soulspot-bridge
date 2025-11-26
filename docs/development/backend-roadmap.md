@@ -1,23 +1,64 @@
 # SoulSpot – Backend Development Roadmap
 
-> **Last Updated:** 2025-11-16  
-> **Version:** 0.1.0 (Alpha)  
-> **Status:** Phase 7 Near Complete (95%) - Production Ready  
-> **Owner:** Backend Team
+> **Last Updated:** 2025-11-26  
+> **Version:** 0.1.0 (Alpha - Production Ready)  
+> **Status:** Phase 1-5 Complete ✅ | Phase 6 (Automation) In Progress  
+> **Owner:** Backend Team  
+> **Current Release:** v0.1.0 (2025-11-08)
 
 ---
 
 ## 📑 Table of Contents
 
-1. [Vision & Goals](#-vision--goals)
-2. [Current Status](#-current-status)
+1. [Implementation Status](#-implementation-status) ⭐ START HERE
+2. [Vision & Goals](#-vision--goals)
 3. [Architecture Overview](#-architecture-overview)
-4. [Now (Next 4-8 Weeks)](#-now-next-4-8-weeks)
-5. [Next (2-3 Months)](#-next-2-3-months)
-6. [Later (>3 Months)](#-later-3-months)
-7. [Cross-Cutting Concerns](#-cross-cutting-concerns)
-8. [Dependencies & Risks](#-dependencies--risks)
-9. [Links & References](#-links--references)
+4. [Phase 6 (Automation & Watchlists)](#-phase-6-automation--watchlists)
+5. [Phase 7+ (Future)](#-phase-7-future)
+6. [Cross-Cutting Concerns](#-cross-cutting-concerns)
+7. [Dependencies & Risks](#-dependencies--risks)
+8. [Links & References](#-links--references)
+
+---
+
+## 🎯 Implementation Status
+
+### ✅ Phase 1-5 Complete (v0.1.0 - Production Ready)
+
+| Phase | Name | Status | Date | Version |
+|-------|------|--------|------|---------|
+| **1** | Foundation | ✅ Complete | 2025-11-08 | v0.0.1 |
+| **2** | Core Infrastructure | ✅ Complete | 2025-11-08 | v0.0.2 |
+| **3** | External Integrations | ✅ Complete | 2025-11-08 | v0.0.3 |
+| **4** | Application Layer | ✅ Complete | 2025-11-08 | v0.0.4 |
+| **5** | Web UI & API Integration | ✅ Complete | 2025-11-08 | v0.1.0 |
+
+**What's delivered:**
+- Domain-driven architecture (Clean Architecture)
+- SQLite database + Alembic migrations
+- FastAPI REST API (50+ endpoints)
+- Spotify OAuth PKCE flow
+- slskd integration (downloads)
+- MusicBrainz metadata enrichment
+- Background worker system
+- Web UI with HTMX + SSE
+- Phase 1-2 UI enhancements (master class design)
+
+### 🟡 Phase 6 In Progress (Automation & Watchlists)
+
+| Feature | Status | Timeline |
+|---------|--------|----------|
+| Artist Watchlists | 🚧 In Progress | Next |
+| Discography Tracking | 🚧 In Progress | Next |
+| Quality Upgrades | 📋 Planned | Phase 6.2 |
+| Advanced Search | 📋 Planned | Phase 6.3 |
+
+### 📋 Phase 7+ (Future)
+
+- Performance optimization
+- Observability (logging, tracing)
+- Advanced security (OWASP, rate limiting)
+- Modular architecture (v3.0 planned for Q1 2026)
 
 ---
 
@@ -29,7 +70,7 @@ The backend of SoulSpot is responsible for:
 - 🔌 **External Integrations** – Spotify API, slskd client, MusicBrainz, metadata providers
 - ⚙️ **Business Logic** – Use cases, domain services, download queue management, post-processing pipeline
 - 🔄 **Worker System** – Background job processing, async operations, retry logic
-- 📊 **API Layer** – FastAPI REST endpoints, request validation, response formatting
+- 📊 **API Layer** – FastAPI REST endpoints (50+ endpoints), request validation, response formatting
 - 💾 **Caching & Performance** – SQLite-based caching, connection pooling, query optimization
 
 ### Core Principles
@@ -44,11 +85,11 @@ The backend of SoulSpot is responsible for:
 
 ## 📍 Current Status
 
-### ✅ Completed Phases
+### ✅ Phase 1-5 Complete
 
 | Phase | Status | Key Features |
 |-------|--------|--------------|
-| **Stage: Foundation** | ✅ Complete | Domain Layer, Project Setup, Core Models |
+| **1: Foundation** | ✅ Complete | Domain Layer, Project Setup, Core Models |
 | **Stage: Core Infrastructure** | ✅ Complete | Settings Management, Database Layer, FastAPI Application |
 | **Stage: External Integrations** | ✅ Complete | slskd Client, Spotify OAuth, MusicBrainz Integration |
 | **Stage: Application Layer** | ✅ Complete | Use Cases, Worker System, Token Management, Caching |
