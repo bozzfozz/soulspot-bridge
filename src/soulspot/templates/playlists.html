@@ -26,7 +26,8 @@
             <div
                 class="aspect-square rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 mb-4 relative overflow-hidden shadow-inner">
                 {% if playlist.cover_url %}
-                <img src="{{ playlist.cover_url }}" alt="{{ playlist.name }}"
+                <img data-src="{{ playlist.cover_url }}" alt="{{ playlist.name }}"
+                    loading="lazy"
                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                 {% else %}
                 <div

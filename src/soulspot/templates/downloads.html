@@ -27,44 +27,99 @@
     </div>
 
     <!-- Controls & Filters -->
-    <div class="glass-panel p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-        <!-- Status Filters -->
-        <div class="flex gap-2 p-1 bg-black/20 rounded-lg backdrop-blur-md">
-            <button class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-primary text-white shadow-md"
-                onclick="filterDownloads('all', this)">
-                All
-            </button>
-            <button
-                class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5"
-                onclick="filterDownloads('queued', this)">
-                Queued
-            </button>
-            <button
-                class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5"
-                onclick="filterDownloads('downloading', this)">
-                Downloading
-            </button>
-            <button
-                class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5"
-                onclick="filterDownloads('completed', this)">
-                Completed
-            </button>
-            <button
-                class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5"
-                onclick="filterDownloads('failed', this)">
-                Failed
-            </button>
+    <div class="glass-panel p-4">
+        <!-- Search Bar with Fuzzy Search -->
+        <div class="mb-4">
+            <div class="header-search" style="width: 100%; position: relative;">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" 
+                       id="fuzzy-search-input"
+                       placeholder="Search downloads (fuzzy matching)..."
+                       style="width: 100%; padding-left: var(--space-8);"
+                       autocomplete="off">
+                <button class="btn-icon btn-secondary" 
+                        style="position: absolute; right: var(--space-2); top: 50%; transform: translateY(-50%);" 
+                        onclick="document.getElementById('fuzzy-search-input').value = ''; filterDownloads();" 
+                        title="Clear search">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="search-results-count" class="text-xs text-muted mt-2" style="display: none;">
+                <!-- Results count will be shown here -->
+            </div>
         </div>
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <!-- Status Filters -->
+            <div class="flex gap-2 p-1 bg-black/20 rounded-lg backdrop-blur-md flex-wrap">
+                <button class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-primary text-white shadow-md filter-btn"
+                    data-filter="status" data-value="all" onclick="toggleFilter(this)">
+                    All
+                </button>
+                <button
+                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5 filter-btn"
+                    data-filter="status" data-value="queued" onclick="toggleFilter(this)">
+                    Queued
+                </button>
+                <button
+                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5 filter-btn"
+                    data-filter="status" data-value="downloading" onclick="toggleFilter(this)">
+                    Downloading
+                </button>
+                <button
+                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5 filter-btn"
+                    data-filter="status" data-value="completed" onclick="toggleFilter(this)">
+                    Completed
+                </button>
+                <button
+                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5 filter-btn"
+                    data-filter="status" data-value="failed" onclick="toggleFilter(this)">
+                    Failed
+                </button>
+            </div>
 
-        <!-- Sort -->
-        <div class="flex items-center gap-2">
-            <span class="text-sm text-muted">Sort by:</span>
-            <select class="form-control py-1 px-3 text-sm w-auto" onchange="sortDownloads(this.value)">
-                <option value="created">Date Added</option>
-                <option value="priority">Priority</option>
-                <option value="progress">Progress</option>
-                <option value="status">Status</option>
-            </select>
+            <!-- Sort & Advanced Filters -->
+            <div class="flex items-center gap-2">
+                <button class="btn btn-icon btn-secondary" onclick="toggleAdvancedFilters()" title="Advanced Filters">
+                    <i class="fa-solid fa-filter"></i>
+                    <span class="badge badge-primary" id="active-filters-badge" style="display: none; position: absolute; top: -4px; right: -4px; font-size: 0.6rem; padding: 2px 4px;">0</span>
+                </button>
+                <span class="text-sm text-muted">Sort by:</span>
+                <select class="form-control py-1 px-3 text-sm w-auto" onchange="sortDownloads(this.value)">
+                    <option value="created">Date Added</option>
+                    <option value="priority">Priority</option>
+                    <option value="progress">Progress</option>
+                    <option value="status">Status</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Advanced Filters Panel (Hidden by default) -->
+        <div id="advanced-filters" class="mt-4" style="display: none;">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-black/20 rounded-lg">
+                <!-- Priority Filter -->
+                <div>
+                    <label class="text-sm text-muted mb-2 block">Priority</label>
+                    <div class="flex gap-2">
+                        <button class="btn btn-sm btn-secondary filter-chip" data-filter="priority" data-value="0" onclick="toggleFilterChip(this)">P0</button>
+                        <button class="btn btn-sm btn-secondary filter-chip" data-filter="priority" data-value="1" onclick="toggleFilterChip(this)">P1</button>
+                        <button class="btn btn-sm btn-secondary filter-chip" data-filter="priority" data-value="2" onclick="toggleFilterChip(this)">P2</button>
+                    </div>
+                </div>
+                
+                <!-- Progress Range -->
+                <div>
+                    <label class="text-sm text-muted mb-2 block">Progress: <span id="progress-value">0-100%</span></label>
+                    <input type="range" min="0" max="100" value="0" class="w-full" id="progress-filter" oninput="updateProgressFilter(this.value)">
+                </div>
+                
+                <!-- Clear Filters -->
+                <div class="flex items-end">
+                    <button class="btn btn-secondary w-full" onclick="clearAllFilters()">
+                        <i class="fa-solid fa-xmark"></i> Clear All Filters
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -118,16 +173,27 @@
                     class="w-5 h-5 rounded border-gray-600 bg-black/20 text-primary focus:ring-primary download-checkbox"
                     data-download-id="{{ download.id }}" onchange="updateSelection()">
 
-                <!-- Icon -->
-                <div class="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center text-2xl">
+                <!-- Icon / Progress Indicator -->
+                <div class="w-16 h-16 flex items-center justify-center">
                     {% if download.status == 'downloading' %}
-                    <i class="fa-solid fa-circle-notch fa-spin text-primary"></i>
+                    <!-- Circular Progress for downloading -->
+                    <div data-circular-progress="{{ download.progress_percent }}" 
+                         data-size="60"
+                         data-color="var(--primary)"
+                         aria-label="Download progress {{ download.progress_percent|round(1) }}%">
+                    </div>
                     {% elif download.status == 'completed' %}
-                    <i class="fa-solid fa-check text-success"></i>
+                    <div class="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
+                        <i class="fa-solid fa-check text-secondary text-xl"></i>
+                    </div>
                     {% elif download.status == 'failed' %}
-                    <i class="fa-solid fa-triangle-exclamation text-danger"></i>
+                    <div class="w-12 h-12 rounded-full bg-danger/20 flex items-center justify-center">
+                        <i class="fa-solid fa-triangle-exclamation text-danger text-xl"></i>
+                    </div>
                     {% else %}
-                    <i class="fa-solid fa-clock text-warning"></i>
+                    <div class="w-12 h-12 rounded-full bg-warning/20 flex items-center justify-center">
+                        <i class="fa-solid fa-clock text-warning text-xl"></i>
+                    </div>
                     {% endif %}
                 </div>
 
@@ -153,7 +219,7 @@
                             style="width: {{ download.progress_percent }}%"></div>
                     </div>
                     <div class="flex justify-between text-xs text-muted">
-                        <span>{{ download.progress_percent|round(1) }}%</span>
+                        <span data-percent-text>{{ download.progress_percent|round(1) }}%</span>
                         <span>{{ download.created_at }}</span>
                     </div>
                 </div>
@@ -357,5 +423,76 @@
             }
         }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/download-filters.js"></script>
+<script>
+// Hey future me - this connects to SSE stream to get real-time download updates!
+// Updates the circular progress indicators live without polling. Much more efficient.
+// We match downloads by ID and update the progress value dynamically.
+document.addEventListener('DOMContentLoaded', () => {
+    // Only initialize SSE if SSEClient is available
+    if (typeof SSEClient === 'undefined') {
+        console.log('SSEClient not available, falling back to polling');
+        return;
+    }
+    
+    const sseClient = new SSEClient('/api/ui/sse/stream', {
+        debug: false,
+        reconnectInterval: 3000
+    });
+    
+    // Handle download updates
+    sseClient.on('downloads_update', (data) => {
+        if (!data.downloads || !Array.isArray(data.downloads)) return;
+        
+        data.downloads.forEach(download => {
+            const card = document.querySelector(`[data-download-id="${download.id}"]`);
+            if (!card) return;
+            
+            // Update circular progress if download is in progress
+            const progressElement = card.querySelector('[data-circular-progress]');
+            if (progressElement && progressElement._circularProgress) {
+                const newProgress = download.progress_percent || 0;
+                progressElement._circularProgress.setProgress(newProgress);
+            }
+            
+            // Update linear progress bar as well
+            const progressBar = card.querySelector('.bg-gradient-to-r');
+            if (progressBar) {
+                progressBar.style.width = `${download.progress_percent || 0}%`;
+            }
+            
+            // Update percentage text
+            const percentText = card.querySelector('[data-percent-text]');
+            if (percentText) {
+                percentText.textContent = `${(download.progress_percent || 0).toFixed(1)}%`;
+            }
+        });
+    });
+    
+    // Handle connection events
+    sseClient.on('connected', () => {
+        console.log('Live updates connected');
+        // Optional: Show toast notification
+        if (typeof ToastManager !== 'undefined') {
+            ToastManager.info('Live updates enabled', null, 2000);
+        }
+    });
+    
+    sseClient.on('error', (error) => {
+        console.error('SSE connection error:', error);
+    });
+    
+    // Connect
+    sseClient.connect();
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        sseClient.disconnect();
+    });
+});
 </script>
 {% endblock %}

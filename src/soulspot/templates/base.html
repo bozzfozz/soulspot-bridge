@@ -7,6 +7,14 @@
     <title>{% block title %}SoulSpot{% endblock %}</title>
     <meta name="description" content="Intelligente Musik-Download-Anwendung">
 
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#8b5cf6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SoulSpot">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,6 +24,12 @@
 
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/static/css/layout.css" as="style">
+    <link rel="preload" href="/static/css/components.css" as="style">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
     <!-- Design System -->
     <link rel="stylesheet" href="/static/css/layout.css">
@@ -28,6 +42,11 @@
 </head>
 
 <body>
+    <!-- Skip to Content (Accessibility) -->
+    <a href="#main-content" class="skip-to-content">
+        Skip to main content
+    </a>
+    
     <!-- Sidebar Navigation -->
     <nav class="app-sidebar" id="sidebar">
         <div class="sidebar-brand">
@@ -107,11 +126,46 @@
 
     <!-- Scripts -->
     <script>
+        // Service Worker Registration (PWA)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New version available
+                                    if (typeof ToastManager !== 'undefined') {
+                                        ToastManager.info(
+                                            'A new version is available. Refresh to update.',
+                                            'Update Available',
+                                            10000
+                                        );
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+        
         // Simple sidebar toggle for mobile (can be moved to external JS)
         document.addEventListener('DOMContentLoaded', () => {
             // Add any global JS initialization here
         });
     </script>
+    <script src="/static/js/sse-client.js"></script>
+    <script src="/static/js/circular-progress.js"></script>
+    <script src="/static/js/fuzzy-search.js"></script>
+    <script src="/static/js/notifications.js"></script>
+    <script src="/static/js/mobile-gestures.js"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 

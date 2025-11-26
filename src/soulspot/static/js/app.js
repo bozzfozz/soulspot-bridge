@@ -197,11 +197,247 @@ const KeyboardNav = {
 };
 
 // =============================================================================
+// Optimistic UI & Performance Enhancements
+// =============================================================================
+const PerformanceEnhancer = {
+    // Hey future me - this implements optimistic UI updates! Before HTMX makes the actual request,
+    // we immediately show loading states and predicted UI changes. Makes the app feel instant.
+    // If the request fails, we rollback. This is the secret sauce for perceived performance.
+    initOptimisticUI() {
+        document.body.addEventListener('htmx:beforeRequest', (event) => {
+            const trigger = event.detail.elt;
+            const target = event.detail.target;
+            
+            // Add optimistic loading class
+            if (target) {
+                target.classList.add('loading-optimistic');
+                target.setAttribute('aria-busy', 'true');
+            }
+            
+            // Show optimistic feedback on buttons
+            if (trigger && trigger.tagName === 'BUTTON') {
+                trigger.setAttribute('data-original-disabled', trigger.disabled);
+                trigger.disabled = true;
+            }
+        });
+        
+        document.body.addEventListener('htmx:afterRequest', (event) => {
+            const trigger = event.detail.elt;
+            const target = event.detail.target;
+            
+            // Remove loading states
+            if (target) {
+                target.classList.remove('loading-optimistic');
+                target.removeAttribute('aria-busy');
+            }
+            
+            // Restore button state
+            if (trigger && trigger.tagName === 'BUTTON') {
+                const wasDisabled = trigger.getAttribute('data-original-disabled') === 'true';
+                trigger.disabled = wasDisabled;
+                trigger.removeAttribute('data-original-disabled');
+            }
+        });
+    },
+    
+    // Hey future me - prefetching makes navigation feel instant! We preload pages when users hover
+    // over links. By the time they click, content is already cached. Clever, right?
+    initLinkPrefetching() {
+        const prefetchedUrls = new Set();
+        
+        document.querySelectorAll('a[href^="/"]').forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                const url = this.href;
+                
+                // Only prefetch once per URL
+                if (prefetchedUrls.has(url)) return;
+                prefetchedUrls.add(url);
+                
+                // Prefetch using HTMX (stores in cache)
+                htmx.ajax('GET', url, {swap: 'none'});
+            }, {once: true, passive: true});
+        });
+    },
+    
+    // Hey future me - lazy loading images saves bandwidth and speeds up initial page load!
+    // Images only load when they're about to enter the viewport. Modern browsers have native
+    // support, but we add a polyfill for older ones using Intersection Observer.
+    initImageLazyLoading() {
+        // Modern browsers: use native lazy loading
+        document.querySelectorAll('img[data-src]').forEach(img => {
+            if ('loading' in HTMLImageElement.prototype) {
+                img.loading = 'lazy';
+                img.src = img.dataset.src;
+                img.removeAttribute('data-src');
+            }
+        });
+        
+        // Polyfill for older browsers
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        if (img.dataset.src) {
+                            img.src = img.dataset.src;
+                            img.classList.add('loaded');
+                            img.removeAttribute('data-src');
+                            observer.unobserve(img);
+                        }
+                    }
+                });
+            }, {
+                rootMargin: '50px' // Start loading 50px before entering viewport
+            });
+            
+            document.querySelectorAll('img[data-src]').forEach(img => {
+                imageObserver.observe(img);
+            });
+        }
+    }
+};
+
+// =============================================================================
+// Ripple Effect for Interactive Elements
+// =============================================================================
+const RippleEffect = {
+    // Hey future me - ripple effects give tactile feedback on clicks! Material Design pattern
+    // that makes buttons feel responsive. Creates a circular wave from click point.
+    init() {
+        document.addEventListener('click', (e) => {
+            const button = e.target.closest('.btn, .nav-item, .card');
+            if (!button) return;
+            
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            
+            button.style.position = 'relative';
+            button.style.overflow = 'hidden';
+            button.appendChild(ripple);
+            
+            // Haptic feedback for mobile devices
+            if ('vibrate' in navigator) {
+                navigator.vibrate(5);
+            }
+            
+            setTimeout(() => ripple.remove(), 600);
+        }, {passive: true});
+    }
+};
+
+// =============================================================================
+// Enhanced Keyboard Navigation
+// =============================================================================
+const EnhancedKeyboardNav = {
+    currentIndex: 0,
+    items: [],
+    
+    // Hey future me - arrow key navigation for lists! Power users love this.
+    // Navigate downloads/playlists with keyboard, Enter to activate. Accessibility win!
+    init() {
+        this.initListNavigation();
+        this.initGlobalShortcuts();
+    },
+    
+    initListNavigation() {
+        document.addEventListener('keydown', (e) => {
+            // Only activate when no input is focused
+            if (document.activeElement.tagName === 'INPUT' || 
+                document.activeElement.tagName === 'TEXTAREA') {
+                return;
+            }
+            
+            // Get current navigable items
+            this.items = Array.from(document.querySelectorAll(
+                '.download-card:not([style*="display: none"]), .card[href]'
+            ));
+            
+            if (this.items.length === 0) return;
+            
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    this.currentIndex = Math.min(this.currentIndex + 1, this.items.length - 1);
+                    this.focusCurrentItem();
+                    break;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    this.currentIndex = Math.max(this.currentIndex - 1, 0);
+                    this.focusCurrentItem();
+                    break;
+                    
+                case 'Enter':
+                    if (this.items[this.currentIndex]) {
+                        e.preventDefault();
+                        const item = this.items[this.currentIndex];
+                        const link = item.querySelector('a') || item;
+                        link.click();
+                    }
+                    break;
+            }
+        });
+    },
+    
+    focusCurrentItem() {
+        const item = this.items[this.currentIndex];
+        if (item) {
+            item.focus();
+            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Visual highlight
+            this.items.forEach(i => i.classList.remove('keyboard-focused'));
+            item.classList.add('keyboard-focused');
+        }
+    },
+    
+    initGlobalShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Cmd/Ctrl + K: Focus search
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                const searchInput = document.querySelector('input[name="q"], input[type="search"]');
+                if (searchInput) {
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            }
+            
+            // Escape: Clear focus, close modals
+            if (e.key === 'Escape') {
+                document.activeElement?.blur();
+                KeyboardNav.closeModals();
+            }
+        });
+    }
+};
+
+// =============================================================================
 // Main Application Initialization
 // =============================================================================
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize keyboard navigation
     KeyboardNav.init();
+    
+    // Initialize performance enhancements
+    PerformanceEnhancer.initOptimisticUI();
+    PerformanceEnhancer.initLinkPrefetching();
+    PerformanceEnhancer.initImageLazyLoading();
+    
+    // Initialize ripple effects
+    RippleEffect.init();
+    
+    // Initialize enhanced keyboard navigation
+    EnhancedKeyboardNav.init();
 
     // Auto-refresh downloads page every 5 seconds if on downloads page
     if (window.location.pathname.includes('/downloads')) {

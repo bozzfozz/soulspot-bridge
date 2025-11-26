@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - SoulSpot</title>
+    
+    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/layout.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    
+    <style>
+        .offline-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: var(--space-8);
+            text-align: center;
+            background: var(--bg-app);
+        }
+        
+        .offline-icon {
+            font-size: 6rem;
+            margin-bottom: var(--space-6);
+            opacity: 0.5;
+        }
+        
+        .offline-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--space-4);
+            color: var(--text-main);
+        }
+        
+        .offline-message {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            max-width: 500px;
+            margin-bottom: var(--space-8);
+        }
+        
+        .retry-button {
+            padding: var(--space-4) var(--space-8);
+            font-size: 1.125rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        
+        <h1 class="offline-title">You're Offline</h1>
+        
+        <p class="offline-message">
+            It looks like you've lost your internet connection. 
+            Check your network and try again.
+        </p>
+        
+        <button class="btn btn-primary btn-lg retry-button" onclick="window.location.reload()">
+            <i class="fa-solid fa-rotate-right"></i>
+            Try Again
+        </button>
+        
+        <div style="margin-top: var(--space-8);">
+            <p class="text-muted" style="font-size: 0.875rem;">
+                Some features may still work offline thanks to caching
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-retry when connection restored
+        window.addEventListener('online', () => {
+            console.log('Connection restored, reloading...');
+            window.location.reload();
+        });
+        
+        // Show connection status
+        if (navigator.onLine) {
+            document.querySelector('.offline-message').innerHTML = 
+                'Connection detected, but unable to reach server. Please try again.';
+        }
+    </script>
+</body>
+</html>

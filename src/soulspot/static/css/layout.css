@@ -278,6 +278,25 @@ p {
     gap: var(--space-6);
 }
 
+/* Skip to Content Link (Accessibility) */
+.skip-to-content {
+    position: absolute;
+    left: -9999px;
+    top: var(--space-4);
+    z-index: 9999;
+    background: var(--primary);
+    color: white;
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    box-shadow: 0 4px 12px var(--primary-glow);
+    transition: left var(--transition-fast);
+}
+
+.skip-to-content:focus {
+    left: var(--space-4);
+}
+
 /* Utilities */
 .text-gradient {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
