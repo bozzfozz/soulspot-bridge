@@ -37,12 +37,22 @@
                 </div>
             </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <input type="text" 
                    id="album-search"
                    placeholder="Search albums..."
                    class="input-modern focus-visible-ring"
                    aria-label="Search albums">
+            <select id="sort-filter" class="input-modern focus-visible-ring" aria-label="Sort albums">
+                <option value="artist-asc">Artist (A-Z)</option>
+                <option value="artist-desc">Artist (Z-A)</option>
+                <option value="title-asc">Title (A-Z)</option>
+                <option value="title-desc">Title (Z-A)</option>
+                <option value="year-desc">Year (Newest)</option>
+                <option value="year-asc">Year (Oldest)</option>
+                <option value="tracks-desc">Most Tracks</option>
+                <option value="tracks-asc">Fewest Tracks</option>
+            </select>
         </div>
     </div>
 
@@ -105,32 +115,80 @@
 </div>
 
 <script>
-// Enhanced client-side search with modern UI feedback
+// Hey future me - this handles client-side search AND sorting for albums. Search filters by title/artist,
+// sort reorders the grid dynamically. Both work together so you can search THEN sort the results.
+// The sort uses data attributes on the cards to avoid re-parsing text. The debounce prevents spam.
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('album-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', window.debounce(function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const albumCards = document.querySelectorAll('.album-card');
-            let visibleCount = 0;
+    const sortFilter = document.getElementById('sort-filter');
+    const albumsGrid = document.querySelector('#albums-list [data-stagger]');
+    
+    // Helper to get sort value from album card
+    function getSortValue(card, field) {
+        const title = card.querySelector('h3')?.textContent?.trim() || '';
+        const artist = card.querySelector('p')?.textContent?.trim() || '';
+        const trackCount = parseInt(card.querySelector('.flex.items-center.gap-1')?.textContent?.trim()) || 0;
+        const year = parseInt(card.querySelector('.font-medium:last-child')?.textContent?.trim()) || 0;
+        
+        switch(field) {
+            case 'title': return title.toLowerCase();
+            case 'artist': return artist.toLowerCase();
+            case 'year': return year;
+            case 'tracks': return trackCount;
+            default: return title.toLowerCase();
+        }
+    }
+    
+    function filterAndSortAlbums() {
+        if (!albumsGrid) return;
+        
+        const searchTerm = (searchInput?.value || '').toLowerCase();
+        const sortValue = sortFilter?.value || 'artist-asc';
+        const [sortField, sortDir] = sortValue.split('-');
+        const albumCards = Array.from(document.querySelectorAll('.album-card'));
+        
+        // Filter by search term
+        albumCards.forEach(card => {
+            const albumTitle = card.querySelector('h3')?.textContent?.toLowerCase() || '';
+            const artistName = card.querySelector('p')?.textContent?.toLowerCase() || '';
             
-            albumCards.forEach(card => {
-                const albumTitle = card.querySelector('h3').textContent.toLowerCase();
-                const artistName = card.querySelector('p').textContent.toLowerCase();
-                
-                if (albumTitle.includes(searchTerm) || artistName.includes(searchTerm)) {
-                    card.style.display = '';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            
-            // Show toast if no results
-            if (searchTerm && visibleCount === 0 && window.toastManager) {
-                window.toastManager.info(`No albums found matching "${searchTerm}"`, 2000);
+            if (albumTitle.includes(searchTerm) || artistName.includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
             }
-        }, 300));
+        });
+        
+        // Sort visible cards
+        const visibleCards = albumCards.filter(c => c.style.display !== 'none');
+        visibleCards.sort((a, b) => {
+            const aVal = getSortValue(a, sortField);
+            const bVal = getSortValue(b, sortField);
+            
+            if (typeof aVal === 'number' && typeof bVal === 'number') {
+                return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+            }
+            return sortDir === 'asc' 
+                ? String(aVal).localeCompare(String(bVal))
+                : String(bVal).localeCompare(String(aVal));
+        });
+        
+        // Re-append sorted cards
+        visibleCards.forEach(card => albumsGrid.appendChild(card));
+        
+        // Show toast if no results
+        const hiddenCount = albumCards.filter(c => c.style.display === 'none').length;
+        if (searchTerm && hiddenCount === albumCards.length && window.toastManager) {
+            window.toastManager.info(`No albums found matching "${searchTerm}"`, 2000);
+        }
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', window.debounce ? window.debounce(filterAndSortAlbums, 300) : filterAndSortAlbums);
+    }
+    
+    if (sortFilter) {
+        sortFilter.addEventListener('change', filterAndSortAlbums);
     }
 });
 </script>

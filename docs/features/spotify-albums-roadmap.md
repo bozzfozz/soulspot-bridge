@@ -1,8 +1,8 @@
 # Spotify Albums API Roadmap
 
-> **Version:** 1.1  
+> **Version:** 1.2  
 > **Last Updated:** 2025-11-26  
-> **Status:** Phase 1 abgeschlossen (Core Album API implementiert)
+> **Status:** Phase 1 abgeschlossen (Core Album API + Frontend implementiert)
 
 ---
 
@@ -77,8 +77,19 @@ Diese Roadmap dokumentiert den aktuellen Stand der Spotify Album API Integration
 
 ### ✅ Web UI
 
-- `/library/albums` - Album-Übersicht
-- `/library/albums/{album_key}` - Album-Details
+- `/library/albums` - Album-Übersicht mit Grid-View
+  - Client-Side Suche und Sortierung
+  - Sortieroptionen: Artist, Title, Year, Track Count
+  - Responsive Grid-Layout
+  - Empty State für leere Library
+- `/library/albums/{album_key}` - Album-Details mit Track-Listing
+  - Stats-Cards: Total, Downloaded, Missing, Broken
+  - Bulk-Selection mit "Select All" Checkbox
+  - "Download All Missing" Button
+  - "Download Selected" Button  
+  - Track-Suche/Filter innerhalb Album
+  - Metadata-Editor Modal Integration
+  - HTMX-basierte Download-Aktionen
 
 ---
 
@@ -312,6 +323,15 @@ last_synced_at = Column(DateTime)
 | **Album Search** | ❌ Fehlt |
 | **Saved Albums** | ❌ Fehlt |
 | **Album Sync** | ❌ Fehlt |
+| **Frontend: Album-Liste** | ✅ Komplett |
+| **Frontend: Album-Detail** | ✅ Komplett |
+| **Frontend: Bulk-Aktionen** | ✅ Komplett |
+| **Frontend: Album-Artwork** | ⚠️ Platzhalter (Backend fehlt) |
+
+**Frontend-Status:** Die Album-Verwaltung im Frontend ist **100% fertig** für alle aktuell verfügbaren Backend-Features. Folgende Features benötigen zuerst Backend-Arbeit:
+- Album-Suche (Phase 2)
+- Saved Albums Sync (Phase 3)
+- Album-Artwork Download
 
 **Nächster Schritt:** Phase 2 - Album-Suche implementieren
 
