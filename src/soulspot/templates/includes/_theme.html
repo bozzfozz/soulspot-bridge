@@ -1,46 +1,22 @@
-{# 
-  Harmony-v1 Theme Include
+{#
+  Hey future me - LEGACY Theme Include
   
-  Include this file in your template's <head> section to enable the Harmony theme:
+  This old harmony theme switcher is SUPERSEDED by:
+  - /static/new-ui/css/variables.css (design tokens)
+  - /static/new-ui/css/main.css (all styles)
   
-  {% include 'includes/_theme.html' %}
+  The new design system is dark-only (no light mode toggle).
+  Colors are controlled via CSS custom properties in variables.css.
   
-  This will load:
-  - Inter font from Google Fonts
-  - Harmony theme CSS with design tokens
-  - Optional theme switcher support
+  Keeping this file for backward compatibility but it does nothing now.
 #}
 
-{# Load Harmony theme CSS #}
-<link rel="stylesheet" href="/static/css/theme.css">
+{# 
+  DEPRECATED: Theme handling is now done via CSS variables.
+  The new UI is dark-theme only. No toggling needed.
+  
+  If you need to customize colors, edit:
+  /static/new-ui/css/variables.css
+#}
 
-{# Optional: Add theme switcher support #}
-<script>
-  // Theme switcher functionality (optional)
-  function initHarmonyTheme() {
-    // Check for saved theme preference or use system preference
-    const savedTheme = localStorage.getItem('harmony-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-  }
-  
-  // Toggle theme (call this from your UI)
-  function toggleHarmonyTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    if (newTheme === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-    
-    localStorage.setItem('harmony-theme', newTheme);
-  }
-  
-  // Initialize theme on page load
-  initHarmonyTheme();
-</script>
+<!-- Theme include deprecated - new design uses CSS variables in /static/new-ui/css/variables.css -->

@@ -1,185 +1,204 @@
+{# Hey future me - Main Dashboard page!
+   Shows stats (playlists, tracks, downloads, queue) + quick actions + Spotify session status.
+   HTMX checks /api/auth/session on load to display connection status.
+   stats object passed from backend with .playlists, .tracks, .downloads, .queue_size #}
+
 {% extends "base.html" %}
 
 {% block title %}Dashboard - SoulSpot{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<div style="max-width: 1200px; margin: 0 auto;">
 
     <!-- Hero Section -->
-    <div class="glass-panel p-8 mb-8 relative overflow-hidden">
-        <div class="relative z-10 flex items-center justify-between">
+    <div class="card" style="padding: var(--space-8); margin-bottom: var(--space-8); position: relative; overflow: hidden;">
+        <div style="position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between;">
             <div>
-                <h1 class="text-4xl font-bold mb-2 text-gradient">Welcome back</h1>
-                <p class="text-lg text-muted">Your music library is ready.</p>
+                <h1 style="font-size: var(--font-size-4xl); margin-bottom: var(--space-2); background: linear-gradient(135deg, var(--accent-primary), #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Welcome back</h1>
+                <p style="font-size: var(--font-size-lg); color: var(--text-muted);">Your music library is ready.</p>
             </div>
-            <div class="hidden md:block">
-                <div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                    <i class="fa-solid fa-music text-2xl text-white"></i>
+            <div style="display: none;" class="hero-icon">
+                <div style="width: 64px; height: 64px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
+                    <i class="fa-solid fa-music" style="font-size: 1.5rem; color: white;"></i>
                 </div>
             </div>
         </div>
-
         <!-- Abstract Background Shapes -->
-        <div class="absolute top-0 right-0 w-64 h-64 bg-primary opacity-10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-        <div class="absolute bottom-0 left-0 w-48 h-48 bg-secondary opacity-10 rounded-full blur-2xl -ml-12 -mb-12">
-        </div>
+        <div style="position: absolute; top: 0; right: 0; width: 256px; height: 256px; background: var(--accent-primary); opacity: 0.1; border-radius: 50%; filter: blur(48px); margin-right: -64px; margin-top: -64px;"></div>
+        <div style="position: absolute; bottom: 0; left: 0; width: 192px; height: 192px; background: #a855f7; opacity: 0.1; border-radius: 50%; filter: blur(32px); margin-left: -48px; margin-bottom: -48px;"></div>
     </div>
 
     <!-- Stats Grid -->
-    <div class="grid-cols-4 mb-8">
+    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-8);">
         <!-- Playlists -->
-        <div class="card">
-            <div class="flex items-center justify-between mb-4">
-                <div class="btn-icon bg-primary-glow text-primary">
-                    <i class="fa-solid fa-list"></i>
+        <div class="card" style="padding: var(--space-5);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+                <div style="width: 40px; height: 40px; background: rgba(var(--accent-primary-rgb), 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-list" style="color: var(--accent-primary);"></i>
                 </div>
-                <span class="text-xs text-muted bg-card-hover px-2 py-1 rounded-full">Total</span>
+                <span class="badge badge-default">Total</span>
             </div>
-            <h3 class="text-3xl font-bold mb-1">{{ stats.playlists or 0 }}</h3>
-            <p class="text-sm text-muted">Playlists Imported</p>
+            <h3 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">{{ stats.playlists or 0 }}</h3>
+            <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Playlists Imported</p>
         </div>
 
         <!-- Tracks -->
-        <div class="card">
-            <div class="flex items-center justify-between mb-4">
-                <div class="btn-icon bg-secondary-glow text-secondary" style="background: rgba(16, 185, 129, 0.1);">
-                    <i class="fa-solid fa-music"></i>
+        <div class="card" style="padding: var(--space-5);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+                <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-music" style="color: #10b981;"></i>
                 </div>
-                <span class="text-xs text-muted bg-card-hover px-2 py-1 rounded-full">Library</span>
+                <span class="badge badge-default">Library</span>
             </div>
-            <h3 class="text-3xl font-bold mb-1">{{ stats.tracks or 0 }}</h3>
-            <p class="text-sm text-muted">Tracks Managed</p>
+            <h3 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">{{ stats.tracks or 0 }}</h3>
+            <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Tracks Managed</p>
         </div>
 
         <!-- Downloads -->
-        <div class="card">
-            <div class="flex items-center justify-between mb-4">
-                <div class="btn-icon bg-info-glow text-info" style="background: rgba(59, 130, 246, 0.1);">
-                    <i class="fa-solid fa-download"></i>
+        <div class="card" style="padding: var(--space-5);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+                <div style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-download" style="color: #3b82f6;"></i>
                 </div>
-                <span class="text-xs text-muted bg-card-hover px-2 py-1 rounded-full">Completed</span>
+                <span class="badge badge-default">Completed</span>
             </div>
-            <h3 class="text-3xl font-bold mb-1">{{ stats.downloads or 0 }}</h3>
-            <p class="text-sm text-muted">Downloaded Tracks</p>
+            <h3 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">{{ stats.downloads or 0 }}</h3>
+            <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Downloaded Tracks</p>
         </div>
 
         <!-- Queue -->
-        <div class="card">
-            <div class="flex items-center justify-between mb-4">
-                <div class="btn-icon bg-warning-glow text-warning" style="background: rgba(245, 158, 11, 0.1);">
-                    <i class="fa-solid fa-clock"></i>
+        <div class="card" style="padding: var(--space-5);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
+                <div style="width: 40px; height: 40px; background: rgba(245, 158, 11, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-clock" style="color: #f59e0b;"></i>
                 </div>
-                <span class="text-xs text-muted bg-card-hover px-2 py-1 rounded-full">Active</span>
+                <span class="badge badge-default">Active</span>
             </div>
-            <h3 class="text-3xl font-bold mb-1">{{ stats.queue_size or 0 }}</h3>
-            <p class="text-sm text-muted">Pending Downloads</p>
+            <h3 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">{{ stats.queue_size or 0 }}</h3>
+            <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Pending Downloads</p>
         </div>
     </div>
 
     <!-- Main Actions & Status -->
-    <div class="grid-cols-2 mb-8">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); margin-bottom: var(--space-8);">
         <!-- Quick Actions -->
-        <div class="glass-panel p-6">
-            <h3 class="text-xl mb-6 flex items-center gap-2">
-                <i class="fa-solid fa-bolt text-warning"></i> Quick Actions
+        <div class="card" style="padding: var(--space-6);">
+            <h3 style="font-size: var(--font-size-xl); margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-2);">
+                <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Quick Actions
             </h3>
-            <div class="grid-cols-2 gap-4">
-                <a href="/playlists/import"
-                    class="card hover:bg-card-hover p-4 flex flex-col items-center justify-center text-center gap-3 h-full">
-                    <div
-                        class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white shadow-lg">
-                        <i class="fa-solid fa-plus"></i>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+                <a href="/playlists/import" class="card" style="padding: var(--space-4); text-align: center; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: var(--space-3); transition: var(--transition-base);">
+                    <div style="width: 48px; height: 48px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
+                        <i class="fa-solid fa-plus" style="color: white;"></i>
                     </div>
                     <div>
-                        <h4 class="text-lg font-bold mb-1">Import Playlist</h4>
-                        <p class="text-xs text-muted">Sync from Spotify</p>
+                        <h4 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Import Playlist</h4>
+                        <p style="font-size: var(--font-size-xs); color: var(--text-muted);">Sync from Spotify</p>
                     </div>
                 </a>
 
-                <a href="/downloads"
-                    class="card hover:bg-card-hover p-4 flex flex-col items-center justify-center text-center gap-3 h-full">
-                    <div
-                        class="w-12 h-12 rounded-full bg-secondary flex items-center justify-center text-white shadow-lg">
-                        <i class="fa-solid fa-list-check"></i>
+                <a href="/downloads" class="card" style="padding: var(--space-4); text-align: center; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: var(--space-3); transition: var(--transition-base);">
+                    <div style="width: 48px; height: 48px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
+                        <i class="fa-solid fa-list-check" style="color: white;"></i>
                     </div>
                     <div>
-                        <h4 class="text-lg font-bold mb-1">Manage Queue</h4>
-                        <p class="text-xs text-muted">View downloads</p>
+                        <h4 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Manage Queue</h4>
+                        <p style="font-size: var(--font-size-xs); color: var(--text-muted);">View downloads</p>
                     </div>
                 </a>
             </div>
         </div>
 
         <!-- Spotify Status -->
-        <div class="glass-panel p-6" id="session-status" hx-get="/api/auth/session" hx-trigger="load">
-            <div class="flex flex-col items-center justify-center h-full text-center p-4">
-                <div
-                    class="spinner border-4 border-primary border-t-transparent rounded-full w-12 h-12 animate-spin mb-4">
-                </div>
-                <p class="text-muted">Checking connection...</p>
+        <div class="card" id="session-status" style="padding: var(--space-6);" hx-get="/api/auth/session" hx-trigger="load">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: var(--space-4);">
+                <div class="spinner" style="margin-bottom: var(--space-4);"></div>
+                <p style="color: var(--text-muted);">Checking connection...</p>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_scripts %}
+<style>
+    .spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid var(--border-secondary);
+        border-top-color: var(--accent-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    @media (min-width: 768px) {
+        .hero-icon { display: block !important; }
+    }
+    @media (max-width: 1024px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+    @media (max-width: 640px) {
+        .stats-grid { grid-template-columns: 1fr !important; }
+    }
+</style>
 <script>
-    // Handle Session Status
-    document.body.addEventListener('htmx:afterSwap', function (evt) {
-        if (evt.detail.target.id === 'session-status') {
-            try {
-                const response = JSON.parse(evt.detail.xhr.response);
-                const statusDiv = document.getElementById('session-status');
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target.id === 'session-status') {
+        try {
+            const response = JSON.parse(evt.detail.xhr.response);
+            const statusDiv = document.getElementById('session-status');
 
-                if (response.has_access_token && !response.token_expired) {
-                    statusDiv.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-center animate-fade-in">
-                        <div class="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mb-4 text-secondary">
-                            <i class="fa-brands fa-spotify text-3xl"></i>
+            if (response.has_access_token && !response.token_expired) {
+                statusDiv.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
+                        <div style="width: 64px; height: 64px; background: rgba(16, 185, 129, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4);">
+                            <i class="fa-brands fa-spotify" style="font-size: 2rem; color: #1DB954;"></i>
                         </div>
-                        <h3 class="text-xl font-bold mb-2">Connected to Spotify</h3>
-                        <p class="text-muted mb-6">Ready to sync your library</p>
-                        <a href="/playlists" class="btn btn-secondary w-full justify-center">
+                        <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-2);">Connected to Spotify</h3>
+                        <p style="color: var(--text-muted); margin-bottom: var(--space-6);">Ready to sync your library</p>
+                        <a href="/playlists" class="btn btn-outline" style="width: 100%; justify-content: center;">
                             Go to Playlists
                         </a>
                     </div>
                 `;
-                } else {
-                    statusDiv.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-center animate-fade-in">
-                        <div class="w-16 h-16 bg-card-hover rounded-full flex items-center justify-center mb-4 text-muted">
-                            <i class="fa-brands fa-spotify text-3xl"></i>
+            } else {
+                statusDiv.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
+                        <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4);">
+                            <i class="fa-brands fa-spotify" style="font-size: 2rem; color: var(--text-muted);"></i>
                         </div>
-                        <h3 class="text-xl font-bold mb-2">Not Connected</h3>
-                        <p class="text-muted mb-6">Connect Spotify to start</p>
-                        <a href="/auth" class="btn btn-primary w-full justify-center">
+                        <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-2);">Not Connected</h3>
+                        <p style="color: var(--text-muted); margin-bottom: var(--space-6);">Connect Spotify to start</p>
+                        <a href="/auth" class="btn btn-primary" style="width: 100%; justify-content: center;">
                             Connect Now
                         </a>
                     </div>
                 `;
-                }
-            } catch (e) {
-                console.error("Error parsing session status", e);
             }
+        } catch (e) {
+            console.error("Error parsing session status", e);
         }
-    });
+    }
+});
 
-    // Handle 401/Errors
-    document.body.addEventListener('htmx:responseError', function (evt) {
-        if (evt.detail.target.id === 'session-status') {
-            const statusDiv = document.getElementById('session-status');
-            statusDiv.innerHTML = `
-            <div class="flex flex-col items-center justify-center h-full text-center animate-fade-in">
-                <div class="w-16 h-16 bg-card-hover rounded-full flex items-center justify-center mb-4 text-muted">
-                    <i class="fa-brands fa-spotify text-3xl"></i>
+document.body.addEventListener('htmx:responseError', function(evt) {
+    if (evt.detail.target.id === 'session-status') {
+        const statusDiv = document.getElementById('session-status');
+        statusDiv.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
+                <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4);">
+                    <i class="fa-brands fa-spotify" style="font-size: 2rem; color: var(--text-muted);"></i>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Connection Issue</h3>
-                <p class="text-muted mb-6">Please reconnect Spotify</p>
-                <a href="/auth" class="btn btn-primary w-full justify-center">
+                <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-2);">Connection Issue</h3>
+                <p style="color: var(--text-muted); margin-bottom: var(--space-6);">Please reconnect Spotify</p>
+                <a href="/auth" class="btn btn-primary" style="width: 100%; justify-content: center;">
                     Connect Now
                 </a>
             </div>
         `;
-        }
-    });
+    }
+});
 </script>
 {% endblock %}

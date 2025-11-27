@@ -1,85 +1,159 @@
+{# Hey future me - Playlists overview page!
+   Shows all imported playlists in a grid.
+   Media cards have hover actions for play/download.
+   Pagination at bottom if total_pages > 1. #}
+
 {% extends "base.html" %}
 
 {% block title %}Playlists - SoulSpot{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h1 class="text-4xl font-bold mb-2 text-gradient">Your Playlists</h1>
-            <p class="text-muted">Manage and sync your music collection</p>
-        </div>
-        <a href="/playlists/import" class="btn btn-primary shadow-lg glow-on-hover">
+<!-- Page Header -->
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1>Playlists</h1>
+        <p class="text-muted" style="margin-top: 0.5rem;">Manage your Spotify playlists</p>
+    </div>
+    <div class="flex gap-3">
+        <button class="btn btn-outline" hx-post="/api/playlists/sync-all" hx-swap="none">
+            <i class="fa-solid fa-sync"></i>
+            Sync All
+        </button>
+        <a href="/playlists/import" class="btn btn-primary">
             <i class="fa-solid fa-plus"></i>
-            <span>Import Playlist</span>
+            Import Playlist
         </a>
     </div>
+</div>
 
-    <!-- Playlists Grid -->
-    <div class="grid-cols-3" id="playlists-grid">
-        {% if playlists %}
-        {% for playlist in playlists %}
-        <div class="card group hover:scale-[1.02] transition-all duration-300">
-            <!-- Cover Art / Placeholder -->
-            <div
-                class="aspect-square rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 mb-4 relative overflow-hidden shadow-inner">
-                {% if playlist.cover_url %}
-                <img data-src="{{ playlist.cover_url }}" alt="{{ playlist.name }}"
-                    loading="lazy"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
-                {% else %}
-                <div
-                    class="absolute inset-0 flex items-center justify-center text-gray-700 group-hover:text-primary transition-colors">
-                    <i class="fa-solid fa-music text-4xl"></i>
-                </div>
-                {% endif %}
+<!-- Stats -->
+<div class="grid grid-cols-4 mb-8">
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="fa-solid fa-list"></i>
+        </div>
+        <div class="stat-card-content">
+            <div class="stat-card-label">Total Playlists</div>
+            <div class="stat-card-value">{{ playlists|length if playlists else 0 }}</div>
+        </div>
+    </div>
 
-                <!-- Hover Overlay -->
-                <div
-                    class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-sm">
-                    <a href="/ui/playlists/{{ playlist.id }}"
-                        class="btn-icon bg-white text-black hover:scale-110 transition-transform" title="View">
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="fa-solid fa-music"></i>
+        </div>
+        <div class="stat-card-content">
+            <div class="stat-card-label">Total Tracks</div>
+            <div class="stat-card-value">{{ total_tracks|default(0) }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <div class="stat-card-content">
+            <div class="stat-card-label">Downloaded</div>
+            <div class="stat-card-value">{{ downloaded_tracks|default(0) }}</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-card-content">
+            <div class="stat-card-label">Pending</div>
+            <div class="stat-card-value">{{ pending_tracks|default(0) }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Playlists Grid -->
+{% if playlists %}
+<div class="grid grid-cols-5">
+    {% for playlist in playlists %}
+    <a href="/playlists/{{ playlist.id }}" class="media-card">
+        <div class="media-card-image">
+            <img src="{{ playlist.cover_url or 'https://via.placeholder.com/300x300?text=' + (playlist.name[:1] if playlist.name else 'P') }}"
+                alt="{{ playlist.name }}">
+            <div class="media-card-overlay">
+                <div class="media-card-actions">
+                    <button class="btn-icon btn-primary"
+                        onclick="event.preventDefault(); playPlaylist('{{ playlist.id }}')">
                         <i class="fa-solid fa-play"></i>
-                    </a>
-                    <button class="btn-icon bg-white/20 text-white hover:bg-white hover:text-black transition-colors"
-                        hx-post="/api/playlists/{{ playlist.id }}/sync" hx-swap="none" title="Sync">
-                        <i class="fa-solid fa-rotate"></i>
+                    </button>
+                    <button class="btn-icon" onclick="event.preventDefault(); downloadPlaylist('{{ playlist.id }}')">
+                        <i class="fa-solid fa-download"></i>
                     </button>
                 </div>
             </div>
-
-            <!-- Info -->
-            <div>
-                <h3 class="font-bold text-lg mb-1 truncate group-hover:text-primary transition-colors">
-                    {{ playlist.name }}
-                </h3>
-                <div class="flex items-center justify-between text-sm text-muted">
-                    <span>{{ playlist.track_count or 0 }} tracks</span>
-                    <span class="px-2 py-0.5 rounded-full bg-white/5 text-xs border border-white/10">
-                        {{ playlist.source|upper }}
-                    </span>
-                </div>
+        </div>
+        <div class="media-card-content">
+            <div class="media-card-title">{{ playlist.name }}</div>
+            <div class="media-card-subtitle">{{ playlist.track_count|default(0) }} tracks</div>
+            <div class="media-card-meta">
+                {% if playlist.downloaded_count %}
+                <span class="badge badge-success">
+                    {{ playlist.downloaded_count }} downloaded
+                </span>
+                {% endif %}
+                {% if playlist.pending_count %}
+                <span class="badge badge-warning">
+                    {{ playlist.pending_count }} pending
+                </span>
+                {% endif %}
             </div>
         </div>
-        {% endfor %}
-        {% else %}
-        <!-- Empty State -->
-        <div class="col-span-3">
-            <div class="glass-panel p-12 text-center">
-                <div class="w-20 h-20 bg-card rounded-full flex items-center justify-center mx-auto mb-6 text-muted">
-                    <i class="fa-solid fa-music text-3xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold mb-2">No playlists yet</h2>
-                <p class="text-muted mb-8 max-w-md mx-auto">Import your first playlist from Spotify to start building
-                    your offline library.</p>
-                <a href="/playlists/import" class="btn btn-primary btn-lg">
-                    Import Playlist
-                </a>
-            </div>
-        </div>
-        {% endif %}
-    </div>
+    </a>
+    {% endfor %}
 </div>
+
+<!-- Pagination -->
+{% if total_pages is defined and total_pages > 1 %}
+<div class="flex items-center justify-center gap-2" style="margin-top: 2rem;">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}" class="btn btn-outline btn-sm">
+        <i class="fa-solid fa-chevron-left"></i>
+    </a>
+    {% endif %}
+    <span class="text-muted">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="?page={{ page + 1 }}" class="btn btn-outline btn-sm">
+        <i class="fa-solid fa-chevron-right"></i>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<!-- Empty State -->
+<div class="card" style="text-align: center; padding: 4rem;">
+    <i class="fa-solid fa-list" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem;"></i>
+    <h2>No Playlists Yet</h2>
+    <p class="text-muted" style="margin-top: 0.5rem; margin-bottom: 2rem;">
+        Import your first playlist from Spotify to get started.
+    </p>
+    <a href="/playlists/import" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i>
+        Import from Spotify
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function playPlaylist(playlistId) {
+        console.log('Playing playlist:', playlistId);
+    }
+
+    function downloadPlaylist(playlistId) {
+        htmx.ajax('POST', '/api/playlists/' + playlistId + '/download', {
+            target: 'body',
+            swap: 'none'
+        });
+        SoulSpot.showNotification('Playlist added to download queue', 'success');
+    }
+</script>
 {% endblock %}

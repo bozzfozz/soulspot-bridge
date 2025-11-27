@@ -1,0 +1,9 @@
+/* SoulSpot New UI - Main CSS */
+
+/* Import all CSS files */
+@import url('variables.css');
+@import url('components.css');
+@import url('ui-components.css');
+
+/* Font import - Using system fonts for now */
+/* Can be replaced with Google Fonts or custom fonts later */

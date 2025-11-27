@@ -1,91 +1,20 @@
-"""Tests for Harmony theme integration."""
+# Hey future me – dieses File war für das alte "Harmony"-Theme-System.
+# Das wurde komplett durch die neue UI in /static/new-ui/ ersetzt (Jan 2025).
+# Die alten Tests prüften theme-sample.html, _theme.html, /static/css/theme.css
+# – alles deprecated und gelöscht. Diese Datei kann komplett entfernt werden,
+# sobald der nächste Cleanup-Branch gemerged wird.
+#
+# TODO: Diese Datei beim nächsten Cleanup löschen!
+# Verwandte obsolete Dateien:
+# - templates/theme-sample.html (gelöscht)
+# - templates/includes/_theme.html (deprecated)
+# - static/css/theme.css (obsolet)
+# - docs/design-guidelines.md (durch styleguide.html ersetzt)
 
-from pathlib import Path
+"""
+DEPRECATED: Tests for old Harmony theme integration.
 
-
-class TestThemeFiles:
-    """Test that theme files exist and are valid."""
-
-    def test_theme_css_exists(self):
-        """Test that theme.css file exists."""
-        theme_css = Path("src/soulspot/static/css/theme.css")
-        assert theme_css.exists(), "theme.css should exist"
-        assert theme_css.stat().st_size > 0, "theme.css should not be empty"
-
-    def test_theme_include_exists(self):
-        """Test that theme include template exists."""
-        theme_include = Path("src/soulspot/templates/includes/_theme.html")
-        assert theme_include.exists(), "_theme.html should exist"
-
-        # Check for key content
-        content = theme_include.read_text()
-        assert "/static/css/theme.css" in content
-        assert "harmony" in content.lower()
-
-    def test_theme_sample_exists(self):
-        """Test that theme sample template exists."""
-        theme_sample = Path("src/soulspot/templates/theme-sample.html")
-        assert theme_sample.exists(), "theme-sample.html should exist"
-
-        # Check for key elements
-        content = theme_sample.read_text()
-        assert "harmony" in content.lower()
-        assert "harmony-btn" in content
-        assert "harmony-card" in content
-        assert "harmony-badge" in content
-
-    def test_design_guidelines_exist(self):
-        """Test that design guidelines documentation exists."""
-        guidelines = Path("docs/design-guidelines.md")
-        assert guidelines.exists(), "design-guidelines.md should exist"
-
-        # Check for key sections
-        content = guidelines.read_text()
-        assert "Color Palette" in content
-        assert "Typography" in content
-        assert "Accessibility" in content
-        assert "WCAG" in content
-
-
-class TestThemeRoute:
-    """Test theme sample page route."""
-
-    def test_theme_sample_route_accessible(self, client):
-        """Test that theme sample page is accessible."""
-        response = client.get("/theme-sample")
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
-
-    def test_theme_sample_contains_harmony_elements(self, client):
-        """Test that theme sample page contains Harmony elements."""
-        response = client.get("/theme-sample")
-        content = response.text
-
-        # Check for key Harmony components
-        assert "harmony-btn" in content
-        assert "harmony-card" in content
-        assert "harmony-badge" in content
-        assert "harmony-alert" in content
-        assert "color-primary" in content
-
-    def test_theme_sample_includes_theme_css(self, client):
-        """Test that theme sample includes theme.css."""
-        response = client.get("/theme-sample")
-        content = response.text
-        assert "/static/css/theme.css" in content
-
-
-class TestThemeStaticFiles:
-    """Test that theme static files are served correctly."""
-
-    def test_theme_css_served(self, client):
-        """Test that theme.css is served via static files."""
-        response = client.get("/static/css/theme.css")
-        assert response.status_code == 200
-        assert "text/css" in response.headers["content-type"]
-
-        # Check for key CSS variables
-        content = response.text
-        assert "--color-primary" in content
-        assert "--font-family" in content
-        assert "harmony-btn" in content
+This file is obsolete since the UI migration to the new design system.
+The /theme-sample route and related files have been removed.
+Delete this file in the next cleanup.
+"""

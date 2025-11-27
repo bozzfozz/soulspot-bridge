@@ -1,0 +1,201 @@
+{# Hey future me - this is the styleguide page showing all UI components!
+   Use this to check if the design system is working correctly.
+   All colors, buttons, cards, inputs etc. are demonstrated here.
+   Good for debugging CSS issues. #}
+
+{% extends "base.html" %}
+
+{% block title %}Styleguide - SoulSpot{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold mb-2">UI Styleguide</h1>
+            <p class="text-muted">Overview of all UI components and design tokens.</p>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 gap-8">
+
+    <!-- Colors -->
+    <section class="card p-6">
+        <h2 class="text-xl font-bold mb-4">Colors</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="flex flex-col gap-2">
+                <div class="h-16 rounded-md" style="background: var(--bg-primary); border: 1px solid var(--border-primary);"></div>
+                <span class="text-sm">Background Primary</span>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div class="h-16 rounded-md" style="background: var(--bg-secondary); border: 1px solid var(--border-primary);"></div>
+                <span class="text-sm">Background Secondary</span>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div class="h-16 rounded-md" style="background: var(--bg-tertiary); border: 1px solid var(--border-primary);"></div>
+                <span class="text-sm">Background Tertiary</span>
+            </div>
+            <div class="flex flex-col gap-2">
+                <div class="h-16 rounded-md" style="background: var(--accent-primary);"></div>
+                <span class="text-sm">Accent Primary (#fe4155)</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Typography -->
+    <section class="card p-6">
+        <h2 class="text-xl font-bold mb-4">Typography</h2>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div>
+                <h1 style="font-size: var(--font-size-4xl); font-weight: var(--font-weight-bold);">Heading 1</h1>
+                <p class="text-xs text-muted">font-size-4xl font-weight-bold</p>
+            </div>
+            <div>
+                <h2 style="font-size: var(--font-size-3xl); font-weight: var(--font-weight-bold);">Heading 2</h2>
+                <p class="text-xs text-muted">font-size-3xl font-weight-bold</p>
+            </div>
+            <div>
+                <h3 style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold);">Heading 3</h3>
+                <p class="text-xs text-muted">font-size-2xl font-weight-bold</p>
+            </div>
+            <div>
+                <p style="font-size: var(--font-size-lg);">Large paragraph text for introductions.</p>
+                <p class="text-xs text-muted">font-size-lg</p>
+            </div>
+            <div>
+                <p>Regular paragraph text. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <p class="text-xs text-muted">font-size-base</p>
+            </div>
+            <div>
+                <p class="text-sm text-muted">Small muted text for metadata.</p>
+                <p class="text-xs text-muted">text-sm text-muted</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Buttons -->
+    <section class="card p-6">
+        <h2 class="text-xl font-bold mb-4">Buttons</h2>
+        <div class="flex flex-wrap gap-4 mb-4">
+            <button class="btn btn-primary">Primary Button</button>
+            <button class="btn btn-secondary">Secondary Button</button>
+            <button class="btn btn-outline">Outline Button</button>
+            <button class="btn btn-ghost">Ghost Button</button>
+            <button class="btn btn-danger">Danger Button</button>
+        </div>
+        <div class="flex flex-wrap gap-4 items-center">
+            <button class="btn btn-primary btn-sm">Small</button>
+            <button class="btn btn-primary">Default</button>
+            <button class="btn btn-primary btn-lg">Large</button>
+            <button class="btn-icon"><i class="fa-solid fa-play"></i></button>
+        </div>
+    </section>
+
+    <!-- Form Elements -->
+    <section class="card p-6">
+        <h2 class="text-xl font-bold mb-4">Form Elements</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium);">Text Input</label>
+                <input type="text" placeholder="Enter text..." style="width: 100%; padding: var(--space-2) var(--space-3); background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: var(--radius-md); color: var(--text-primary);">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium);">Select Input</label>
+                <select style="width: 100%; padding: var(--space-2) var(--space-3); background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: var(--radius-md); color: var(--text-primary);">
+                    <option>Option 1</option>
+                    <option>Option 2</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: var(--font-weight-medium);">Input with Icon</label>
+                <div style="position: relative;">
+                    <i class="fa-solid fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                    <input type="text" placeholder="Search..." style="width: 100%; padding: var(--space-2) var(--space-3); padding-left: 2.5rem; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: var(--radius-md); color: var(--text-primary);">
+                </div>
+            </div>
+            <div>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" style="width: 1rem; height: 1rem;">
+                    <span>Checkbox Option</span>
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cards -->
+    <section class="card p-6">
+        <h2 class="text-xl font-bold mb-4">Cards</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Standard Card -->
+            <div class="card" style="padding: var(--space-4);">
+                <h3 style="font-weight: var(--font-weight-bold); margin-bottom: 0.5rem;">Standard Card</h3>
+                <p class="text-muted text-sm">Basic card container with padding.</p>
+            </div>
+
+            <!-- Media Card -->
+            <div class="media-card">
+                <div class="media-card-image">
+                    <div style="width: 100%; height: 160px; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: var(--text-muted);">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <div class="media-card-overlay">
+                        <div class="media-card-actions">
+                            <button class="btn-icon btn-primary">
+                                <i class="fa-solid fa-play"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="media-card-content">
+                    <div class="media-card-title">Album Title</div>
+                    <div class="media-card-subtitle">Artist Name</div>
+                </div>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="stat-card">
+                <div class="stat-card-icon">
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+                <div class="stat-card-content">
+                    <div class="stat-card-label">Likes</div>
+                    <div class="stat-card-value">1,234</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Badges -->
+    <section class="card p-6">
+        <h2 class="text-xl font-bold mb-4">Badges</h2>
+        <div class="flex flex-wrap gap-2">
+            <span class="badge">Default</span>
+            <span class="badge badge-primary">Primary</span>
+            <span class="badge badge-success">Success</span>
+            <span class="badge badge-warning">Warning</span>
+            <span class="badge badge-error">Error</span>
+            <span class="badge badge-info">Info</span>
+        </div>
+    </section>
+
+    <!-- Toasts Demo -->
+    <section class="card p-6">
+        <h2 class="text-xl font-bold mb-4">Notifications</h2>
+        <div class="flex flex-wrap gap-3">
+            <button class="btn btn-outline" onclick="SoulSpot.showNotification('This is an info message', 'info')">
+                Info Toast
+            </button>
+            <button class="btn btn-outline" onclick="SoulSpot.showNotification('Operation successful!', 'success')">
+                Success Toast
+            </button>
+            <button class="btn btn-outline" onclick="SoulSpot.showNotification('Warning: Check settings', 'warning')">
+                Warning Toast
+            </button>
+            <button class="btn btn-outline" onclick="SoulSpot.showNotification('An error occurred', 'error')">
+                Error Toast
+            </button>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

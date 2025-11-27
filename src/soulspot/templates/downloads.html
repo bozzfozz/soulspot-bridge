@@ -1,498 +1,224 @@
+{# Hey future me - Downloads queue page!
+   Shows active/queued/completed downloads with status badges.
+   Tab switching between queue and history.
+   Auto-refresh via HTMX every 2 seconds for live progress updates.
+   Progress bars use CSS transitions for smooth animation. #}
+
 {% extends "base.html" %}
 
 {% block title %}Downloads - SoulSpot{% endblock %}
 
 {% block content %}
-<div class="space-y-8">
-
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-4xl font-bold mb-2 text-gradient">Download Queue</h1>
-            <p class="text-muted">Manage your active and pending downloads</p>
-        </div>
-
-        <div class="flex gap-2">
-            <button id="pause-all-btn" class="btn btn-secondary shadow-lg" hx-post="/api/downloads/pause"
-                hx-swap="none">
-                <i class="fa-solid fa-pause"></i>
-                <span>Pause All</span>
-            </button>
-            <button id="resume-all-btn" class="btn btn-primary shadow-lg glow-on-hover" hx-post="/api/downloads/resume"
-                hx-swap="none">
-                <i class="fa-solid fa-play"></i>
-                <span>Resume All</span>
-            </button>
-        </div>
+<!-- Page Header -->
+<div class="flex items-center justify-between mb-8">
+    <div>
+        <h1>Downloads</h1>
+        <p class="text-muted" style="margin-top: 0.5rem;">Manage your download queue and history</p>
     </div>
-
-    <!-- Controls & Filters -->
-    <div class="glass-panel p-4">
-        <!-- Search Bar with Fuzzy Search -->
-        <div class="mb-4">
-            <div class="header-search" style="width: 100%; position: relative;">
-                <i class="fa-solid fa-search"></i>
-                <input type="text" 
-                       id="fuzzy-search-input"
-                       placeholder="Search downloads (fuzzy matching)..."
-                       style="width: 100%; padding-left: var(--space-8);"
-                       autocomplete="off">
-                <button class="btn-icon btn-secondary" 
-                        style="position: absolute; right: var(--space-2); top: 50%; transform: translateY(-50%);" 
-                        onclick="document.getElementById('fuzzy-search-input').value = ''; filterDownloads();" 
-                        title="Clear search">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div id="search-results-count" class="text-xs text-muted mt-2" style="display: none;">
-                <!-- Results count will be shown here -->
-            </div>
-        </div>
-        
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <!-- Status Filters -->
-            <div class="flex gap-2 p-1 bg-black/20 rounded-lg backdrop-blur-md flex-wrap">
-                <button class="px-4 py-2 rounded-md text-sm font-medium transition-all bg-primary text-white shadow-md filter-btn"
-                    data-filter="status" data-value="all" onclick="toggleFilter(this)">
-                    All
-                </button>
-                <button
-                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5 filter-btn"
-                    data-filter="status" data-value="queued" onclick="toggleFilter(this)">
-                    Queued
-                </button>
-                <button
-                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5 filter-btn"
-                    data-filter="status" data-value="downloading" onclick="toggleFilter(this)">
-                    Downloading
-                </button>
-                <button
-                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5 filter-btn"
-                    data-filter="status" data-value="completed" onclick="toggleFilter(this)">
-                    Completed
-                </button>
-                <button
-                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-muted hover:text-white hover:bg-white/5 filter-btn"
-                    data-filter="status" data-value="failed" onclick="toggleFilter(this)">
-                    Failed
-                </button>
-            </div>
-
-            <!-- Sort & Advanced Filters -->
-            <div class="flex items-center gap-2">
-                <button class="btn btn-icon btn-secondary" onclick="toggleAdvancedFilters()" title="Advanced Filters">
-                    <i class="fa-solid fa-filter"></i>
-                    <span class="badge badge-primary" id="active-filters-badge" style="display: none; position: absolute; top: -4px; right: -4px; font-size: 0.6rem; padding: 2px 4px;">0</span>
-                </button>
-                <span class="text-sm text-muted">Sort by:</span>
-                <select class="form-control py-1 px-3 text-sm w-auto" onchange="sortDownloads(this.value)">
-                    <option value="created">Date Added</option>
-                    <option value="priority">Priority</option>
-                    <option value="progress">Progress</option>
-                    <option value="status">Status</option>
-                </select>
-            </div>
-        </div>
-        
-        <!-- Advanced Filters Panel (Hidden by default) -->
-        <div id="advanced-filters" class="mt-4" style="display: none;">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-black/20 rounded-lg">
-                <!-- Priority Filter -->
-                <div>
-                    <label class="text-sm text-muted mb-2 block">Priority</label>
-                    <div class="flex gap-2">
-                        <button class="btn btn-sm btn-secondary filter-chip" data-filter="priority" data-value="0" onclick="toggleFilterChip(this)">P0</button>
-                        <button class="btn btn-sm btn-secondary filter-chip" data-filter="priority" data-value="1" onclick="toggleFilterChip(this)">P1</button>
-                        <button class="btn btn-sm btn-secondary filter-chip" data-filter="priority" data-value="2" onclick="toggleFilterChip(this)">P2</button>
-                    </div>
-                </div>
-                
-                <!-- Progress Range -->
-                <div>
-                    <label class="text-sm text-muted mb-2 block">Progress: <span id="progress-value">0-100%</span></label>
-                    <input type="range" min="0" max="100" value="0" class="w-full" id="progress-filter" oninput="updateProgressFilter(this.value)">
-                </div>
-                
-                <!-- Clear Filters -->
-                <div class="flex items-end">
-                    <button class="btn btn-secondary w-full" onclick="clearAllFilters()">
-                        <i class="fa-solid fa-xmark"></i> Clear All Filters
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Batch Operations Bar (Hidden by default) -->
-    <div id="batch-operations-bar"
-        class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-panel border border-primary/30 shadow-2xl p-4 animate-slide-up flex items-center gap-6">
-        <div class="flex items-center gap-3 border-r border-white/10 pr-6">
-            <span class="font-bold text-primary" id="selected-count">0 selected</span>
-            <button class="text-xs text-muted hover:text-white underline" onclick="clearSelection()">Clear</button>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <button class="btn btn-sm btn-secondary" onclick="batchAction('pause')">
-                <i class="fa-solid fa-pause"></i> Pause
-            </button>
-            <button class="btn btn-sm btn-primary" onclick="batchAction('resume')">
-                <i class="fa-solid fa-play"></i> Resume
-            </button>
-            <button class="btn btn-sm btn-danger" onclick="batchAction('cancel')">
-                <i class="fa-solid fa-xmark"></i> Cancel
-            </button>
-
-            <div class="w-px h-8 bg-white/10 mx-2"></div>
-
-            <select id="batch-priority" class="form-control py-1 px-2 text-xs w-24">
-                <option value="">Priority</option>
-                <option value="0">P0 - High</option>
-                <option value="1">P1 - Med</option>
-                <option value="2">P2 - Low</option>
-            </select>
-            <button class="btn btn-sm btn-secondary" onclick="batchSetPriority()">Apply</button>
-        </div>
-    </div>
-
-    <!-- Downloads List -->
-    <div class="space-y-3" id="downloads-list">
-        {% if downloads %}
-        {% for download in downloads %}
-        <div class="card p-4 group hover:border-primary/30 transition-colors download-card"
-            data-download-id="{{ download.id }}" data-status="{{ download.status }}"
-            data-priority="{{ download.priority }}" draggable="true">
-
-            <div class="flex items-center gap-4">
-                <!-- Drag Handle -->
-                <div class="cursor-move text-muted hover:text-white p-2">
-                    <i class="fa-solid fa-grip-vertical"></i>
-                </div>
-
-                <!-- Checkbox -->
-                <input type="checkbox"
-                    class="w-5 h-5 rounded border-gray-600 bg-black/20 text-primary focus:ring-primary download-checkbox"
-                    data-download-id="{{ download.id }}" onchange="updateSelection()">
-
-                <!-- Icon / Progress Indicator -->
-                <div class="w-16 h-16 flex items-center justify-center">
-                    {% if download.status == 'downloading' %}
-                    <!-- Circular Progress for downloading -->
-                    <div data-circular-progress="{{ download.progress_percent }}" 
-                         data-size="60"
-                         data-color="var(--primary)"
-                         aria-label="Download progress {{ download.progress_percent|round(1) }}%">
-                    </div>
-                    {% elif download.status == 'completed' %}
-                    <div class="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
-                        <i class="fa-solid fa-check text-secondary text-xl"></i>
-                    </div>
-                    {% elif download.status == 'failed' %}
-                    <div class="w-12 h-12 rounded-full bg-danger/20 flex items-center justify-center">
-                        <i class="fa-solid fa-triangle-exclamation text-danger text-xl"></i>
-                    </div>
-                    {% else %}
-                    <div class="w-12 h-12 rounded-full bg-warning/20 flex items-center justify-center">
-                        <i class="fa-solid fa-clock text-warning text-xl"></i>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Info -->
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-3 mb-1">
-                        <span class="badge badge-neutral">P{{ download.priority }}</span>
-                        <h3 class="font-bold truncate">Track ID: {{ download.track_id }}</h3>
-                        <span
-                            class="badge badge-{{ 'success' if download.status == 'completed' else 'warning' if download.status == 'queued' else 'primary' if download.status == 'downloading' else 'error' }}">
-                            {{ download.status|upper }}
-                        </span>
-                    </div>
-
-                    {% if download.error_message %}
-                    <p class="text-sm text-danger mb-2"><i class="fa-solid fa-circle-exclamation mr-1"></i> {{
-                        download.error_message }}</p>
-                    {% endif %}
-
-                    <!-- Progress -->
-                    <div class="w-full bg-black/20 rounded-full h-2 mb-1 overflow-hidden">
-                        <div class="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500"
-                            style="width: {{ download.progress_percent }}%"></div>
-                    </div>
-                    <div class="flex justify-between text-xs text-muted">
-                        <span data-percent-text>{{ download.progress_percent|round(1) }}%</span>
-                        <span>{{ download.created_at }}</span>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {% if download.status == 'downloading' %}
-                    <button class="btn-icon bg-secondary/20 hover:bg-secondary text-secondary hover:text-white"
-                        hx-post="/api/downloads/{{ download.id }}/pause" hx-swap="outerHTML"
-                        hx-target="closest .download-card">
-                        <i class="fa-solid fa-pause"></i>
-                    </button>
-                    {% endif %}
-
-                    {% if download.status == 'queued' %}
-                    <button class="btn-icon bg-primary/20 hover:bg-primary text-primary hover:text-white"
-                        hx-post="/api/downloads/{{ download.id }}/resume" hx-swap="outerHTML"
-                        hx-target="closest .download-card">
-                        <i class="fa-solid fa-play"></i>
-                    </button>
-                    {% endif %}
-
-                    {% if download.status == 'failed' %}
-                    <button class="btn-icon bg-secondary/20 hover:bg-secondary text-secondary hover:text-white"
-                        hx-post="/api/downloads/{{ download.id }}/retry" hx-swap="outerHTML"
-                        hx-target="closest .download-card">
-                        <i class="fa-solid fa-rotate-right"></i>
-                    </button>
-                    {% endif %}
-
-                    <button class="btn-icon bg-danger/10 hover:bg-danger text-danger hover:text-white"
-                        hx-post="/api/downloads/{{ download.id }}/cancel" hx-swap="outerHTML"
-                        hx-target="closest .download-card">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="glass-panel p-12 text-center">
-            <div class="w-20 h-20 bg-card rounded-full flex items-center justify-center mx-auto mb-6 text-muted">
-                <i class="fa-solid fa-download text-3xl"></i>
-            </div>
-            <h2 class="text-2xl font-bold mb-2">No downloads yet</h2>
-            <p class="text-muted">Downloads will appear here when you start downloading tracks.</p>
-        </div>
-        {% endif %}
+    <div class="flex gap-3">
+        <button class="btn btn-outline" hx-post="/api/downloads/pause-all" hx-swap="none">
+            <i class="fa-solid fa-pause"></i>
+            Pause All
+        </button>
+        <button class="btn btn-outline" hx-post="/api/downloads/clear-completed" hx-swap="none">
+            <i class="fa-solid fa-check"></i>
+            Clear Completed
+        </button>
     </div>
 </div>
 
-<script>
-    // Selection & Batch Operations
-    let selectedDownloads = new Set();
+<!-- Stats -->
+<div class="grid grid-cols-4 mb-8">
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+        </div>
+        <div class="stat-card-content">
+            <div class="stat-card-label">Active Downloads</div>
+            <div class="stat-card-value">{{ active_count|default(0) }}</div>
+        </div>
+    </div>
 
-    function updateSelection() {
-        const checkboxes = document.querySelectorAll('.download-checkbox');
-        selectedDownloads.clear();
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-card-content">
+            <div class="stat-card-label">In Queue</div>
+            <div class="stat-card-value">{{ queue_count|default(0) }}</div>
+        </div>
+    </div>
 
-        checkboxes.forEach(cb => {
-            if (cb.checked) {
-                selectedDownloads.add(cb.dataset.downloadId);
-                cb.closest('.download-card').classList.add('border-primary');
-            } else {
-                cb.closest('.download-card').classList.remove('border-primary');
-            }
-        });
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="fa-solid fa-check-circle"></i>
+        </div>
+        <div class="stat-card-content">
+            <div class="stat-card-label">Completed Today</div>
+            <div class="stat-card-value">{{ completed_today|default(0) }}</div>
+        </div>
+    </div>
 
-        const count = selectedDownloads.size;
-        document.getElementById('selected-count').textContent = count + ' selected';
-        document.getElementById('batch-operations-bar').classList.toggle('hidden', count === 0);
-    }
+    <div class="stat-card">
+        <div class="stat-card-icon">
+            <i class="fa-solid fa-times-circle"></i>
+        </div>
+        <div class="stat-card-content">
+            <div class="stat-card-label">Failed</div>
+            <div class="stat-card-value">{{ failed_count|default(0) }}</div>
+        </div>
+    </div>
+</div>
 
-    function clearSelection() {
-        document.querySelectorAll('.download-checkbox').forEach(cb => cb.checked = false);
-        updateSelection();
-    }
+<!-- Tabs -->
+<div class="flex gap-2 mb-6" style="border-bottom: 1px solid var(--border-primary);">
+    <button class="tab-btn active" onclick="switchTab('queue', this)">
+        Queue ({{ downloads|length if downloads else 0 }})
+    </button>
+    <button class="tab-btn" onclick="switchTab('history', this)">
+        History
+    </button>
+</div>
 
-    async function batchAction(action) {
-        const downloadIds = Array.from(selectedDownloads);
-        if (downloadIds.length === 0) return;
+<!-- Queue Tab -->
+<div id="queue-tab" class="tab-content">
+    {% if downloads %}
+    <div class="card" style="padding: 0;">
+        {% for item in downloads %}
+        <div class="queue-item" data-id="{{ item.id }}"
+            style="display: flex; align-items: center; gap: 1rem; padding: 1rem; border-bottom: 1px solid var(--border-primary);">
+            <!-- Album Art -->
+            <div style="width: 56px; height: 56px; flex-shrink: 0;">
+                <img src="{{ item.album_art|default('https://via.placeholder.com/56x56?text=♪') }}" alt="{{ item.title|default('Track') }}"
+                    style="width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-md);">
+            </div>
 
-        try {
-            const response = await fetch('/api/v1/downloads/batch-action', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ download_ids: downloadIds, action: action })
-            });
-            if (response.ok) window.location.reload();
-        } catch (error) {
-            console.error('Batch action failed:', error);
-        }
-    }
+            <!-- Info -->
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: var(--font-weight-medium); color: var(--text-primary);">{{ item.title|default('Track ID: ' + item.track_id) }}</div>
+                <div style="font-size: var(--font-size-sm); color: var(--text-muted); margin-top: 0.25rem;">{{ item.artist|default('Unknown Artist') }}</div>
 
-    async function batchSetPriority() {
-        const priority = document.getElementById('batch-priority').value;
-        if (!priority) return;
+                <!-- Progress Bar -->
+                {% if item.status == 'downloading' %}
+                <div style="margin-top: 0.5rem;">
+                    <div style="background: var(--bg-tertiary); height: 6px; border-radius: var(--radius-full); overflow: hidden;">
+                        <div style="background: var(--accent-primary); height: 100%; width: {{ item.progress_percent|default(0) }}%; transition: width 0.3s;"></div>
+                    </div>
+                    <div style="font-size: var(--font-size-xs); color: var(--text-muted); margin-top: 0.25rem;">
+                        {{ item.progress_percent|default(0)|round(1) }}%
+                    </div>
+                </div>
+                {% endif %}
+            </div>
 
-        const downloadIds = Array.from(selectedDownloads);
-        if (downloadIds.length === 0) return;
+            <!-- Status -->
+            <div>
+                {% if item.status == 'downloading' %}
+                <span class="badge badge-info">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Downloading
+                </span>
+                {% elif item.status == 'queued' or item.status == 'pending' %}
+                <span class="badge">
+                    <i class="fa-solid fa-clock"></i>
+                    Queued
+                </span>
+                {% elif item.status == 'completed' %}
+                <span class="badge badge-success">
+                    <i class="fa-solid fa-check"></i>
+                    Completed
+                </span>
+                {% elif item.status == 'failed' %}
+                <span class="badge badge-error">
+                    <i class="fa-solid fa-times"></i>
+                    Failed
+                </span>
+                {% elif item.status == 'paused' %}
+                <span class="badge badge-warning">
+                    <i class="fa-solid fa-pause"></i>
+                    Paused
+                </span>
+                {% endif %}
+            </div>
 
-        try {
-            const response = await fetch('/api/downloads/batch-action', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    download_ids: downloadIds,
-                    action: 'priority',
-                    priority: parseInt(priority)
-                })
-            });
-            if (response.ok) window.location.reload();
-        } catch (error) {
-            console.error('Batch priority update failed:', error);
-        }
-    }
+            <!-- Actions -->
+            <div class="flex gap-2">
+                {% if item.status == 'downloading' or item.status == 'queued' or item.status == 'pending' %}
+                <button class="btn-icon" hx-post="/api/downloads/{{ item.id }}/pause" hx-swap="none" title="Pause">
+                    <i class="fa-solid fa-pause"></i>
+                </button>
+                {% elif item.status == 'paused' %}
+                <button class="btn-icon" hx-post="/api/downloads/{{ item.id }}/resume" hx-swap="none" title="Resume">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+                {% elif item.status == 'failed' %}
+                <button class="btn-icon" hx-post="/api/downloads/{{ item.id }}/retry" hx-swap="none" title="Retry">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+                {% endif %}
+                <button class="btn-icon" hx-delete="/api/downloads/{{ item.id }}" hx-swap="none" title="Cancel">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card" style="text-align: center; padding: 4rem;">
+        <i class="fa-solid fa-download" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem;"></i>
+        <h2>No Downloads in Queue</h2>
+        <p class="text-muted" style="margin-top: 0.5rem;">
+            Your download queue is empty. Add playlists or tracks to start downloading.
+        </p>
+    </div>
+    {% endif %}
+</div>
 
-    // Filtering
-    function filterDownloads(status, btn) {
-        // Update active button state
-        const buttons = btn.parentElement.querySelectorAll('button');
-        buttons.forEach(b => {
-            b.classList.remove('bg-primary', 'text-white', 'shadow-md');
-            b.classList.add('text-muted', 'hover:text-white', 'hover:bg-white/5');
-        });
-        btn.classList.remove('text-muted', 'hover:text-white', 'hover:bg-white/5');
-        btn.classList.add('bg-primary', 'text-white', 'shadow-md');
-
-        // Filter cards
-        const cards = document.querySelectorAll('.download-card');
-        cards.forEach(card => {
-            if (status === 'all' || card.dataset.status === status) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }
-
-    // Sorting
-    function sortDownloads(sortBy) {
-        const container = document.getElementById('downloads-list');
-        const cards = Array.from(container.querySelectorAll('.download-card'));
-
-        cards.sort((a, b) => {
-            switch (sortBy) {
-                case 'priority':
-                    return parseInt(a.dataset.priority) - parseInt(b.dataset.priority);
-                case 'status':
-                    return a.dataset.status.localeCompare(b.dataset.status);
-                case 'progress':
-                    // Extract percentage from text content or data attribute if available
-                    // Simple fallback for now
-                    return 0;
-                default:
-                    return 0;
-            }
-        });
-
-        cards.forEach(card => container.appendChild(card));
-    }
-
-    // Drag & Drop
-    const container = document.getElementById('downloads-list');
-    let draggedItem = null;
-
-    container.addEventListener('dragstart', e => {
-        draggedItem = e.target.closest('.download-card');
-        e.target.style.opacity = '0.5';
-    });
-
-    container.addEventListener('dragend', e => {
-        e.target.style.opacity = '';
-        draggedItem = null;
-
-        // Recalculate priorities based on new order
-        // Implementation omitted for brevity, similar to previous logic
-    });
-
-    container.addEventListener('dragover', e => {
-        e.preventDefault();
-        const afterElement = getDragAfterElement(container, e.clientY);
-        const currentDrag = document.querySelector('.dragging');
-        if (afterElement == null) {
-            container.appendChild(draggedItem);
-        } else {
-            container.insertBefore(draggedItem, afterElement);
-        }
-    });
-
-    function getDragAfterElement(container, y) {
-        const draggableElements = [...container.querySelectorAll('.download-card:not(.dragging)')];
-
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offset = y - box.top - box.height / 2;
-            if (offset < 0 && offset > closest.offset) {
-                return { offset: offset, element: child };
-            } else {
-                return closest;
-            }
-        }, { offset: Number.NEGATIVE_INFINITY }).element;
-    }
-</script>
+<!-- History Tab -->
+<div id="history-tab" class="tab-content" style="display: none;">
+    <div class="card">
+        <p class="text-muted" style="text-align: center; padding: 2rem;">
+            Download history coming soon...
+        </p>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="/static/js/download-filters.js"></script>
-<script>
-// Hey future me - this connects to SSE stream to get real-time download updates!
-// Updates the circular progress indicators live without polling. Much more efficient.
-// We match downloads by ID and update the progress value dynamically.
-document.addEventListener('DOMContentLoaded', () => {
-    // Only initialize SSE if SSEClient is available
-    if (typeof SSEClient === 'undefined') {
-        console.log('SSEClient not available, falling back to polling');
-        return;
+<style>
+    .tab-btn {
+        padding: var(--space-3) var(--space-4);
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: var(--text-muted);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        cursor: pointer;
+        transition: all var(--transition-fast);
     }
-    
-    const sseClient = new SSEClient('/api/ui/sse/stream', {
-        debug: false,
-        reconnectInterval: 3000
-    });
-    
-    // Handle download updates
-    sseClient.on('downloads_update', (data) => {
-        if (!data.downloads || !Array.isArray(data.downloads)) return;
-        
-        data.downloads.forEach(download => {
-            const card = document.querySelector(`[data-download-id="${download.id}"]`);
-            if (!card) return;
-            
-            // Update circular progress if download is in progress
-            const progressElement = card.querySelector('[data-circular-progress]');
-            if (progressElement && progressElement._circularProgress) {
-                const newProgress = download.progress_percent || 0;
-                progressElement._circularProgress.setProgress(newProgress);
-            }
-            
-            // Update linear progress bar as well
-            const progressBar = card.querySelector('.bg-gradient-to-r');
-            if (progressBar) {
-                progressBar.style.width = `${download.progress_percent || 0}%`;
-            }
-            
-            // Update percentage text
-            const percentText = card.querySelector('[data-percent-text]');
-            if (percentText) {
-                percentText.textContent = `${(download.progress_percent || 0).toFixed(1)}%`;
-            }
-        });
-    });
-    
-    // Handle connection events
-    sseClient.on('connected', () => {
-        console.log('Live updates connected');
-        // Optional: Show toast notification
-        if (typeof ToastManager !== 'undefined') {
-            ToastManager.info('Live updates enabled', null, 2000);
+    .tab-btn:hover {
+        color: var(--text-primary);
+    }
+    .tab-btn.active {
+        color: var(--accent-primary);
+        border-bottom-color: var(--accent-primary);
+    }
+</style>
+<script>
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        btn.classList.add('active');
+        document.getElementById(tab + '-tab').style.display = 'block';
+    }
+
+    // Auto-refresh queue every 5 seconds
+    setInterval(() => {
+        if (document.getElementById('queue-tab').style.display !== 'none') {
+            htmx.ajax('GET', '/downloads', { target: '#queue-tab', swap: 'innerHTML' });
         }
-    });
-    
-    sseClient.on('error', (error) => {
-        console.error('SSE connection error:', error);
-    });
-    
-    // Connect
-    sseClient.connect();
-    
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-        sseClient.disconnect();
-    });
-});
+    }, 5000);
 </script>
 {% endblock %}

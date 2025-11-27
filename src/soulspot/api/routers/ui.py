@@ -308,6 +308,15 @@ async def auth(request: Request) -> Any:
     return templates.TemplateResponse("auth.html", {"request": request})
 
 
+# Hey future me - this is the UI styleguide page showing all components! Use it to verify the
+# design system (colors, buttons, cards, badges, etc.) is working. Doesn't hit DB, pure template.
+# Good for debugging CSS issues or showing designers what's available in the component library.
+@router.get("/styleguide", response_class=HTMLResponse)
+async def styleguide(request: Request) -> Any:
+    """UI Styleguide page showing all components and design tokens."""
+    return templates.TemplateResponse("styleguide.html", {"request": request})
+
+
 @router.get("/search", response_class=HTMLResponse)
 async def search(request: Request) -> Any:
     """Advanced search page."""
@@ -389,12 +398,6 @@ async def quick_search(
         "partials/quick_search_results.html",
         {"request": request, "query": query, "results": results},
     )
-
-
-@router.get("/theme-sample", response_class=HTMLResponse)
-async def theme_sample(request: Request) -> Any:
-    """Harmony theme sample page with component showcase."""
-    return templates.TemplateResponse("theme-sample.html", {"request": request})
 
 
 @router.get("/settings", response_class=HTMLResponse)

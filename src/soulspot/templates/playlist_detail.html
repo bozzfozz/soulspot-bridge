@@ -1,274 +1,267 @@
+{# Hey future me - Playlist detail page!
+   Shows playlist header with cover, name, description, stats.
+   Track list in a table with album art, status badges, actions.
+   The download/sync actions use HTMX for async operations.
+   Bulk selection logic is preserved - watch for checkbox state updates! #}
+
 {% extends "base.html" %}
-{% from "includes/_skeleton.html" import card_skeleton, spinner %}
-{% from "includes/_components.html" import empty_state, badge %}
 
 {% block title %}{{ playlist.name }} - SoulSpot{% endblock %}
 
 {% block content %}
-<div class="space-y-8 animate-fade-in">
-    <!-- Modern Page Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div class="flex-1">
-            <nav class="flex mb-3" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-2">
-                    <li class="inline-flex items-center">
-                        <a href="/ui/playlists" class="text-sm text-primary-600 dark:text-primary-400 hover:underline font-medium">
-                            Playlists
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-4 h-4 text-gray-400 mx-1" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                            <span class="text-sm text-gray-500 dark:text-gray-400" aria-current="page">{{ playlist.name }}</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 bg-gradient-to-br from-secondary-500 to-secondary-700 rounded-2xl flex items-center justify-center shadow-lg">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">{{ playlist.name }}</h1>
-                    {% if playlist.description %}
-                    <p class="text-gray-600 dark:text-gray-400 mt-1">{{ playlist.description }}</p>
-                    {% endif %}
-                </div>
+<!-- Breadcrumb -->
+<nav class="breadcrumb" style="margin-bottom: var(--space-6);">
+    <a href="/playlists" style="color: var(--accent-primary);">Playlists</a>
+    <span style="color: var(--text-muted); margin: 0 var(--space-2);">/</span>
+    <span style="color: var(--text-muted);">{{ playlist.name }}</span>
+</nav>
+
+<!-- Playlist Header -->
+<div class="card" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); padding: var(--space-8); margin-bottom: var(--space-8);">
+    <div class="flex gap-6" style="align-items: flex-start;">
+        <img src="{{ playlist.cover_url or 'https://via.placeholder.com/200x200?text=' + (playlist.name[:1] if playlist.name else 'P') }}"
+            alt="{{ playlist.name }}"
+            style="width: 200px; height: 200px; border-radius: var(--radius-lg); object-fit: cover; box-shadow: var(--shadow-xl); flex-shrink: 0;">
+        <div style="flex: 1; min-width: 0;">
+            <div style="font-size: var(--font-size-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: var(--space-2);">
+                Playlist
+            </div>
+            <h1 style="font-size: var(--font-size-4xl); margin-bottom: var(--space-2);">{{ playlist.name }}</h1>
+            {% if playlist.description %}
+            <p style="color: var(--text-secondary); margin-bottom: var(--space-4);">{{ playlist.description }}</p>
+            {% endif %}
+            <div class="flex gap-3" style="font-size: var(--font-size-sm); color: var(--text-muted); margin-bottom: var(--space-6); flex-wrap: wrap;">
+                <span>{{ playlist.track_count|default(0) }} tracks</span>
+                <span>•</span>
+                <span>{{ playlist.tracks|selectattr('file_path')|list|length if playlist.tracks else 0 }} downloaded</span>
+                {% if playlist.source %}
+                <span>•</span>
+                <span class="badge badge-info">{{ playlist.source }}</span>
+                {% endif %}
+            </div>
+            <div class="flex gap-3" style="flex-wrap: wrap;">
+                <button class="btn btn-primary btn-lg"
+                        hx-post="/api/playlists/{{ playlist.id }}/sync"
+                        hx-target="#sync-status"
+                        hx-swap="innerHTML"
+                        hx-indicator="#sync-spinner">
+                    <i class="fa-solid fa-sync"></i>
+                    Sync Now
+                </button>
+                <button id="bulk-download-btn" class="btn btn-outline btn-lg" style="display: none;"
+                        onclick="bulkDownloadSelected()">
+                    <i class="fa-solid fa-download"></i>
+                    Download Selected (<span id="selected-count">0</span>)
+                </button>
             </div>
         </div>
-        <div class="flex flex-wrap gap-2">
-            <button class="btn btn-gradient btn-modern btn-sm focus-visible-ring shadow-lg glow-on-hover" 
-                    hx-post="/api/playlists/{{ playlist.id }}/sync"
-                    hx-target="#sync-status"
-                    hx-swap="innerHTML"
-                    hx-indicator="#sync-spinner"
-                    data-success-message="Playlist synced!"
-                    data-error-message="Sync failed"
-                    aria-label="Sync playlist">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                Sync Now
+    </div>
+</div>
+
+<!-- Sync Status -->
+<div id="sync-status" style="margin-bottom: var(--space-6);"></div>
+<span id="sync-spinner" class="htmx-indicator" style="display: none;">
+    <i class="fa-solid fa-spinner fa-spin"></i> Syncing...
+</span>
+
+<!-- Stats Grid -->
+<div class="stats-grid" style="margin-bottom: var(--space-8);">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(var(--accent-primary-rgb), 0.1); color: var(--accent-primary);">
+            <i class="fa-solid fa-music"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value">{{ playlist.track_count|default(0) }}</div>
+            <div class="stat-label">Total Tracks</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value" style="color: #22c55e;">{{ playlist.tracks|selectattr('file_path')|list|length if playlist.tracks else 0 }}</div>
+            <div class="stat-label">Downloaded</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(234, 179, 8, 0.1); color: #eab308;">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="stat-content">
+            <div class="stat-value" style="color: #eab308;">{{ playlist.tracks|rejectattr('file_path')|list|length if playlist.tracks else 0 }}</div>
+            <div class="stat-label">Missing</div>
+        </div>
+    </div>
+</div>
+
+<!-- Track List -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--border-primary); display: flex; justify-content: space-between; align-items: center;">
+        <h2 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold);">Tracks</h2>
+        <div class="flex gap-2">
+            <button class="btn btn-outline btn-sm" onclick="toggleSelectAll()">
+                <i class="fa-solid fa-check-double"></i>
+                Select All
+            </button>
+            <button class="btn btn-outline btn-sm"
+                    hx-get="/ui/playlists/{{ playlist.id }}/missing-tracks"
+                    hx-target="#missing-tracks-section"
+                    hx-swap="innerHTML">
+                <i class="fa-solid fa-list-check"></i>
+                Missing Tracks
             </button>
         </div>
     </div>
-
-    <!-- Sync Status -->
-    <div id="sync-status"></div>
-
-    <!-- Playlist Stats -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" data-stagger>
-        <div class="stat-card card-modern card-hover-lift group">
-            <div class="flex items-center justify-between mb-2">
-                <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg class="w-5 h-5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                    </svg>
-                </div>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Tracks</p>
-            <p class="stat-value">{{ playlist.track_count }}</p>
-        </div>
-        
-        <div class="stat-card card-modern card-hover-lift group">
-            <div class="flex items-center justify-between mb-2">
-                <div class="w-10 h-10 bg-success-100 dark:bg-success-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <svg class="w-5 h-5 text-success-600 dark:text-success-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                </div>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">Downloaded</p>
-            <p class="stat-value" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                {{ playlist.tracks | selectattr("file_path") | list | length }}
-            </p>
-        </div>
-                    </div>
-                    <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                </div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-body">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Source</p>
-                        <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ playlist.source }}</p>
-                    </div>
-                    {{ badge(playlist.source, 'info') }}
-                </div>
-            </div>
-        </div>
+    
+    {% if playlist.tracks %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border-primary); background: var(--bg-tertiary);">
+                    <th style="padding: var(--space-3) var(--space-4); text-align: left; width: 40px;">
+                        <input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAll()"
+                               style="accent-color: var(--accent-primary);">
+                    </th>
+                    <th style="padding: var(--space-3); text-align: left; width: 50px; color: var(--text-muted); font-size: var(--font-size-xs); text-transform: uppercase;">#</th>
+                    <th style="padding: var(--space-3); text-align: left; color: var(--text-muted); font-size: var(--font-size-xs); text-transform: uppercase;">Title</th>
+                    <th style="padding: var(--space-3); text-align: left; color: var(--text-muted); font-size: var(--font-size-xs); text-transform: uppercase;">Artist</th>
+                    <th style="padding: var(--space-3); text-align: left; color: var(--text-muted); font-size: var(--font-size-xs); text-transform: uppercase;">Album</th>
+                    <th style="padding: var(--space-3); text-align: left; color: var(--text-muted); font-size: var(--font-size-xs); text-transform: uppercase;">Duration</th>
+                    <th style="padding: var(--space-3); text-align: left; color: var(--text-muted); font-size: var(--font-size-xs); text-transform: uppercase;">Status</th>
+                    <th style="padding: var(--space-3) var(--space-4); text-align: right; color: var(--text-muted); font-size: var(--font-size-xs); text-transform: uppercase;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tracks-tbody">
+                {% for track in playlist.tracks %}
+                <tr class="track-row" data-track-id="{{ track.id }}" style="border-bottom: 1px solid var(--border-primary);">
+                    <td style="padding: var(--space-3) var(--space-4);">
+                        <input type="checkbox" class="track-checkbox"
+                               data-track-id="{{ track.id }}"
+                               data-status="{% if track.is_broken %}broken{% elif track.file_path %}downloaded{% else %}missing{% endif %}"
+                               onchange="updateBulkActions()"
+                               style="accent-color: var(--accent-primary);">
+                    </td>
+                    <td style="padding: var(--space-3); color: var(--text-muted);">{{ loop.index }}</td>
+                    <td style="padding: var(--space-3);">
+                        <div class="flex gap-3" style="align-items: center;">
+                            <img src="{{ track.album_art or 'https://via.placeholder.com/40x40?text=' + (track.title[:1] if track.title else 'T') }}"
+                                style="width: 40px; height: 40px; border-radius: var(--radius-sm); object-fit: cover; flex-shrink: 0;">
+                            <span style="font-weight: var(--font-weight-medium);">{{ track.title or 'Unknown Title' }}</span>
+                        </div>
+                    </td>
+                    <td style="padding: var(--space-3); color: var(--text-secondary);">{{ track.artist or 'Unknown Artist' }}</td>
+                    <td style="padding: var(--space-3); color: var(--text-secondary);">{{ track.album or 'Unknown Album' }}</td>
+                    <td style="padding: var(--space-3); color: var(--text-muted);">
+                        {% if track.duration_ms %}
+                            {% set minutes = (track.duration_ms / 60000)|int %}
+                            {% set seconds = ((track.duration_ms % 60000) / 1000)|int %}
+                            {{ "%d:%02d"|format(minutes, seconds) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td style="padding: var(--space-3);">
+                        {% if track.is_broken %}
+                        <span class="badge badge-error">
+                            <i class="fa-solid fa-exclamation-triangle"></i>
+                            Broken
+                        </span>
+                        {% elif track.file_path %}
+                        <span class="badge badge-success">
+                            <i class="fa-solid fa-check"></i>
+                            Downloaded
+                        </span>
+                        {% else %}
+                        <span class="badge badge-warning">
+                            <i class="fa-solid fa-clock"></i>
+                            Missing
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: var(--space-3) var(--space-4); text-align: right;">
+                        <div class="flex gap-2" style="justify-content: flex-end;">
+                            {% if not track.file_path or track.is_broken %}
+                            <button class="btn-icon" hx-post="/api/tracks/{{ track.id }}/download" hx-swap="none" title="Download">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                            {% endif %}
+                            {% if track.spotify_uri %}
+                            <a href="{{ track.spotify_uri }}" target="_blank" class="btn-icon" title="Open in Spotify" style="color: #1DB954;">
+                                <i class="fa-brands fa-spotify"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-    <!-- Sync Status Area -->
-    <div id="sync-status" class="hidden">
-        <!-- HTMX will swap sync status here -->
+    {% else %}
+    <div style="text-align: center; padding: 4rem;">
+        <i class="fa-solid fa-music" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem; display: block;"></i>
+        <h3 style="margin-bottom: var(--space-2);">No Tracks in Playlist</h3>
+        <p style="color: var(--text-muted); margin-bottom: var(--space-6);">
+            This playlist is empty. Sync with Spotify to add tracks.
+        </p>
+        <button class="btn btn-primary" hx-post="/api/playlists/{{ playlist.id }}/sync" hx-swap="none">
+            <i class="fa-solid fa-sync"></i>
+            Sync Now
+        </button>
     </div>
-    <span id="sync-spinner" class="htmx-indicator">{{ spinner('md') }}</span>
+    {% endif %}
+</div>
 
-    <!-- Track List -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">Tracks</h2>
-            <div class="flex gap-2">
-                <button id="select-all-btn" 
-                        class="btn btn-sm btn-outline focus-ring"
-                        onclick="toggleSelectAll()"
-                        aria-label="Select all tracks">
-                    Select All
-                </button>
-                <button id="bulk-download-btn" 
-                        class="btn btn-sm btn-primary focus-ring hidden"
-                        onclick="bulkDownloadSelected()"
-                        aria-label="Download selected tracks">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                    </svg>
-                    Download Selected (<span id="selected-count">0</span>)
-                </button>
-                <button class="btn btn-sm btn-outline focus-ring"
-                        hx-get="/ui/playlists/{{ playlist.id }}/missing-tracks"
-                        hx-target="#missing-tracks-section"
-                        hx-swap="innerHTML"
-                        aria-label="View missing tracks">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                    </svg>
-                    Missing Tracks
-                </button>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            {% if playlist.tracks %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                <input type="checkbox" 
-                                       id="select-all-checkbox"
-                                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                       onclick="toggleSelectAll()"
-                                       aria-label="Select all tracks">
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                #
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Title
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Artist
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Album
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Duration
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700" id="tracks-tbody">
-                        {% for track in playlist.tracks %}
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors track-row" data-track-id="{{ track.id }}">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="checkbox" 
-                                       class="track-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                       data-track-id="{{ track.id }}"
-                                       data-status="{% if track.is_broken %}broken{% elif track.file_path %}downloaded{% else %}missing{% endif %}"
-                                       onchange="updateBulkActions()"
-                                       aria-label="Select track {{ track.title }}">
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ loop.index }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ track.title or "Unknown Title" }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ track.artist or "Unknown Artist" }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {{ track.album or "Unknown Album" }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {% if track.duration_ms %}
-                                    {% set minutes = (track.duration_ms / 60000) | int %}
-                                    {% set seconds = ((track.duration_ms % 60000) / 1000) | int %}
-                                    {{ "%d:%02d" | format(minutes, seconds) }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {% if track.is_broken %}
-                                    {{ badge('Broken', 'danger') }}
-                                {% elif track.file_path %}
-                                    {{ badge('Downloaded', 'success') }}
-                                {% else %}
-                                    {{ badge('Missing', 'warning') }}
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <div class="flex gap-2">
-                                    {% if not track.file_path or track.is_broken %}
-                                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 focus-ring"
-                                            hx-post="/api/tracks/{{ track.id }}/download"
-                                            hx-target="closest tr"
-                                            hx-swap="outerHTML"
-                                            aria-label="Download track {{ track.title }}">
-                                        Download
-                                    </button>
-                                    {% endif %}
-                                    {% if track.spotify_uri %}
-                                    <a href="{{ track.spotify_uri }}" 
-                                       target="_blank" 
-                                       rel="noopener noreferrer"
-                                       class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 focus-ring"
-                                       aria-label="Open in Spotify">
-                                        Spotify
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="p-12">
-                {% set icon %}
-                <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                </svg>
-                {% endset %}
-                {{ empty_state(icon, 'No tracks in this playlist', 'This playlist does not contain any tracks yet.') }}
-            </div>
-            {% endif %}
-        </div>
-    </div>
+<!-- Missing Tracks Section -->
+<div id="missing-tracks-section" style="margin-top: var(--space-6);"></div>
+{% endblock %}
 
-    <!-- Missing Tracks Section -->
-    <div id="missing-tracks-section" class="mt-6"></div>
-
-    <script>
-    // Bulk selection functionality
+{% block extra_scripts %}
+<style>
+    .track-row {
+        transition: background-color var(--transition-fast);
+    }
+    .track-row:hover {
+        background-color: var(--bg-tertiary);
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-4);
+    }
+    .stat-card {
+        background: var(--bg-secondary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-5);
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+        border: 1px solid var(--border-primary);
+    }
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-xl);
+    }
+    .stat-value {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-bold);
+    }
+    .stat-label {
+        font-size: var(--font-size-sm);
+        color: var(--text-muted);
+    }
+</style>
+<script>
+    // Hey future me - Bulk selection functionality
+    // This handles the checkbox logic for selecting multiple tracks at once.
+    // Watch out: the data-status attribute is used to filter already-downloaded tracks!
+    
     function toggleSelectAll() {
         const selectAllCheckbox = document.getElementById('select-all-checkbox');
         const trackCheckboxes = document.querySelectorAll('.track-checkbox');
@@ -298,11 +291,7 @@
         }
         
         if (bulkDownloadBtn) {
-            if (checkedBoxes.length > 0) {
-                bulkDownloadBtn.classList.remove('hidden');
-            } else {
-                bulkDownloadBtn.classList.add('hidden');
-            }
+            bulkDownloadBtn.style.display = checkedBoxes.length > 0 ? 'inline-flex' : 'none';
         }
         
         // Update select all checkbox state
@@ -319,46 +308,44 @@
             .map(cb => cb.getAttribute('data-track-id'));
         
         if (trackIds.length === 0) {
-            alert('No tracks to download. All selected tracks are already downloaded.');
+            SoulSpot.showNotification('All selected tracks are already downloaded', 'info');
             return;
         }
         
         if (confirm(`Download ${trackIds.length} track(s)?`)) {
-            // Queue downloads for selected tracks
             trackIds.forEach(trackId => {
                 fetch(`/api/tracks/${trackId}/download`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        console.error(`Failed to queue download for track ${trackId}`);
-                    }
-                })
-                .catch(error => {
+                    headers: { 'Content-Type': 'application/json' }
+                }).catch(error => {
                     console.error(`Error queuing download for track ${trackId}:`, error);
                 });
             });
             
-            // Show success message
-            const successMsg = document.createElement('div');
-            successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-            successMsg.textContent = `Queued ${trackIds.length} track(s) for download`;
-            document.body.appendChild(successMsg);
-            setTimeout(() => successMsg.remove(), 3000);
+            SoulSpot.showNotification(`Queued ${trackIds.length} track(s) for download`, 'success');
             
             // Clear selections
             document.querySelectorAll('.track-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('select-all-checkbox').checked = false;
             updateBulkActions();
         }
     }
+
+    // Show notification on HTMX success
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.successful) {
+            const target = evt.detail.elt;
+            if (target.matches('[hx-post*="download"]')) {
+                SoulSpot.showNotification('Added to download queue', 'success');
+            } else if (target.matches('[hx-post*="sync"]')) {
+                SoulSpot.showNotification('Playlist sync started', 'info');
+            }
+        }
+    });
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         updateBulkActions();
     });
-    </script>
-</div>
+</script>
 {% endblock %}

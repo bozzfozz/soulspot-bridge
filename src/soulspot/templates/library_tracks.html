@@ -1,199 +1,229 @@
+{# Hey future me - Tracks browse page with table view!
+   Shows all tracks with title, artist, album, duration, status.
+   Client-side search + status filter. Sortable columns.
+   Status filter: all, downloaded, missing, broken.
+   Download button for missing/broken tracks, Edit button opens metadata modal via HTMX. #}
+
 {% extends "base.html" %}
-{% from "includes/_components.html" import empty_state, badge %}
 
 {% block title %}Tracks - SoulSpot{% endblock %}
 
 {% block content %}
-<div class="space-y-8 animate-fade-in">
-    <!-- Modern Page Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div class="flex-1">
-            <nav class="flex mb-3" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-2">
-                    <li class="inline-flex items-center">
-                        <a href="/ui/library" class="text-sm text-primary-600 dark:text-primary-400 hover:underline font-medium">
-                            Library
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-4 h-4 text-gray-400 mx-1" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                            <span class="text-sm text-gray-500 dark:text-gray-400" aria-current="page">Tracks</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center shadow-lg">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Tracks</h1>
-                    <p class="text-gray-600 dark:text-gray-400 mt-1">Browse {{ tracks|length }} tracks in your library</p>
-                </div>
-            </div>
+<!-- Breadcrumb -->
+<nav style="margin-bottom: var(--space-4);">
+    <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
+        <li><a href="/ui/library" style="color: var(--accent-primary);">Library</a></li>
+        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>Tracks</li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
+    <div style="display: flex; align-items: center; gap: var(--space-4);">
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent-primary), #d6364a); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-music" style="color: white; font-size: 1.25rem;"></i>
         </div>
-        <div class="flex flex-wrap gap-2">
-            <input type="text" 
-                   id="track-search"
-                   placeholder="Search tracks..."
-                   class="input-modern focus-visible-ring"
-                   aria-label="Search tracks">
-            <select id="status-filter" class="input-modern focus-visible-ring">
-                <option value="all">All Tracks</option>
-                <option value="downloaded">Downloaded</option>
-                <option value="missing">Missing</option>
-                <option value="broken">Broken</option>
-            </select>
+        <div>
+            <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Tracks</h1>
+            <p style="color: var(--text-muted); font-size: var(--font-size-sm);">Browse {{ tracks|length }} tracks in your library</p>
         </div>
     </div>
-
-    <!-- Tracks Table -->
-    <div class="card-modern">
-        <div class="p-0">
-            {% if tracks %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-sort="title">
-                                Title
-                                <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                                </svg>
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-sort="artist">
-                                Artist
-                                <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                                </svg>
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" data-sort="album">
-                                Album
-                                <svg class="inline w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
-                                </svg>
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Duration
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700" id="tracks-tbody">
-                        {% for track in tracks %}
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors track-row" 
-                            data-status="{% if track.is_broken %}broken{% elif track.file_path %}downloaded{% else %}missing{% endif %}">
-                            <td class="px-6 py-4 whitespace-nowrap" data-sort-value="{{ track.title }}">
-                                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ track.title }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" data-sort-value="{{ track.artist }}">
-                                {{ track.artist }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400" data-sort-value="{{ track.album }}">
-                                {{ track.album }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {% if track.duration_ms %}
-                                    {% set minutes = (track.duration_ms / 60000) | int %}
-                                    {% set seconds = ((track.duration_ms % 60000) / 1000) | int %}
-                                    {{ "%d:%02d" | format(minutes, seconds) }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {% if track.is_broken %}
-                                    {{ badge('Broken', 'danger') }}
-                                {% elif track.file_path %}
-                                    {{ badge('Downloaded', 'success') }}
-                                {% else %}
-                                    {{ badge('Missing', 'warning') }}
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <div class="flex gap-2">
-                                    {% if not track.file_path or track.is_broken %}
-                                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 focus-ring"
-                                            hx-post="/api/tracks/{{ track.id }}/download"
-                                            hx-target="closest tr"
-                                            hx-swap="outerHTML"
-                                            aria-label="Download track {{ track.title }}">
-                                        Download
-                                    </button>
-                                    {% endif %}
-                                    <button class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 focus-ring"
-                                            hx-get="/tracks/{{ track.id }}/metadata-editor"
-                                            hx-target="#metadata-modal"
-                                            hx-swap="innerHTML"
-                                            aria-label="Edit metadata for {{ track.title }}">
-                                        Edit
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="p-12">
-                {% set icon %}
-                <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                </svg>
-                {% endset %}
-                {{ empty_state(icon, 'No tracks found', 'Your library does not contain any tracks yet. Import some playlists to get started!', 'Import Playlist', '/ui/playlists/import') }}
-            </div>
-            {% endif %}
-        </div>
+    <div style="display: flex; flex-wrap: wrap; gap: var(--space-3);">
+        <input type="text" 
+               id="track-search"
+               placeholder="Search tracks..."
+               class="form-input"
+               style="min-width: 180px;">
+        <select id="status-filter" class="form-select" style="min-width: 140px;">
+            <option value="all">All Tracks</option>
+            <option value="downloaded">Downloaded</option>
+            <option value="missing">Missing</option>
+            <option value="broken">Broken</option>
+        </select>
     </div>
-
-    <!-- Metadata Modal Container -->
-    <div id="metadata-modal"></div>
 </div>
 
+<!-- Tracks Table -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    {% if tracks %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th data-sort="title" style="cursor: pointer;">
+                        Title <i class="fa-solid fa-sort" style="margin-left: var(--space-1); opacity: 0.5;"></i>
+                    </th>
+                    <th data-sort="artist" style="cursor: pointer;">
+                        Artist <i class="fa-solid fa-sort" style="margin-left: var(--space-1); opacity: 0.5;"></i>
+                    </th>
+                    <th data-sort="album" style="cursor: pointer;">
+                        Album <i class="fa-solid fa-sort" style="margin-left: var(--space-1); opacity: 0.5;"></i>
+                    </th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tracks-tbody">
+                {% for track in tracks %}
+                <tr class="track-row" 
+                    data-status="{% if track.is_broken %}broken{% elif track.file_path %}downloaded{% else %}missing{% endif %}"
+                    data-title="{{ track.title|lower }}"
+                    data-artist="{{ track.artist|lower }}"
+                    data-album="{{ track.album|lower }}">
+                    <td>
+                        <span style="font-weight: var(--font-weight-medium);">{{ track.title }}</span>
+                    </td>
+                    <td style="color: var(--text-muted);">{{ track.artist }}</td>
+                    <td style="color: var(--text-muted);">{{ track.album }}</td>
+                    <td style="color: var(--text-muted);">
+                        {% if track.duration_ms %}
+                            {% set minutes = (track.duration_ms / 60000) | int %}
+                            {% set seconds = ((track.duration_ms % 60000) / 1000) | int %}
+                            {{ "%d:%02d" | format(minutes, seconds) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if track.is_broken %}
+                            <span class="badge badge-error">Broken</span>
+                        {% elif track.file_path %}
+                            <span class="badge badge-success">Downloaded</span>
+                        {% else %}
+                            <span class="badge badge-warning">Missing</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: var(--space-2);">
+                            {% if not track.file_path or track.is_broken %}
+                            <button class="btn btn-sm btn-outline"
+                                    hx-post="/api/tracks/{{ track.id }}/download"
+                                    hx-target="closest tr"
+                                    hx-swap="outerHTML">
+                                Download
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-sm btn-ghost"
+                                    hx-get="/tracks/{{ track.id }}/metadata-editor"
+                                    hx-target="#metadata-modal"
+                                    hx-swap="innerHTML">
+                                Edit
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: var(--space-12);">
+        <div class="empty-icon">
+            <i class="fa-solid fa-music"></i>
+        </div>
+        <h3>No tracks found</h3>
+        <p>Your library does not contain any tracks yet. Import some playlists to get started!</p>
+        <a href="/ui/playlists/import" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i>
+            Import Playlist
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Metadata Modal Container -->
+<div id="metadata-modal"></div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .data-table th {
+        padding: var(--space-3) var(--space-4);
+        text-align: left;
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-primary);
+    }
+    .data-table th:hover {
+        background: var(--bg-hover);
+    }
+    .data-table td {
+        padding: var(--space-3) var(--space-4);
+        border-bottom: 1px solid var(--border-primary);
+        font-size: var(--font-size-sm);
+    }
+    .data-table tr:hover {
+        background: var(--bg-hover);
+    }
+    .empty-state {
+        text-align: center;
+    }
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto var(--space-4);
+        background: var(--bg-tertiary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-2xl);
+        color: var(--text-muted);
+    }
+    .empty-state h3 {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-bold);
+        margin-bottom: var(--space-2);
+    }
+    .empty-state p {
+        color: var(--text-muted);
+        margin-bottom: var(--space-6);
+    }
+</style>
 <script>
+// Hey future me - handles search, status filter, and column sorting for tracks table.
+// All work together: search + filter are combined, sorting is independent.
 document.addEventListener('DOMContentLoaded', function() {
-    // Search filter
     const searchInput = document.getElementById('track-search');
     const statusFilter = document.getElementById('status-filter');
+    const sortHeaders = document.querySelectorAll('[data-sort]');
+    const tbody = document.getElementById('tracks-tbody');
+    
+    let currentSort = { column: null, direction: 'asc' };
     
     function filterTracks() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const statusValue = statusFilter.value;
+        const searchTerm = (searchInput?.value || '').toLowerCase();
+        const statusValue = statusFilter?.value || 'all';
         const trackRows = document.querySelectorAll('.track-row');
         
         trackRows.forEach(row => {
-            const title = row.querySelector('[data-sort-value]').getAttribute('data-sort-value').toLowerCase();
-            const artist = row.querySelectorAll('[data-sort-value]')[1].getAttribute('data-sort-value').toLowerCase();
-            const album = row.querySelectorAll('[data-sort-value]')[2].getAttribute('data-sort-value').toLowerCase();
+            const title = row.getAttribute('data-title') || '';
+            const artist = row.getAttribute('data-artist') || '';
+            const album = row.getAttribute('data-album') || '';
             const status = row.getAttribute('data-status');
             
             const matchesSearch = title.includes(searchTerm) || artist.includes(searchTerm) || album.includes(searchTerm);
             const matchesStatus = statusValue === 'all' || status === statusValue;
             
-            if (matchesSearch && matchesStatus) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+            row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
         });
     }
     
+    let debounceTimer;
     if (searchInput) {
-        searchInput.addEventListener('input', filterTracks);
+        searchInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(filterTracks, 200);
+        });
     }
     
     if (statusFilter) {
@@ -201,16 +231,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Sortable columns
-    const sortHeaders = document.querySelectorAll('[data-sort]');
-    let currentSort = { column: null, direction: 'asc' };
-    
     sortHeaders.forEach(header => {
         header.addEventListener('click', function() {
             const column = this.getAttribute('data-sort');
-            const tbody = document.getElementById('tracks-tbody');
             const rows = Array.from(tbody.querySelectorAll('tr'));
             
-            // Toggle direction if same column
             if (currentSort.column === column) {
                 currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
             } else {
@@ -218,19 +243,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentSort.direction = 'asc';
             }
             
-            // Sort rows
             rows.sort((a, b) => {
-                const aValue = a.querySelector(`[data-sort-value]`)?.getAttribute('data-sort-value') || '';
-                const bValue = b.querySelector(`[data-sort-value]`)?.getAttribute('data-sort-value') || '';
+                const aValue = a.getAttribute('data-' + column) || '';
+                const bValue = b.getAttribute('data-' + column) || '';
                 
-                if (currentSort.direction === 'asc') {
-                    return aValue.localeCompare(bValue);
-                } else {
-                    return bValue.localeCompare(aValue);
-                }
+                return currentSort.direction === 'asc'
+                    ? aValue.localeCompare(bValue)
+                    : bValue.localeCompare(aValue);
             });
             
-            // Reorder rows
             rows.forEach(row => tbody.appendChild(row));
         });
     });

@@ -1,16 +1,20 @@
-{# New Page Modal #}
-<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+{# 
+  Hey future me - New Page Modal (legacy widget system)
+  
+  This was part of the dashboard widget/page system that got removed.
+  Keeping for backward compatibility but might not be used anymore.
+  Uses new design system modal styling just in case.
+#}
+<div style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: var(--space-4); backdrop-filter: blur(4px);"
      id="new-page-modal">
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full">
+  <div class="card" style="max-width: 400px; width: 100%;">
     {# Modal Header #}
-    <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create New Page</h2>
-      <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-6); border-bottom: 1px solid var(--border-color);">
+      <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--text-primary);">Create New Page</h2>
+      <button class="btn btn-outline btn-sm"
               onclick="document.getElementById('modal-container').innerHTML = ''"
               aria-label="Close">
-        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        <i class="fa-solid fa-xmark"></i>
       </button>
     </div>
     
@@ -18,9 +22,9 @@
     <form hx-post="/api/ui/pages"
           hx-target="#modal-container"
           hx-swap="innerHTML">
-      <div class="p-6 space-y-4">
+      <div style="padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4);">
         <div>
-          <label for="page-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label for="page-name" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-2);">
             Page Name
           </label>
           <input type="text" 
@@ -28,14 +32,12 @@
                  name="name" 
                  required
                  placeholder="My New Dashboard"
-                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                        bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                        focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                 class="form-input"
                  oninput="generateSlug(this.value)">
         </div>
         
         <div>
-          <label for="page-slug" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label for="page-slug" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-2);">
             Slug (URL identifier)
           </label>
           <input type="text" 
@@ -44,24 +46,21 @@
                  required
                  pattern="[a-z0-9_-]+"
                  placeholder="my-new-dashboard"
-                 class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg 
-                        bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                        focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-          <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                 class="form-input">
+          <p style="margin-top: var(--space-1); font-size: var(--font-size-xs); color: var(--text-muted);">
             Only lowercase letters, numbers, hyphens, and underscores allowed
           </p>
         </div>
       </div>
       
       {# Modal Footer #}
-      <div class="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+      <div style="display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-6); border-top: 1px solid var(--border-color);">
         <button type="button"
-                class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                class="btn btn-outline"
                 onclick="document.getElementById('modal-container').innerHTML = ''">
           Cancel
         </button>
-        <button type="submit"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <button type="submit" class="btn btn-primary">
           Create Page
         </button>
       </div>

@@ -1,186 +1,205 @@
+{# Hey future me - Artist detail page!
+   Shows artist avatar, album grid, and all tracks table.
+   Tracks table has status badges and edit buttons. #}
+
 {% extends "base.html" %}
-{% from "includes/_components.html" import empty_state, badge %}
 
 {% block title %}{{ artist.name }} - Artists - SoulSpot{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div class="flex-1">
-            <nav class="flex mb-2" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-3">
-                    <li class="inline-flex items-center">
-                        <a href="/ui/library" class="text-sm text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
-                            Library
-                        </a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                            <a href="/ui/library/artists" class="text-sm text-gray-700 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400">
-                                Artists
-                            </a>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <svg class="w-3 h-3 text-gray-400 mx-1" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                            <span class="text-sm text-gray-500 dark:text-gray-400" aria-current="page">{{ artist.name }}</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-            <div class="flex items-center gap-4">
-                <!-- Artist Avatar -->
-                <div class="w-24 h-24 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span class="text-4xl font-bold text-white">
-                        {{ artist.name[0]|upper }}
-                    </span>
-                </div>
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white leading-tight">{{ artist.name }}</h1>
-                    <div class="flex gap-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        <span>{{ artist.albums|length }} album{{ 's' if artist.albums|length != 1 else '' }}</span>
-                        <span>{{ artist.track_count }} track{{ 's' if artist.track_count != 1 else '' }}</span>
-                    </div>
-                </div>
-            </div>
+<!-- Breadcrumb -->
+<nav style="margin-bottom: var(--space-4);">
+    <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
+        <li><a href="/ui/library" style="color: var(--accent-primary);">Library</a></li>
+        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li><a href="/ui/library/artists" style="color: var(--accent-primary);">Artists</a></li>
+        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>{{ artist.name }}</li>
+    </ol>
+</nav>
+
+<!-- Artist Header -->
+<div style="display: flex; align-items: center; gap: var(--space-6); margin-bottom: var(--space-8);">
+    <div class="artist-avatar" style="width: 120px; height: 120px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <span style="font-size: 3rem; font-weight: var(--font-weight-bold); color: white;">
+            {{ artist.name[0]|upper }}
+        </span>
+    </div>
+    <div>
+        <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-2);">{{ artist.name }}</h1>
+        <div style="display: flex; gap: var(--space-4); color: var(--text-muted); font-size: var(--font-size-sm);">
+            <span><i class="fa-solid fa-compact-disc" style="margin-right: var(--space-2);"></i>{{ artist.albums|length }} album{{ 's' if artist.albums|length != 1 else '' }}</span>
+            <span><i class="fa-solid fa-music" style="margin-right: var(--space-2);"></i>{{ artist.track_count }} track{{ 's' if artist.track_count != 1 else '' }}</span>
         </div>
     </div>
-
-    <!-- Albums Section -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">Albums</h2>
-        </div>
-        <div class="card-body">
-            {% if artist.albums %}
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {% for album in artist.albums %}
-                <a href="/ui/library/albums/{{ album.id }}" class="card hover:shadow-md transition-shadow cursor-pointer">
-                    <div class="card-body p-4">
-                        <!-- Album Cover Placeholder -->
-                        <div class="aspect-square mb-3 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center shadow-sm">
-                            <svg class="w-12 h-12 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                            </svg>
-                        </div>
-                        <h3 class="font-semibold text-gray-900 dark:text-white text-sm mb-1 truncate" title="{{ album.title }}">
-                            {{ album.title }}
-                        </h3>
-                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>{{ album.track_count }} tracks</span>
-                            {% if album.year %}
-                            <span>{{ album.year }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="p-12">
-                {% set icon %}
-                <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                </svg>
-                {% endset %}
-                {{ empty_state(icon, 'No albums found', 'This artist does not have any albums in your library.') }}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- All Tracks Section -->
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">All Tracks</h2>
-        </div>
-        <div class="card-body p-0">
-            {% if artist.tracks %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Title
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Album
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Duration
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                        {% for track in artist.tracks %}
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                            <td class="px-6 py-4">
-                                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ track.title }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                {{ track.album or "Unknown Album" }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                {% if track.duration_ms %}
-                                    {% set minutes = (track.duration_ms / 60000) | int %}
-                                    {% set seconds = ((track.duration_ms % 60000) / 1000) | int %}
-                                    {{ "%d:%02d" | format(minutes, seconds) }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {% if track.is_broken %}
-                                    {{ badge('Broken', 'danger') }}
-                                {% elif track.file_path %}
-                                    {{ badge('Downloaded', 'success') }}
-                                {% else %}
-                                    {{ badge('Missing', 'warning') }}
-                                {% endif %}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <button class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300 focus-ring"
-                                        hx-get="/tracks/{{ track.id }}/metadata-editor"
-                                        hx-target="#metadata-modal"
-                                        hx-swap="innerHTML"
-                                        aria-label="Edit metadata for {{ track.title }}">
-                                    Edit
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="p-12">
-                {% set icon %}
-                <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                </svg>
-                {% endset %}
-                {{ empty_state(icon, 'No tracks found', 'This artist does not have any tracks in your library.') }}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Metadata Modal Container -->
-    <div id="metadata-modal"></div>
 </div>
+
+<!-- Albums Section -->
+<div class="card" style="padding: var(--space-6); margin-bottom: var(--space-6);">
+    <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-5);">Albums</h2>
+    {% if artist.albums %}
+    <div class="albums-grid">
+        {% for album in artist.albums %}
+        <a href="/ui/library/albums/{{ album.id }}" class="album-card">
+            <div class="album-cover">
+                <i class="fa-solid fa-compact-disc"></i>
+            </div>
+            <h3 class="album-title" title="{{ album.title }}">{{ album.title }}</h3>
+            <div class="album-meta">
+                <span>{{ album.track_count }} tracks</span>
+                {% if album.year %}<span>{{ album.year }}</span>{% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state-small">
+        <i class="fa-solid fa-compact-disc"></i>
+        <p>No albums found for this artist.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- All Tracks Section -->
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: var(--space-5) var(--space-6); border-bottom: 1px solid var(--border-primary);">
+        <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold);">All Tracks</h2>
+    </div>
+    {% if artist.tracks %}
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Album</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for track in artist.tracks %}
+                <tr>
+                    <td><span style="font-weight: var(--font-weight-medium);">{{ track.title }}</span></td>
+                    <td style="color: var(--text-muted);">{{ track.album or "Unknown Album" }}</td>
+                    <td style="color: var(--text-muted);">
+                        {% if track.duration_ms %}
+                            {% set minutes = (track.duration_ms / 60000) | int %}
+                            {% set seconds = ((track.duration_ms % 60000) / 1000) | int %}
+                            {{ "%d:%02d" | format(minutes, seconds) }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if track.is_broken %}
+                            <span class="badge badge-error">Broken</span>
+                        {% elif track.file_path %}
+                            <span class="badge badge-success">Downloaded</span>
+                        {% else %}
+                            <span class="badge badge-warning">Missing</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-ghost"
+                                hx-get="/tracks/{{ track.id }}/metadata-editor"
+                                hx-target="#metadata-modal"
+                                hx-swap="innerHTML">
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-small" style="padding: var(--space-8);">
+        <i class="fa-solid fa-music"></i>
+        <p>No tracks found for this artist.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Metadata Modal Container -->
+<div id="metadata-modal"></div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+    .albums-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: var(--space-4);
+    }
+    .album-card {
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .album-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+    .album-cover {
+        aspect-ratio: 1;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        border-radius: var(--radius-md);
+        margin-bottom: var(--space-3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        color: rgba(255, 255, 255, 0.4);
+    }
+    .album-title {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        margin-bottom: var(--space-1);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .album-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--font-size-xs);
+        color: var(--text-muted);
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .data-table th {
+        padding: var(--space-3) var(--space-4);
+        text-align: left;
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        background: var(--bg-tertiary);
+    }
+    .data-table td {
+        padding: var(--space-3) var(--space-4);
+        border-bottom: 1px solid var(--border-primary);
+        font-size: var(--font-size-sm);
+    }
+    .data-table tr:hover {
+        background: var(--bg-hover);
+    }
+    .empty-state-small {
+        text-align: center;
+        padding: var(--space-6);
+        color: var(--text-muted);
+    }
+    .empty-state-small i {
+        font-size: var(--font-size-3xl);
+        margin-bottom: var(--space-3);
+        display: block;
+        opacity: 0.5;
+    }
+</style>
 {% endblock %}

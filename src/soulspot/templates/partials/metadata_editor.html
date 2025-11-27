@@ -1,100 +1,106 @@
-{# Track Metadata Editor Modal #}
-<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+{# 
+  Hey future me - Track Metadata Editor Modal (HTMX loaded)
+  
+  This is a modal dialog for editing track metadata. Gets loaded into a container
+  when user clicks "Edit" on a track. Uses new design system modal styling.
+  Form submits via fetch() to PATCH endpoint and shows toast on success/error.
+#}
+<div style="position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);" 
      id="metadata-modal-overlay"
      onclick="closeMetadataModal()"
      role="dialog"
      aria-modal="true"
      aria-labelledby="metadata-modal-title">
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" 
+    <div class="card" 
+         style="max-width: 640px; width: 100%; margin: var(--space-4); max-height: 90vh; overflow-y: auto;"
          onclick="event.stopPropagation()">
+        
         <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 id="metadata-modal-title" class="text-xl font-semibold text-gray-900 dark:text-white">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--space-6); border-bottom: 1px solid var(--border-color);">
+            <h3 id="metadata-modal-title" style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); color: var(--text-primary);">
                 Edit Track Metadata
             </h3>
             <button onclick="closeMetadataModal()" 
-                    class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus-ring"
+                    class="btn btn-outline btn-sm"
                     aria-label="Close modal">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+                <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
 
         <!-- Modal Body -->
         <form id="metadata-form" onsubmit="saveMetadata(event)">
-            <div class="p-6 space-y-4">
+            <div style="padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4);">
                 <!-- Track Title -->
                 <div>
-                    <label for="track-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Title
+                    <label for="track-title" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
+                        Title <span style="color: var(--status-error);">*</span>
                     </label>
                     <input type="text" 
                            id="track-title" 
                            name="title"
                            value="{{ track.title or '' }}"
-                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                           class="form-input"
                            required
                            aria-label="Track title">
                 </div>
 
                 <!-- Artist -->
                 <div>
-                    <label for="track-artist" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Artist
+                    <label for="track-artist" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
+                        Artist <span style="color: var(--status-error);">*</span>
                     </label>
                     <input type="text" 
                            id="track-artist" 
                            name="artist"
                            value="{{ track.artist or '' }}"
-                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                           class="form-input"
                            required
                            aria-label="Track artist">
                 </div>
 
                 <!-- Album -->
                 <div>
-                    <label for="track-album" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label for="track-album" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
                         Album
                     </label>
                     <input type="text" 
                            id="track-album" 
                            name="album"
                            value="{{ track.album or '' }}"
-                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                           class="form-input"
                            aria-label="Track album">
                 </div>
 
                 <!-- Album Artist -->
                 <div>
-                    <label for="track-album-artist" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label for="track-album-artist" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
                         Album Artist
                     </label>
                     <input type="text" 
                            id="track-album-artist" 
                            name="album_artist"
                            value="{{ track.album_artist or '' }}"
-                           class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                           class="form-input"
                            aria-label="Album artist">
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
                     <!-- Genre -->
                     <div>
-                        <label for="track-genre" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="track-genre" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
                             Genre
                         </label>
                         <input type="text" 
                                id="track-genre" 
                                name="genre"
                                value="{{ track.genre or '' }}"
-                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                               class="form-input"
                                aria-label="Track genre">
                     </div>
 
                     <!-- Year -->
                     <div>
-                        <label for="track-year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="track-year" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
                             Year
                         </label>
                         <input type="number" 
@@ -103,15 +109,15 @@
                                value="{{ track.year or '' }}"
                                min="1900"
                                max="2100"
-                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                               class="form-input"
                                aria-label="Track year">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
                     <!-- Track Number -->
                     <div>
-                        <label for="track-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="track-number" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
                             Track Number
                         </label>
                         <input type="number" 
@@ -119,13 +125,13 @@
                                name="track_number"
                                value="{{ track.track_number or '' }}"
                                min="1"
-                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                               class="form-input"
                                aria-label="Track number">
                     </div>
 
                     <!-- Disc Number -->
                     <div>
-                        <label for="disc-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        <label for="disc-number" style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
                             Disc Number
                         </label>
                         <input type="number" 
@@ -133,7 +139,7 @@
                                name="disc_number"
                                value="{{ track.disc_number or '' }}"
                                min="1"
-                               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                               class="form-input"
                                aria-label="Disc number">
                     </div>
                 </div>
@@ -141,10 +147,10 @@
                 <!-- Current File Path (Read-only info) -->
                 {% if track.file_path %}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label style="display: block; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); color: var(--text-primary); margin-bottom: var(--space-1);">
                         File Location
                     </label>
-                    <div class="px-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-400 break-all">
+                    <div style="padding: var(--space-3); background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: var(--font-size-sm); color: var(--text-muted); word-break: break-all;">
                         {{ track.file_path }}
                     </div>
                 </div>
@@ -155,18 +161,14 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="flex justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
+            <div style="display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-6); border-top: 1px solid var(--border-color);">
                 <button type="button" 
                         onclick="closeMetadataModal()" 
-                        class="btn btn-secondary focus-ring">
+                        class="btn btn-outline">
                     Cancel
                 </button>
-                <button type="submit" 
-                        class="btn btn-primary focus-ring">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    Save Changes
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-check"></i> Save Changes
                 </button>
             </div>
         </form>
@@ -185,11 +187,9 @@ function saveMetadata(event) {
     const formData = new FormData(form);
     const trackId = formData.get('track_id');
     
-    // Convert FormData to JSON
     const data = {};
     formData.forEach((value, key) => {
         if (key !== 'track_id' && value !== '') {
-            // Convert numeric fields
             if (key === 'year' || key === 'track_number' || key === 'disc_number') {
                 data[key] = parseInt(value);
             } else {
@@ -198,49 +198,31 @@ function saveMetadata(event) {
         }
     });
     
-    // Show loading state
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
     
-    // Send update request
     fetch(`/api/tracks/${trackId}/metadata`, {
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to update metadata');
-        }
+        if (!response.ok) throw new Error('Failed to update metadata');
         return response.json();
     })
     .then(result => {
-        // Show success message
-        const successMsg = document.createElement('div');
-        successMsg.className = 'fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        successMsg.textContent = 'Metadata updated successfully';
-        document.body.appendChild(successMsg);
-        setTimeout(() => successMsg.remove(), 3000);
-        
-        // Close modal
+        if (typeof SoulSpot !== 'undefined') {
+            SoulSpot.toast('Metadata updated successfully', 'success');
+        }
         closeMetadataModal();
-        
-        // Reload the page to show updated data
         setTimeout(() => window.location.reload(), 500);
     })
     .catch(error => {
-        // Show error message
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'fixed top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        errorMsg.textContent = 'Failed to update metadata: ' + error.message;
-        document.body.appendChild(errorMsg);
-        setTimeout(() => errorMsg.remove(), 5000);
-        
-        // Restore button
+        if (typeof SoulSpot !== 'undefined') {
+            SoulSpot.toast('Failed to update metadata: ' + error.message, 'error');
+        }
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
     });

@@ -1,39 +1,31 @@
+{# Hey future me - this is the NEW base template for the SoulSpot UI redesign!
+   Uses the new design system from /static/new-ui/css/main.css with dark mode and accent color #fe4155.
+   The sidebar is included from includes/sidebar.html and the layout uses the app-layout pattern.
+   Make sure all pages extend this template and use {% block content %} for page content.
+   HTMX is loaded for dynamic content loading. PWA support is preserved from the old template. #}
+
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="SoulSpot - Modern Media Manager">
+    <meta name="theme-color" content="#0f0f0f">
     <title>{% block title %}SoulSpot{% endblock %}</title>
-    <meta name="description" content="Intelligente Musik-Download-Anwendung">
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#8b5cf6">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SoulSpot">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
-        rel="stylesheet">
-
-    <!-- Icons -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Preload Critical Resources -->
-    <link rel="preload" href="/static/css/layout.css" as="style">
-    <link rel="preload" href="/static/css/components.css" as="style">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <!-- Design System -->
-    <link rel="stylesheet" href="/static/css/layout.css">
-    <link rel="stylesheet" href="/static/css/components.css">
+    <!-- New UI CSS -->
+    <link rel="stylesheet" href="/static/new-ui/css/main.css">
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
@@ -42,136 +34,52 @@
 </head>
 
 <body>
-    <!-- Skip to Content (Accessibility) -->
-    <a href="#main-content" class="skip-to-content">
-        Skip to main content
-    </a>
-    
-    <!-- Sidebar Navigation -->
-    <nav class="app-sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <i class="fa-solid fa-bolt"></i>
-            <span>SoulSpot</span>
-        </div>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        {% include "includes/sidebar.html" %}
 
-        <ul class="sidebar-nav">
-            <li>
-                <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
-                    <i class="fa-solid fa-chart-pie"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            <li>
-                <a href="/playlists" class="nav-item {% if 'playlists' in request.path %}active{% endif %}">
-                    <i class="fa-solid fa-music"></i>
-                    <span>Playlists</span>
-                </a>
-            </li>
-            <li>
-                <a href="/library" class="nav-item {% if 'library' in request.path %}active{% endif %}">
-                    <i class="fa-solid fa-compact-disc"></i>
-                    <span>Library</span>
-                </a>
-            </li>
-            <li>
-                <a href="/automation/followed-artists" class="nav-item {% if 'followed-artists' in request.path %}active{% endif %}">
-                    <i class="fa-solid fa-heart"></i>
-                    <span>Followed Artists</span>
-                </a>
-            </li>
-            <li>
-                <a href="/downloads" class="nav-item {% if 'downloads' in request.path %}active{% endif %}">
-                    <i class="fa-solid fa-download"></i>
-                    <span>Downloads</span>
-                </a>
-            </li>
-            <li>
-                <a href="/settings" class="nav-item {% if 'settings' in request.path %}active{% endif %}">
-                    <i class="fa-solid fa-gear"></i>
-                    <span>Settings</span>
-                </a>
-            </li>
-        </ul>
-
-        <div class="sidebar-footer">
-            <!-- Optional: User profile or status -->
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="app-main">
-        <!-- Header -->
-        <header class="app-header">
-            <div class="header-search">
-                <i class="fa-solid fa-search"></i>
-                <input type="text" placeholder="Search tracks, artists..." 
-                       name="q"
-                       hx-get="/search/quick"
-                       hx-trigger="keyup changed delay:500ms"
-                       hx-target="#search-results"
-                       autocomplete="off">
-                <!-- Quick search results dropdown -->
-                <div id="search-results" class="header-search-results"></div>
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Mobile Header (Visible only on mobile) -->
+            <div class="mobile-header" style="display: none;">
+                <div class="flex items-center gap-3" style="padding: var(--space-4); background: var(--bg-secondary); border-bottom: 1px solid var(--border-primary);">
+                    <button id="sidebar-toggle" class="btn-icon">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <span style="font-size: var(--font-size-lg); font-weight: var(--font-weight-bold);">SoulSpot</span>
+                    <div style="flex: 1;"></div>
+                    <a href="/search" class="btn-icon"><i class="fa-solid fa-search"></i></a>
+                </div>
             </div>
 
-            <div class="header-actions">
-                <a href="/settings" class="btn btn-icon btn-secondary">
-                    <i class="fa-regular fa-bell"></i>
-                </a>
-                <a href="/auth/logout" class="btn btn-icon btn-secondary" title="Logout">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </a>
+            <div class="app-content">
+                {% block content %}{% endblock %}
             </div>
-        </header>
+        </main>
+    </div>
 
-        <!-- Page Content -->
-        <div id="main-content" class="page-content">
-            {% block content %}{% endblock %}
-        </div>
-    </main>
+    <!-- New UI JavaScript -->
+    <script src="/static/new-ui/js/app.js"></script>
 
-    <!-- Scripts -->
+    <!-- PWA Service Worker -->
     <script>
-        // Service Worker Registration (PWA)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/static/service-worker.js')
                     .then((registration) => {
                         console.log('ServiceWorker registered:', registration.scope);
-                        
-                        // Check for updates
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    // New version available
-                                    if (typeof ToastManager !== 'undefined') {
-                                        ToastManager.info(
-                                            'A new version is available. Refresh to update.',
-                                            'Update Available',
-                                            10000
-                                        );
-                                    }
-                                }
-                            });
-                        });
                     })
                     .catch((error) => {
                         console.error('ServiceWorker registration failed:', error);
                     });
             });
         }
-        
-        // Simple sidebar toggle for mobile (can be moved to external JS)
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add any global JS initialization here
-        });
     </script>
+
+    <!-- Legacy JS for backwards compatibility with HTMX partials -->
     <script src="/static/js/sse-client.js"></script>
-    <script src="/static/js/circular-progress.js"></script>
-    <script src="/static/js/fuzzy-search.js"></script>
     <script src="/static/js/notifications.js"></script>
-    <script src="/static/js/mobile-gestures.js"></script>
+
     {% block extra_scripts %}{% endblock %}
 </body>
 
