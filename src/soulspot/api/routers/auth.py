@@ -369,7 +369,7 @@ async def spotify_status(
     return {
         "connected": status.is_valid and not status.needs_reauth,
         "provider": "spotify",
-        "expires_at": None,  # Could add this if needed from status
+        "expires_in_minutes": status.expires_in_minutes,
         "token_expired": status.needs_reauth,
         "needs_reauth": status.needs_reauth,
         "last_error": status.last_error,

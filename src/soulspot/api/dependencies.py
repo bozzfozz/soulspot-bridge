@@ -272,7 +272,7 @@ async def get_spotify_token_shared(request: Request) -> str:
         # Token doesn't exist or is invalid - user needs to authenticate
         raise HTTPException(
             status_code=401,
-            detail="Keine Spotify-Verbindung. Bitte zuerst bei Spotify anmelden.",
+            detail="No Spotify connection. Please authenticate with Spotify first.",
         )
 
     return access_token
