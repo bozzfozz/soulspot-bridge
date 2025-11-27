@@ -37,12 +37,22 @@
                 </div>
             </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <input type="text" 
                    id="album-search"
                    placeholder="Search albums..."
                    class="input-modern focus-visible-ring"
                    aria-label="Search albums">
+            <select id="sort-filter" class="input-modern focus-visible-ring" aria-label="Sort albums">
+                <option value="artist-asc">Artist (A-Z)</option>
+                <option value="artist-desc">Artist (Z-A)</option>
+                <option value="title-asc">Title (A-Z)</option>
+                <option value="title-desc">Title (Z-A)</option>
+                <option value="year-desc">Year (Newest)</option>
+                <option value="year-asc">Year (Oldest)</option>
+                <option value="tracks-desc">Most Tracks</option>
+                <option value="tracks-asc">Fewest Tracks</option>
+            </select>
         </div>
     </div>
 
@@ -51,7 +61,11 @@
         {% if albums %}
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" data-stagger>
             {% for album in albums %}
-            <div class="card-modern card-hover-lift group album-card">
+            <div class="card-modern card-hover-lift group album-card"
+                 data-title="{{ album.title|lower }}"
+                 data-artist="{{ album.artist|lower }}"
+                 data-year="{{ album.year or 0 }}"
+                 data-track-count="{{ album.track_count }}">
                 <a href="/ui/library/albums/{{ album.artist|urlencode }}::{{ album.title|urlencode }}" class="block p-4">
                     <!-- Album Cover Placeholder -->
                     <div class="aspect-square mb-3 bg-gradient-to-br from-success-400 to-success-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
@@ -105,32 +119,75 @@
 </div>
 
 <script>
-// Enhanced client-side search with modern UI feedback
+// Hey future me - this handles client-side search AND sorting for albums. Search filters by title/artist,
+// sort reorders the grid dynamically. Both work together so you can search THEN sort the results.
+// Uses data attributes on cards for reliable sorting (no DOM parsing needed). The debounce prevents spam.
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('album-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', window.debounce(function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const albumCards = document.querySelectorAll('.album-card');
-            let visibleCount = 0;
+    const sortFilter = document.getElementById('sort-filter');
+    const albumsGrid = document.querySelector('#albums-list [data-stagger]');
+    
+    // Helper to get sort value from album card data attributes
+    function getSortValue(card, field) {
+        switch(field) {
+            case 'title': return card.getAttribute('data-title') || '';
+            case 'artist': return card.getAttribute('data-artist') || '';
+            case 'year': return parseInt(card.getAttribute('data-year')) || 0;
+            case 'tracks': return parseInt(card.getAttribute('data-track-count')) || 0;
+            default: return card.getAttribute('data-title') || '';
+        }
+    }
+    
+    function filterAndSortAlbums() {
+        if (!albumsGrid) return;
+        
+        const searchTerm = (searchInput?.value || '').toLowerCase();
+        const sortValue = sortFilter?.value || 'artist-asc';
+        const [sortField, sortDir] = sortValue.split('-');
+        const albumCards = Array.from(document.querySelectorAll('.album-card'));
+        
+        // Filter by search term using data attributes
+        albumCards.forEach(card => {
+            const albumTitle = card.getAttribute('data-title') || '';
+            const artistName = card.getAttribute('data-artist') || '';
             
-            albumCards.forEach(card => {
-                const albumTitle = card.querySelector('h3').textContent.toLowerCase();
-                const artistName = card.querySelector('p').textContent.toLowerCase();
-                
-                if (albumTitle.includes(searchTerm) || artistName.includes(searchTerm)) {
-                    card.style.display = '';
-                    visibleCount++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-            
-            // Show toast if no results
-            if (searchTerm && visibleCount === 0 && window.toastManager) {
-                window.toastManager.info(`No albums found matching "${searchTerm}"`, 2000);
+            if (albumTitle.includes(searchTerm) || artistName.includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
             }
-        }, 300));
+        });
+        
+        // Sort visible cards
+        const visibleCards = albumCards.filter(c => c.style.display !== 'none');
+        visibleCards.sort((a, b) => {
+            const aVal = getSortValue(a, sortField);
+            const bVal = getSortValue(b, sortField);
+            
+            if (typeof aVal === 'number' && typeof bVal === 'number') {
+                return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+            }
+            return sortDir === 'asc' 
+                ? String(aVal).localeCompare(String(bVal))
+                : String(bVal).localeCompare(String(aVal));
+        });
+        
+        // Re-append sorted cards
+        visibleCards.forEach(card => albumsGrid.appendChild(card));
+        
+        // Show toast if no results
+        const hiddenCount = albumCards.filter(c => c.style.display === 'none').length;
+        if (searchTerm && hiddenCount === albumCards.length && window.toastManager) {
+            window.toastManager.info(`No albums found matching "${searchTerm}"`, 2000);
+        }
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', window.debounce ? window.debounce(filterAndSortAlbums, 300) : filterAndSortAlbums);
+    }
+    
+    if (sortFilter) {
+        sortFilter.addEventListener('change', filterAndSortAlbums);
     }
 });
 </script>
