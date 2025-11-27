@@ -1,6 +1,14 @@
 {# Hey future me - this is the sidebar navigation for the new UI. Uses request.url.path for active state highlighting.
    The queue_count variable should be passed from the router for badge display. The user variable is for avatar display.
-   Keep this in sync with the routes in ui.py - if you add a new page, add a sidebar link here! #}
+   Keep this in sync with the routes in ui.py - if you add a new page, add a sidebar link here!
+   
+   STRUKTUR-KONZEPT (Nov 2025):
+   - Main: Dashboard, Search (globale Einstiegspunkte)
+   - Spotify: Alles was von Spotify kommt (online, cloud)
+   - Local Library: Alles was heruntergeladen/lokal ist
+   - Downloads: Queue, aktive Transfers
+   - System: Settings, Dev-Tools
+#}
 
 <!-- Sidebar -->
 <aside class="app-sidebar" id="sidebar">
@@ -27,10 +35,35 @@
             </a>
         </div>
 
-        <!-- Library Section -->
+        <!-- Spotify Section (Online/Cloud) -->
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Library</div>
-            <a href="/library/artists" class="sidebar-item {% if '/library/artists' in request.url.path %}active{% endif %}">
+            <div class="sidebar-section-title">
+                <i class="fa-brands fa-spotify" style="color: #1DB954; margin-right: 6px;"></i>Spotify
+            </div>
+            <a href="/playlists" class="sidebar-item {% if '/playlists' in request.url.path and '/import' not in request.url.path %}active{% endif %}">
+                <i class="fa-solid fa-list sidebar-item-icon"></i>
+                <span class="sidebar-item-text">Playlists</span>
+            </a>
+            <a href="/spotify/artists" class="sidebar-item {% if '/spotify/artists' in request.url.path %}active{% endif %}">
+                <i class="fa-solid fa-heart sidebar-item-icon"></i>
+                <span class="sidebar-item-text">Followed Artists</span>
+            </a>
+            <a href="/playlists/import" class="sidebar-item {% if '/playlists/import' in request.url.path %}active{% endif %}">
+                <i class="fa-solid fa-cloud-arrow-down sidebar-item-icon"></i>
+                <span class="sidebar-item-text">Import</span>
+            </a>
+        </div>
+
+        <!-- Local Library Section -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">
+                <i class="fa-solid fa-folder-open" style="color: var(--accent-primary); margin-right: 6px;"></i>Library
+            </div>
+            <a href="/library/import" class="sidebar-item {% if '/library/import' in request.url.path %}active{% endif %}">
+                <i class="fa-solid fa-upload sidebar-item-icon"></i>
+                <span class="sidebar-item-text">Import</span>
+            </a>
+            <a href="/library/artists" class="sidebar-item {% if '/library/artists' in request.url.path and '/import' not in request.url.path %}active{% endif %}">
                 <i class="fa-solid fa-user sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Artists</span>
             </a>
@@ -44,17 +77,9 @@
             </a>
         </div>
 
-        <!-- Content Section -->
+        <!-- Downloads Section -->
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Content</div>
-            <a href="/playlists" class="sidebar-item {% if '/playlists' in request.url.path and '/import' not in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-list sidebar-item-icon"></i>
-                <span class="sidebar-item-text">Playlists</span>
-            </a>
-            <a href="/playlists/import" class="sidebar-item {% if '/playlists/import' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-download sidebar-item-icon"></i>
-                <span class="sidebar-item-text">Import</span>
-            </a>
+            <div class="sidebar-section-title">Downloads</div>
             <a href="/downloads" class="sidebar-item {% if '/downloads' in request.url.path %}active{% endif %}">
                 <i class="fa-solid fa-clock sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Queue</span>
@@ -64,7 +89,7 @@
             </a>
         </div>
 
-        <!-- Settings Section -->
+        <!-- System Section -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">System</div>
             <a href="/settings" class="sidebar-item {% if '/settings' in request.url.path %}active{% endif %}">

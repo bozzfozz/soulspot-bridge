@@ -18,6 +18,7 @@ class JobType(str, Enum):
     DOWNLOAD = "download"
     METADATA_ENRICHMENT = "metadata_enrichment"
     PLAYLIST_SYNC = "playlist_sync"
+    LIBRARY_SCAN = "library_scan"
 
 
 class JobStatus(str, Enum):

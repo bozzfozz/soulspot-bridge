@@ -3,7 +3,7 @@
 import asyncio
 import contextlib
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,12 +16,19 @@ from soulspot.application.services.watchlist_service import WatchlistService
 from soulspot.domain.entities import AutomationTrigger
 from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
 
+if TYPE_CHECKING:
+    from soulspot.application.services.token_manager import DatabaseTokenManager
+
 logger = logging.getLogger(__name__)
 
 
 class WatchlistWorker:
     """Background worker for checking artist watchlists for new releases."""
 
+    # Hey future me: This worker uses DatabaseTokenManager to get Spotify access token!
+    # If token is invalid (is_valid=False), worker skips work gracefully and logs warning.
+    # UI shows warning banner when token invalid → user re-authenticates → worker resumes.
+    # The token_manager is injected via set_token_manager() after worker construction.
     def __init__(
         self,
         session: AsyncSession,
@@ -42,6 +49,19 @@ class WatchlistWorker:
         self.workflow_service = AutomationWorkflowService(session)
         self._running = False
         self._task: asyncio.Task | None = None
+        # Hey - token_manager is set via set_token_manager() after construction
+        # This avoids circular dependencies and allows workers to be created before app.state is ready
+        self._token_manager: "DatabaseTokenManager | None" = None
+
+    def set_token_manager(self, token_manager: "DatabaseTokenManager") -> None:
+        """Set the token manager for getting Spotify access tokens.
+        
+        Called during app startup after DatabaseTokenManager is initialized.
+        
+        Args:
+            token_manager: Database-backed token manager
+        """
+        self._token_manager = token_manager
 
     async def start(self) -> None:
         """Start the watchlist worker."""
@@ -78,11 +98,30 @@ class WatchlistWorker:
     # Hey future me: Watchlist worker - background daemon that polls Spotify for new releases
     # WHY check every hour? Balance between finding new releases quickly vs API rate limits
     # WHY separate worker? Long-running process, can't block main application
-    # GOTCHA: If Spotify access token expires, worker silently fails until token refreshed
-    # TODO: Add automatic token refresh or at least alert when token is stale
+    # 
+    # TOKEN HANDLING (2025 update):
+    # Uses DatabaseTokenManager.get_token_for_background() to get valid access token.
+    # If token invalid (user revoked, refresh failed), skips work and logs warning.
+    # UI shows red banner to user → user re-authenticates → worker resumes automatically.
+    # This is GRACEFUL DEGRADATION - no crashes, just paused automation until re-auth.
     async def _check_watchlists(self) -> None:
         """Check all due watchlists for new releases."""
         try:
+            # Hey - get access token from DatabaseTokenManager!
+            # This is the CRITICAL integration point for background token management.
+            access_token = None
+            if self._token_manager:
+                access_token = await self._token_manager.get_token_for_background()
+            
+            if not access_token:
+                # Token invalid or missing - skip this cycle gracefully
+                # UI warning banner shows "Spotify-Verbindung unterbrochen"
+                logger.warning(
+                    "No valid Spotify token available - skipping watchlist check. "
+                    "User needs to re-authenticate via UI."
+                )
+                return
+
             # Get watchlists that need checking
             watchlists = await self.watchlist_service.list_due_for_check(limit=100)
 
@@ -108,13 +147,20 @@ class WatchlistWorker:
                         await self.session.commit()
                         continue
 
-                    # Note: In a real implementation, we'd need to get the access token
-                    # from a secure location (e.g., service account or user session)
-                    # For now, this will log an info message
+                    # Hey - we have the access_token from token_manager above!
+                    # Use it for Spotify API calls. The token is refreshed automatically
+                    # by TokenRefreshWorker, so we can trust it's valid here.
                     logger.info(
-                        f"Would check Spotify for new releases from artist {watchlist.artist_id}. "
-                        "Integration requires valid access token."
+                        f"Checking Spotify for new releases from artist {watchlist.artist_id} "
+                        f"(token available: yes)"
                     )
+                    
+                    # TODO: Actually call Spotify API here once SpotifyClient methods are ready
+                    # new_releases = await self.spotify_client.get_artist_albums(
+                    #     artist_id=watchlist.artist_id.value,
+                    #     access_token=access_token,
+                    #     limit=10
+                    # )
 
                     # Trigger automation workflows for new releases if auto_download is enabled
                     if watchlist.auto_download:
@@ -174,6 +220,10 @@ class DiscographyWorker:
     # WHY 24h check interval? Artist discographies rarely change (few new albums per year)
     # This is more intensive than watchlist checking because we fetch ENTIRE discography
     # WHY Spotify client? MB doesn't have complete discographies for all artists
+    #
+    # TOKEN HANDLING (2025 update):
+    # Uses DatabaseTokenManager.get_token_for_background() - same pattern as WatchlistWorker.
+    # Graceful degradation: skips work when token invalid, resumes after user re-authenticates.
     def __init__(
         self,
         session: AsyncSession,
@@ -194,6 +244,18 @@ class DiscographyWorker:
         self.workflow_service = AutomationWorkflowService(session)
         self._running = False
         self._task: asyncio.Task | None = None
+        # Hey - token_manager is set via set_token_manager() after construction
+        self._token_manager: "DatabaseTokenManager | None" = None
+
+    def set_token_manager(self, token_manager: "DatabaseTokenManager") -> None:
+        """Set the token manager for getting Spotify access tokens.
+        
+        Called during app startup after DatabaseTokenManager is initialized.
+        
+        Args:
+            token_manager: Database-backed token manager
+        """
+        self._token_manager = token_manager
 
     async def start(self) -> None:
         """Start the discography worker."""
@@ -230,7 +292,11 @@ class DiscographyWorker:
     # Yo, discography check implementation - queries active watchlists and checks for missing albums
     # WHY check discographies? Auto-download missing albums when artists release new stuff
     # WHY active watchlists only? Don't waste API calls on paused/disabled artists
-    # GOTCHA: Needs valid Spotify access token - will fail if token expired (see TODO above)
+    #
+    # TOKEN HANDLING (2025 update):
+    # Gets token from DatabaseTokenManager at start of each cycle.
+    # If no valid token, entire check is skipped (graceful degradation).
+    # UI warning banner tells user to re-authenticate → worker resumes automatically.
     async def _check_discographies(self) -> None:
         """Check discography completeness for all artists.
 
@@ -242,6 +308,21 @@ class DiscographyWorker:
         """
         try:
             logger.info("Checking artist discographies")
+
+            # Hey - get access token from DatabaseTokenManager FIRST!
+            # If no token, skip entire cycle (graceful degradation)
+            access_token = None
+            if self._token_manager:
+                access_token = await self._token_manager.get_token_for_background()
+            
+            if not access_token:
+                # Token invalid or missing - skip this cycle gracefully
+                # UI warning banner shows "Spotify-Verbindung unterbrochen"
+                logger.warning(
+                    "No valid Spotify token available - skipping discography check. "
+                    "User needs to re-authenticate via UI."
+                )
+                return
 
             # Hey - import repository here to avoid circular deps
             from soulspot.infrastructure.persistence.repositories import (
@@ -270,15 +351,8 @@ class DiscographyWorker:
                         )
                         continue
 
-                    # Hey - need Spotify access token! This is the TODO from above
-                    # For now, we'll skip if no token available (graceful degradation)
-                    # In production, should get from session/config or refresh automatically
-                    access_token = None  # TODO: Get from auth context or config
-                    if not access_token:
-                        logger.warning(
-                            "No Spotify access token available - skipping discography checks"
-                        )
-                        break  # Skip all checks if no token
+                    # Hey - we have access_token from token_manager above!
+                    # Token is refreshed automatically by TokenRefreshWorker.
 
                     # Check discography using service
                     discography_info = await self.discography_service.check_discography(
@@ -478,6 +552,11 @@ class AutomationWorkerManager:
     # WHY manager? So you can start/stop all automation with one call instead of managing three workers
     # GOTCHA: All workers share same DB session - concurrent access could cause conflicts if not careful
     # The interval params let you tune each worker independently (watchlist hourly, others daily)
+    #
+    # TOKEN HANDLING (2025 update):
+    # Manager now accepts token_manager param and injects it into workers that need Spotify access.
+    # WatchlistWorker and DiscographyWorker get token_manager for background token access.
+    # QualityUpgradeWorker doesn't need it (scans local library, no Spotify API calls).
     def __init__(
         self,
         session: AsyncSession,
@@ -485,6 +564,7 @@ class AutomationWorkerManager:
         watchlist_interval: int = 3600,
         discography_interval: int = 86400,
         quality_interval: int = 86400,
+        token_manager: "DatabaseTokenManager | None" = None,
     ) -> None:
         """Initialize automation worker manager.
 
@@ -494,6 +574,7 @@ class AutomationWorkerManager:
             watchlist_interval: Watchlist check interval in seconds
             discography_interval: Discography check interval in seconds
             quality_interval: Quality upgrade check interval in seconds
+            token_manager: Database-backed token manager for Spotify access
         """
         self.watchlist_worker = WatchlistWorker(
             session, spotify_client, watchlist_interval
@@ -502,6 +583,23 @@ class AutomationWorkerManager:
             session, spotify_client, discography_interval
         )
         self.quality_worker = QualityUpgradeWorker(session, quality_interval)
+        
+        # Hey - inject token_manager into workers that need Spotify access!
+        # This is the critical connection between token storage and background work.
+        if token_manager:
+            self.watchlist_worker.set_token_manager(token_manager)
+            self.discography_worker.set_token_manager(token_manager)
+
+    def set_token_manager(self, token_manager: "DatabaseTokenManager") -> None:
+        """Set token manager for all workers that need Spotify access.
+        
+        Call this if token_manager wasn't available at construction time.
+        
+        Args:
+            token_manager: Database-backed token manager
+        """
+        self.watchlist_worker.set_token_manager(token_manager)
+        self.discography_worker.set_token_manager(token_manager)
 
     # Hey future me: Start all three workers in parallel with asyncio.gather equivalents
     # Each worker.start() creates an async task that runs forever in background

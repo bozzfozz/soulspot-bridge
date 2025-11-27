@@ -445,3 +445,46 @@ def get_queue_playlist_downloads_use_case(
         track_repository=track_repository,
         job_queue=job_queue,
     )
+
+
+# Hey future me - this creates SpotifySyncService for auto-syncing Spotify data!
+# Used by the /spotify/* UI routes to auto-sync on page load and fetch data from DB.
+# Requires both DB session and Spotify client for API calls + persistence.
+async def get_spotify_sync_service(
+    session: AsyncSession = Depends(get_db_session),
+    spotify_client: SpotifyClient = Depends(get_spotify_client),
+) -> AsyncGenerator:
+    """Get Spotify sync service for auto-sync and browse.
+
+    Args:
+        session: Database session
+        spotify_client: Spotify client for API calls
+
+    Yields:
+        SpotifySyncService instance
+    """
+    from soulspot.application.services.spotify_sync_service import SpotifySyncService
+
+    yield SpotifySyncService(session=session, spotify_client=spotify_client)
+
+
+# Hey future me - this creates LibraryScannerService for scanning local music files!
+# Used by /api/library/scan endpoints to start/check scans.
+# The service itself handles file discovery, metadata extraction, fuzzy matching.
+async def get_library_scanner_service(
+    request: Request,
+    session: AsyncSession = Depends(get_db_session),
+) -> AsyncGenerator:
+    """Get library scanner service for local file imports.
+
+    Args:
+        request: FastAPI request (for settings access)
+        session: Database session
+
+    Yields:
+        LibraryScannerService instance
+    """
+    from soulspot.application.services.library_scanner_service import LibraryScannerService
+
+    settings = get_settings()
+    yield LibraryScannerService(session=session, settings=settings)

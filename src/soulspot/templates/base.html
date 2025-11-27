@@ -40,6 +40,20 @@
 
         <!-- Main Content -->
         <main class="app-main">
+            {# Hey future me - this banner shows when background workers can't access Spotify!
+               It polls /api/auth/token-status every 30 seconds via HTMX. When needs_reauth=true,
+               the banner becomes visible with a red warning. The user clicks "Erneut anmelden"
+               to re-authenticate. Once token is valid again, banner disappears automatically.
+               This is CRITICAL for user experience - without it, background sync silently fails! #}
+            
+            <!-- Token Status Warning Banner (polls every 30s) -->
+            <div id="token-status-banner" 
+                 hx-get="/api/auth/token-status" 
+                 hx-trigger="load, every 30s"
+                 hx-swap="innerHTML">
+                {# Content will be loaded via HTMX from the partial #}
+            </div>
+
             <!-- Mobile Header (Visible only on mobile) -->
             <div class="mobile-header" style="display: none;">
                 <div class="flex items-center gap-3" style="padding: var(--space-4); background: var(--bg-secondary); border-bottom: 1px solid var(--border-primary);">

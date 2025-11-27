@@ -554,3 +554,262 @@ class SessionModel(Base):
         Index("ix_sessions_last_accessed", "last_accessed_at"),
         Index("ix_sessions_token_expires", "token_expires_at"),
     )
+
+
+# =============================================================================
+# SPOTIFY BROWSE MODELS (Separate from Local Library!)
+# =============================================================================
+# Hey future me - these models are for SYNCED SPOTIFY DATA only! They mirror what's on
+# the user's Spotify account (followed artists, their albums, tracks). Completely separate
+# from ArtistModel/AlbumModel/TrackModel which represent LOCAL library files.
+#
+# The flow is: User follows artist on Spotify → auto-sync saves to spotify_artists →
+# user browses to artist detail → albums synced to spotify_albums → user clicks album →
+# tracks synced to spotify_tracks → user downloads → creates entry in local TrackModel.
+#
+# CASCADE DELETE ensures clean removal: unfollow artist → albums gone → tracks gone.
+# The local_track_id on SpotifyTrackModel links to downloaded files in local library.
+# =============================================================================
+
+
+class SpotifyArtistModel(Base):
+    """Spotify artist from user's followed artists.
+    
+    This is NOT the same as ArtistModel! ArtistModel = local library,
+    SpotifyArtistModel = synced from Spotify account. They can reference
+    the same real-world artist but serve different purposes.
+    """
+
+    __tablename__ = "spotify_artists"
+
+    # Spotify ID is the primary key (e.g., "0OdUWJ0sBjDrqHygGUXeCF")
+    spotify_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Genres stored as JSON text: '["rock", "alternative"]'
+    genres: Mapped[str | None] = mapped_column(Text, nullable=True)
+    popularity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    follower_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Sync timestamps for cooldown logic
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    albums_synced_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships - CASCADE delete albums when artist unfollowed
+    albums: Mapped[list["SpotifyAlbumModel"]] = relationship(
+        "SpotifyAlbumModel", back_populates="artist", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_spotify_artists_last_synced", "last_synced_at"),
+    )
+
+
+class SpotifyAlbumModel(Base):
+    """Spotify album from a followed artist.
+    
+    Synced when user navigates to artist detail page. Contains albums,
+    singles, and compilations. Tracks are lazily loaded when user opens album.
+    """
+
+    __tablename__ = "spotify_albums"
+
+    spotify_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    artist_id: Mapped[str] = mapped_column(
+        String(32), 
+        ForeignKey("spotify_artists.spotify_id", ondelete="CASCADE"), 
+        nullable=False,
+        index=True
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Release date can be "2023", "2023-05", or "2023-05-15"
+    release_date: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+    release_date_precision: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    # album, single, compilation
+    album_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    total_tracks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # When were tracks last synced for this album?
+    tracks_synced_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    artist: Mapped["SpotifyArtistModel"] = relationship(
+        "SpotifyArtistModel", back_populates="albums"
+    )
+    tracks: Mapped[list["SpotifyTrackModel"]] = relationship(
+        "SpotifyTrackModel", back_populates="album", cascade="all, delete-orphan"
+    )
+
+
+class SpotifyTrackModel(Base):
+    """Spotify track from an album.
+    
+    Synced when user opens album detail page. The local_track_id links to
+    the local library entry AFTER the track has been downloaded via slskd.
+    """
+
+    __tablename__ = "spotify_tracks"
+
+    spotify_id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    album_id: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("spotify_albums.spotify_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    track_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    disc_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    explicit: Mapped[bool] = mapped_column(default=False, nullable=False)
+    preview_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    isrc: Mapped[str | None] = mapped_column(String(12), nullable=True, index=True)
+    # Link to local library after download
+    local_track_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("tracks.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    # Relationships
+    album: Mapped["SpotifyAlbumModel"] = relationship(
+        "SpotifyAlbumModel", back_populates="tracks"
+    )
+    local_track: Mapped["TrackModel | None"] = relationship("TrackModel")
+
+
+class SpotifySyncStatusModel(Base):
+    """Tracks sync status for different sync types.
+    
+    Enables cooldown logic - don't hammer Spotify API on every page load.
+    Also provides UI feedback about last sync time and any errors.
+    """
+
+    __tablename__ = "spotify_sync_status"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    # followed_artists, artist_albums, album_tracks
+    sync_type: Mapped[str] = mapped_column(String(50), nullable=False, unique=True, index=True)
+    last_sync_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    next_sync_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    # idle, running, error
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="idle")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    items_synced: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    items_added: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    items_removed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+# =============================================================================
+# SPOTIFY TOKEN MODEL (Background Worker OAuth Token Storage)
+# =============================================================================
+# Hey future me - this is THE token store for background workers! Different from sessions table:
+# - Sessions: User-facing, cookie-based, per browser session
+# - Tokens: Background workers, survives logout, single active token
+#
+# Single-user architecture: We keep ONE row with id='default'. When user logs in via OAuth,
+# we UPSERT this row. Background workers call get_active_token() and get this single token.
+#
+# The is_valid flag is CRITICAL for the UI warning system:
+# - True = Token works, background workers operate normally
+# - False = Refresh failed (user revoked access, etc.) → UI shows "re-authenticate" banner
+#           → Workers skip their work (no crash loop) → User re-auths → is_valid=True again
+#
+# The token_refresh_worker runs every 5 min, checks token_expires_at, and proactively
+# refreshes tokens before they expire. If refresh fails → is_valid=False + last_error set.
+# =============================================================================
+
+
+class SpotifyTokenModel(Base):
+    """Spotify OAuth token for background workers.
+    
+    Single-user: exactly one row with id='default'. Background workers
+    get this token for API calls. Separate from user sessions (cookie-based).
+    
+    The is_valid flag controls the UI warning banner - when False, users see
+    "Spotify connection expired - please re-authenticate" message.
+    """
+
+    __tablename__ = "spotify_tokens"
+
+    # Single-user: always 'default', could be spotify_user_id for multi-user
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    # OAuth tokens (NOT encrypted - simplicity over security per user choice)
+    access_token: Mapped[str] = mapped_column(Text, nullable=False)
+    refresh_token: Mapped[str] = mapped_column(Text, nullable=False)
+    token_expires_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False
+    )
+    # Scopes granted: "user-follow-read playlist-read-private ..."
+    scopes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Validity flag - False when refresh fails (triggers UI warning)
+    is_valid: Mapped[bool] = mapped_column(default=True, nullable=False)
+    # Error tracking for debugging and UI display
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_error_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+    # Metadata timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+    last_refreshed_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
+
+    # Indexes for efficient queries
+    __table_args__ = (
+        Index("ix_spotify_tokens_expires", "token_expires_at"),
+        Index("ix_spotify_tokens_valid", "is_valid"),
+    )
+
+    # Hey future me - helper methods for cleaner code in services!
+    def is_expired(self) -> bool:
+        """Check if token is expired (past expiration time)."""
+        from datetime import UTC
+        return datetime.now(UTC) >= self.token_expires_at
+
+    def expires_soon(self, minutes: int = 10) -> bool:
+        """Check if token expires within given minutes (for proactive refresh)."""
+        from datetime import UTC, timedelta
+        threshold = datetime.now(UTC) + timedelta(minutes=minutes)
+        return self.token_expires_at <= threshold

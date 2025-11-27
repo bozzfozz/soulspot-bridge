@@ -1,0 +1,388 @@
+{# Hey future me - Spotify Artist Detail page with albums!
+   Shows artist info + all their albums/singles from Spotify.
+   Albums auto-sync on page load. Click album to see tracks. #}
+
+{% extends "base.html" %}
+
+{% block title %}{{ artist.name if artist else 'Artist' }} - Spotify - SoulSpot{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav style="margin-bottom: var(--space-4);">
+    <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
+        <li><a href="/spotify/artists" style="color: #1DB954;"><i class="fa-brands fa-spotify"></i> Spotify</a></li>
+        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li><a href="/spotify/artists" style="color: #1DB954;">Artists</a></li>
+        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li style="color: var(--text-muted);">{{ artist.name if artist else 'Unknown' }}</li>
+    </ol>
+</nav>
+
+{% if error %}
+<div class="alert alert-error" style="margin-bottom: var(--space-6);">
+    <i class="fa-solid fa-exclamation-triangle"></i>
+    <span>{{ error }}</span>
+</div>
+{% endif %}
+
+{% if artist %}
+<!-- Artist Header -->
+<div class="artist-header">
+    {% if artist.image_url %}
+    <img src="{{ artist.image_url }}" alt="{{ artist.name }}" class="artist-header-image">
+    {% else %}
+    <div class="artist-header-avatar">
+        {{ artist.name[0]|upper }}
+    </div>
+    {% endif %}
+    <div class="artist-header-info">
+        <span class="artist-header-label"><i class="fa-brands fa-spotify" style="color: #1DB954;"></i> Spotify Artist</span>
+        <h1 class="artist-header-name">{{ artist.name }}</h1>
+        <div class="artist-header-meta">
+            {% if artist.genres %}
+            <div class="artist-header-genres">
+                {% for genre in artist.genres[:5] %}
+                <span class="genre-badge">{{ genre }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% if artist.follower_count %}
+            <span class="meta-item">
+                <i class="fa-solid fa-users"></i>
+                {{ "{:,}".format(artist.follower_count) }} followers
+            </span>
+            {% endif %}
+            <span class="meta-item">
+                <i class="fa-solid fa-compact-disc"></i>
+                {{ album_count }} release{{ 's' if album_count != 1 else '' }}
+            </span>
+        </div>
+        {% if sync_stats and sync_stats.synced %}
+        <span style="font-size: var(--font-size-sm); color: var(--text-muted); margin-top: var(--space-2); display: block;">
+            <i class="fa-solid fa-check" style="color: #1DB954;"></i>
+            Albums synced
+        </span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Albums Section -->
+<div style="margin-top: var(--space-8);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+        <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold);">
+            Discography
+        </h2>
+        <div style="display: flex; gap: var(--space-2);">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="album">Albums</button>
+            <button class="filter-btn" data-filter="single">Singles</button>
+        </div>
+    </div>
+
+    {% if albums %}
+    <div class="albums-grid" id="albums-grid">
+        {% for album in albums %}
+        <a href="/spotify/artists/{{ artist.spotify_id }}/albums/{{ album.spotify_id }}" 
+           class="album-card" 
+           data-type="{{ album.album_type }}">
+            {% if album.image_url %}
+            <img src="{{ album.image_url }}" alt="{{ album.name }}" class="album-cover">
+            {% else %}
+            <div class="album-cover-placeholder">
+                <i class="fa-solid fa-compact-disc"></i>
+            </div>
+            {% endif %}
+            <div class="album-info">
+                <h3 class="album-name" title="{{ album.name }}">{{ album.name }}</h3>
+                <div class="album-meta">
+                    <span class="album-year">{{ album.release_date[:4] if album.release_date else 'Unknown' }}</span>
+                    <span class="album-type-badge album-type-{{ album.album_type }}">{{ album.album_type|capitalize }}</span>
+                </div>
+                <span class="album-tracks">{{ album.total_tracks }} track{{ 's' if album.total_tracks != 1 else '' }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fa-solid fa-compact-disc"></i>
+        </div>
+        <h3>No albums found</h3>
+        <p>This artist has no albums on Spotify yet, or albums are still syncing.</p>
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">
+        <i class="fa-solid fa-user-slash"></i>
+    </div>
+    <h3>Artist not found</h3>
+    <p>The requested artist could not be found.</p>
+    <a href="/spotify/artists" class="btn btn-primary">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Artists
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+    .artist-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
+        background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-6);
+    }
+    .artist-header-image {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: var(--shadow-xl);
+    }
+    .artist-header-avatar {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1DB954, #1ed760);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        font-weight: var(--font-weight-bold);
+        color: white;
+        box-shadow: var(--shadow-xl);
+    }
+    .artist-header-info {
+        flex: 1;
+    }
+    .artist-header-label {
+        font-size: var(--font-size-sm);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .artist-header-name {
+        font-size: var(--font-size-4xl);
+        font-weight: var(--font-weight-bold);
+        margin: var(--space-2) 0;
+    }
+    .artist-header-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-4);
+        color: var(--text-muted);
+        font-size: var(--font-size-sm);
+    }
+    .artist-header-genres {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+    }
+    .genre-badge {
+        background: rgba(29, 185, 84, 0.2);
+        color: #1DB954;
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-xs);
+    }
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    
+    /* Filter buttons */
+    .filter-btn {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-primary);
+        color: var(--text-muted);
+        padding: var(--space-2) var(--space-4);
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+    .filter-btn:hover {
+        border-color: #1DB954;
+        color: #1DB954;
+    }
+    .filter-btn.active {
+        background: #1DB954;
+        border-color: #1DB954;
+        color: white;
+    }
+    
+    /* Albums grid */
+    .albums-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--space-4);
+    }
+    .album-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .album-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+    }
+    .album-cover {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+    .album-cover-placeholder {
+        width: 100%;
+        aspect-ratio: 1;
+        background: var(--bg-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: var(--text-muted);
+    }
+    .album-info {
+        padding: var(--space-3);
+    }
+    .album-name {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-bold);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: var(--space-1);
+    }
+    .album-card:hover .album-name {
+        color: #1DB954;
+    }
+    .album-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin-bottom: var(--space-1);
+    }
+    .album-year {
+        font-size: var(--font-size-xs);
+        color: var(--text-muted);
+    }
+    .album-type-badge {
+        font-size: var(--font-size-xs);
+        padding: 1px 6px;
+        border-radius: var(--radius-sm);
+    }
+    .album-type-album {
+        background: rgba(29, 185, 84, 0.2);
+        color: #1DB954;
+    }
+    .album-type-single {
+        background: rgba(168, 85, 247, 0.2);
+        color: #a855f7;
+    }
+    .album-type-compilation {
+        background: rgba(251, 146, 60, 0.2);
+        color: #fb923c;
+    }
+    .album-tracks {
+        font-size: var(--font-size-xs);
+        color: var(--text-muted);
+    }
+    
+    .empty-state {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-12);
+        text-align: center;
+    }
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto var(--space-4);
+        background: var(--bg-tertiary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-3xl);
+        color: var(--text-muted);
+    }
+    .empty-state h3 {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-bold);
+        margin-bottom: var(--space-2);
+    }
+    .empty-state p {
+        color: var(--text-muted);
+        margin-bottom: var(--space-6);
+    }
+    .alert {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        border-radius: var(--radius-lg);
+    }
+    .alert-error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+    
+    @media (max-width: 640px) {
+        .artist-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        .artist-header-image, .artist-header-avatar {
+            width: 140px;
+            height: 140px;
+        }
+        .artist-header-name {
+            font-size: var(--font-size-2xl);
+        }
+        .artist-header-meta {
+            justify-content: center;
+        }
+    }
+</style>
+<script>
+// Filter albums by type
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const albumCards = document.querySelectorAll('.album-card');
+    
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Update active state
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter albums
+            albumCards.forEach(card => {
+                const type = card.dataset.type;
+                if (filter === 'all' || type === filter) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

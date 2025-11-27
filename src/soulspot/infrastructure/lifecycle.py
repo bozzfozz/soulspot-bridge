@@ -90,6 +90,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     - Directory creation
     - Database initialization
     - Job queue and download worker startup
+    - Token refresh worker startup (background Spotify token management)
     - Auto-import service startup
     - Resource cleanup
     """
@@ -106,6 +107,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup
     auto_import_task = None
     job_queue = None
+    token_refresh_worker = None
     try:
         # Ensure storage directories exist
         settings.ensure_directories()
@@ -139,9 +141,39 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.session_store = session_store
         logger.info("Session store initialized with database persistence")
 
+        # =================================================================
+        # Initialize DatabaseTokenManager for background workers
+        # =================================================================
+        # Hey future me - this is THE central token store for background workers!
+        # It's separate from session_store (which is for user requests).
+        # Workers like WatchlistWorker, DiscographyWorker use this to get tokens.
+        from soulspot.application.services.token_manager import DatabaseTokenManager
+        from soulspot.application.workers.token_refresh_worker import TokenRefreshWorker
+        from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
+
+        spotify_client = SpotifyClient(settings.spotify)
+        
+        db_token_manager = DatabaseTokenManager(
+            spotify_client=spotify_client,
+            get_db_session=get_db_session_for_store,
+        )
+        app.state.db_token_manager = db_token_manager
+        logger.info("Database token manager initialized for background workers")
+
+        # Start token refresh worker (proactively refreshes tokens before expiry)
+        token_refresh_worker = TokenRefreshWorker(
+            token_manager=db_token_manager,
+            check_interval_seconds=300,  # Check every 5 minutes
+            refresh_threshold_minutes=10,  # Refresh if expires within 10 minutes
+        )
+        await token_refresh_worker.start()
+        app.state.token_refresh_worker = token_refresh_worker
+        logger.info("Token refresh worker started (checks every 5 min)")
+
         # Initialize job queue with configured max concurrent downloads
         from soulspot.application.workers.download_worker import DownloadWorker
         from soulspot.application.workers.job_queue import JobQueue
+        from soulspot.application.workers.library_scan_worker import LibraryScanWorker
         from soulspot.infrastructure.integrations.slskd_client import SlskdClient
         from soulspot.infrastructure.persistence.repositories import (
             DownloadRepository,
@@ -168,6 +200,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             )
             download_worker.register()
             app.state.download_worker = download_worker
+
+            # Initialize library scan worker
+            library_scan_worker = LibraryScanWorker(
+                job_queue=job_queue,
+                db=db,
+                settings=settings,
+            )
+            library_scan_worker.register()
+            app.state.library_scan_worker = library_scan_worker
+            logger.info("Library scan worker registered")
+
             break
 
         # Start job queue workers
@@ -207,6 +250,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     finally:
         # Shutdown - always attempt cleanup
         logger.info("Shutting down application")
+
+        # Stop token refresh worker
+        if token_refresh_worker is not None:
+            try:
+                logger.info("Stopping token refresh worker...")
+                await token_refresh_worker.stop()
+                logger.info("Token refresh worker stopped")
+            except Exception as e:
+                logger.exception("Error stopping token refresh worker: %s", e)
 
         # Stop job queue
         if job_queue is not None:

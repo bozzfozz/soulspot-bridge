@@ -2297,3 +2297,679 @@ class SessionRepository:
             created_at=model.created_at,
             last_accessed_at=model.last_accessed_at,
         )
+
+
+# =============================================================================
+# SPOTIFY BROWSE REPOSITORY
+# =============================================================================
+# Hey future me - this repository handles the SPOTIFY sync tables (spotify_artists,
+# spotify_albums, spotify_tracks). These are SEPARATE from the local library tables!
+# The sync flow: Spotify API → SpotifyBrowseRepository → DB. The browse flow:
+# DB → SpotifyBrowseRepository → UI. Auto-sync with diff logic on page load.
+# =============================================================================
+
+
+class SpotifyBrowseRepository:
+    """Repository for Spotify browse data (followed artists, albums, tracks).
+    
+    This is SEPARATE from the local library repositories! These tables store
+    synced Spotify data for browsing, not local files.
+    """
+
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize repository with session."""
+        self.session = session
+
+    # =========================================================================
+    # ARTISTS
+    # =========================================================================
+
+    async def get_all_artist_ids(self) -> set[str]:
+        """Get all Spotify artist IDs in the database.
+        
+        Used for diff-sync: compare with Spotify API result to find
+        new follows and unfollows.
+        """
+        from .models import SpotifyArtistModel
+
+        stmt = select(SpotifyArtistModel.spotify_id)
+        result = await self.session.execute(stmt)
+        return {row[0] for row in result.all()}
+
+    async def get_artist_by_id(self, spotify_id: str) -> Any | None:
+        """Get a Spotify artist by ID."""
+        from .models import SpotifyArtistModel
+
+        stmt = select(SpotifyArtistModel).where(
+            SpotifyArtistModel.spotify_id == spotify_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_all_artists(
+        self, limit: int = 100, offset: int = 0
+    ) -> list[Any]:
+        """Get all followed artists with pagination."""
+        from .models import SpotifyArtistModel
+
+        stmt = (
+            select(SpotifyArtistModel)
+            .order_by(SpotifyArtistModel.name)
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def count_artists(self) -> int:
+        """Count total followed artists."""
+        from .models import SpotifyArtistModel
+
+        stmt = select(func.count(SpotifyArtistModel.spotify_id))
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    async def upsert_artist(
+        self,
+        spotify_id: str,
+        name: str,
+        image_url: str | None = None,
+        genres: list[str] | None = None,
+        popularity: int | None = None,
+        follower_count: int | None = None,
+    ) -> None:
+        """Insert or update a Spotify artist."""
+        from .models import SpotifyArtistModel
+
+        # Check if exists
+        stmt = select(SpotifyArtistModel).where(
+            SpotifyArtistModel.spotify_id == spotify_id
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        now = datetime.now(UTC)
+        genres_json = json.dumps(genres) if genres else None
+
+        if model:
+            # Update existing
+            model.name = name
+            model.image_url = image_url
+            model.genres = genres_json
+            model.popularity = popularity
+            model.follower_count = follower_count
+            model.last_synced_at = now
+            model.updated_at = now
+        else:
+            # Insert new
+            model = SpotifyArtistModel(
+                spotify_id=spotify_id,
+                name=name,
+                image_url=image_url,
+                genres=genres_json,
+                popularity=popularity,
+                follower_count=follower_count,
+                last_synced_at=now,
+            )
+            self.session.add(model)
+
+    async def delete_artists(self, spotify_ids: set[str]) -> int:
+        """Delete artists by Spotify IDs (CASCADE deletes albums and tracks)."""
+        from .models import SpotifyArtistModel
+
+        if not spotify_ids:
+            return 0
+
+        stmt = delete(SpotifyArtistModel).where(
+            SpotifyArtistModel.spotify_id.in_(spotify_ids)
+        )
+        result = await self.session.execute(stmt)
+        return result.rowcount or 0  # type: ignore[return-value]
+
+    # =========================================================================
+    # ALBUMS
+    # =========================================================================
+
+    async def get_albums_by_artist(
+        self, artist_id: str, limit: int = 100, offset: int = 0
+    ) -> list[Any]:
+        """Get albums for a Spotify artist."""
+        from .models import SpotifyAlbumModel
+
+        stmt = (
+            select(SpotifyAlbumModel)
+            .where(SpotifyAlbumModel.artist_id == artist_id)
+            .order_by(SpotifyAlbumModel.release_date.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_album_by_id(self, spotify_id: str) -> Any | None:
+        """Get a Spotify album by ID."""
+        from .models import SpotifyAlbumModel
+
+        stmt = select(SpotifyAlbumModel).where(
+            SpotifyAlbumModel.spotify_id == spotify_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def count_albums_by_artist(self, artist_id: str) -> int:
+        """Count albums for an artist."""
+        from .models import SpotifyAlbumModel
+
+        stmt = select(func.count(SpotifyAlbumModel.spotify_id)).where(
+            SpotifyAlbumModel.artist_id == artist_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    async def upsert_album(
+        self,
+        spotify_id: str,
+        artist_id: str,
+        name: str,
+        image_url: str | None = None,
+        release_date: str | None = None,
+        release_date_precision: str | None = None,
+        album_type: str = "album",
+        total_tracks: int = 0,
+    ) -> None:
+        """Insert or update a Spotify album."""
+        from .models import SpotifyAlbumModel
+
+        stmt = select(SpotifyAlbumModel).where(
+            SpotifyAlbumModel.spotify_id == spotify_id
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        now = datetime.now(UTC)
+
+        if model:
+            model.name = name
+            model.image_url = image_url
+            model.release_date = release_date
+            model.release_date_precision = release_date_precision
+            model.album_type = album_type
+            model.total_tracks = total_tracks
+            model.updated_at = now
+        else:
+            model = SpotifyAlbumModel(
+                spotify_id=spotify_id,
+                artist_id=artist_id,
+                name=name,
+                image_url=image_url,
+                release_date=release_date,
+                release_date_precision=release_date_precision,
+                album_type=album_type,
+                total_tracks=total_tracks,
+            )
+            self.session.add(model)
+
+    async def set_albums_synced(self, artist_id: str) -> None:
+        """Mark albums as synced for an artist."""
+        from .models import SpotifyArtistModel
+
+        stmt = select(SpotifyArtistModel).where(
+            SpotifyArtistModel.spotify_id == artist_id
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if model:
+            model.albums_synced_at = datetime.now(UTC)
+
+    # =========================================================================
+    # TRACKS
+    # =========================================================================
+
+    async def get_tracks_by_album(
+        self, album_id: str, limit: int = 100, offset: int = 0
+    ) -> list[Any]:
+        """Get tracks for a Spotify album."""
+        from .models import SpotifyTrackModel
+
+        stmt = (
+            select(SpotifyTrackModel)
+            .where(SpotifyTrackModel.album_id == album_id)
+            .order_by(SpotifyTrackModel.disc_number, SpotifyTrackModel.track_number)
+            .limit(limit)
+            .offset(offset)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_track_by_id(self, spotify_id: str) -> Any | None:
+        """Get a Spotify track by ID."""
+        from .models import SpotifyTrackModel
+
+        stmt = select(SpotifyTrackModel).where(
+            SpotifyTrackModel.spotify_id == spotify_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def count_tracks_by_album(self, album_id: str) -> int:
+        """Count tracks in an album."""
+        from .models import SpotifyTrackModel
+
+        stmt = select(func.count(SpotifyTrackModel.spotify_id)).where(
+            SpotifyTrackModel.album_id == album_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    async def upsert_track(
+        self,
+        spotify_id: str,
+        album_id: str,
+        name: str,
+        track_number: int = 1,
+        disc_number: int = 1,
+        duration_ms: int = 0,
+        explicit: bool = False,
+        preview_url: str | None = None,
+        isrc: str | None = None,
+    ) -> None:
+        """Insert or update a Spotify track."""
+        from .models import SpotifyTrackModel
+
+        stmt = select(SpotifyTrackModel).where(
+            SpotifyTrackModel.spotify_id == spotify_id
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        now = datetime.now(UTC)
+
+        if model:
+            model.name = name
+            model.track_number = track_number
+            model.disc_number = disc_number
+            model.duration_ms = duration_ms
+            model.explicit = explicit
+            model.preview_url = preview_url
+            model.isrc = isrc
+            model.updated_at = now
+        else:
+            model = SpotifyTrackModel(
+                spotify_id=spotify_id,
+                album_id=album_id,
+                name=name,
+                track_number=track_number,
+                disc_number=disc_number,
+                duration_ms=duration_ms,
+                explicit=explicit,
+                preview_url=preview_url,
+                isrc=isrc,
+            )
+            self.session.add(model)
+
+    async def set_tracks_synced(self, album_id: str) -> None:
+        """Mark tracks as synced for an album."""
+        from .models import SpotifyAlbumModel
+
+        stmt = select(SpotifyAlbumModel).where(
+            SpotifyAlbumModel.spotify_id == album_id
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if model:
+            model.tracks_synced_at = datetime.now(UTC)
+
+    async def link_track_to_local(
+        self, spotify_track_id: str, local_track_id: str
+    ) -> None:
+        """Link a Spotify track to a local library track after download."""
+        from .models import SpotifyTrackModel
+
+        stmt = select(SpotifyTrackModel).where(
+            SpotifyTrackModel.spotify_id == spotify_track_id
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if model:
+            model.local_track_id = local_track_id
+            model.updated_at = datetime.now(UTC)
+
+    # =========================================================================
+    # SYNC STATUS
+    # =========================================================================
+
+    async def get_sync_status(self, sync_type: str) -> Any | None:
+        """Get sync status for a type."""
+        from .models import SpotifySyncStatusModel
+
+        stmt = select(SpotifySyncStatusModel).where(
+            SpotifySyncStatusModel.sync_type == sync_type
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def update_sync_status(
+        self,
+        sync_type: str,
+        status: str = "idle",
+        items_synced: int = 0,
+        items_added: int = 0,
+        items_removed: int = 0,
+        error_message: str | None = None,
+        cooldown_minutes: int = 5,
+    ) -> None:
+        """Update or create sync status."""
+        import uuid
+
+        from .models import SpotifySyncStatusModel
+
+        stmt = select(SpotifySyncStatusModel).where(
+            SpotifySyncStatusModel.sync_type == sync_type
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        now = datetime.now(UTC)
+        next_sync = now + timedelta(minutes=cooldown_minutes)
+
+        if model:
+            model.status = status
+            model.last_sync_at = now
+            model.next_sync_at = next_sync
+            model.items_synced = items_synced
+            model.items_added = items_added
+            model.items_removed = items_removed
+            model.error_message = error_message
+            model.updated_at = now
+        else:
+            model = SpotifySyncStatusModel(
+                id=str(uuid.uuid4()),
+                sync_type=sync_type,
+                status=status,
+                last_sync_at=now,
+                next_sync_at=next_sync,
+                items_synced=items_synced,
+                items_added=items_added,
+                items_removed=items_removed,
+                error_message=error_message,
+            )
+            self.session.add(model)
+
+    async def should_sync(self, sync_type: str) -> bool:
+        """Check if sync is due based on cooldown."""
+        status = await self.get_sync_status(sync_type)
+        if not status:
+            return True  # Never synced
+        if status.status == "running":
+            return False  # Already running
+        if not status.next_sync_at:
+            return True
+        return datetime.now(UTC) >= status.next_sync_at
+
+
+# =============================================================================
+# SPOTIFY TOKEN REPOSITORY (Background Worker OAuth Tokens)
+# =============================================================================
+# Hey future me - this repository handles the SINGLE token for background workers!
+# Single-user architecture: we always use id='default'. UPSERT pattern ensures
+# exactly one row. Background workers call get_active_token() to get the token.
+#
+# The is_valid flag is CRITICAL:
+# - True: Token works, workers operate normally
+# - False: Refresh failed → UI shows warning → workers skip work → no crash loop
+#
+# The repository does NOT refresh tokens - that's TokenManager's job. Repository
+# is pure data access (CRUD), business logic lives in services/managers.
+# =============================================================================
+
+
+class SpotifyTokenRepository:
+    """Repository for background worker Spotify OAuth tokens.
+    
+    Single-user: manages exactly one token row (id='default'). Background workers
+    call get_active_token() for API access. Separate from user sessions.
+    
+    Key methods:
+    - get_active_token(): Get valid token for background work (None if invalid/missing)
+    - upsert_token(): Store new token after OAuth callback
+    - mark_invalid(): Flag token as invalid (triggers UI warning)
+    - get_expiring_soon(): Find tokens needing proactive refresh
+    """
+
+    # Single-user token ID (could be spotify_user_id for multi-user later)
+    DEFAULT_TOKEN_ID = "default"
+
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize repository with database session."""
+        self.session = session
+
+    # Hey future me - this is THE method background workers call! Returns the token
+    # if it exists AND is valid. Returns None if: no token, or is_valid=False.
+    # Workers should check for None and gracefully skip work (no crash!).
+    async def get_active_token(self) -> "SpotifyTokenModel | None":
+        """Get the active valid token for background workers.
+        
+        Returns None if:
+        - No token exists (user never authenticated)
+        - Token is marked invalid (refresh failed, user revoked)
+        
+        Background workers should check for None and skip work gracefully.
+        
+        Returns:
+            SpotifyTokenModel if valid token exists, None otherwise
+        """
+        from .models import SpotifyTokenModel
+
+        stmt = select(SpotifyTokenModel).where(
+            SpotifyTokenModel.id == self.DEFAULT_TOKEN_ID,
+            SpotifyTokenModel.is_valid == True,  # noqa: E712
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    # Yo - use this to get token status for UI display (even if invalid)
+    async def get_token_status(self) -> "SpotifyTokenModel | None":
+        """Get token regardless of validity (for status display).
+        
+        Unlike get_active_token(), this returns the token even if is_valid=False.
+        Used for UI status display and the /api/auth/token-status endpoint.
+        
+        Returns:
+            SpotifyTokenModel if exists, None if never authenticated
+        """
+        from .models import SpotifyTokenModel
+
+        stmt = select(SpotifyTokenModel).where(
+            SpotifyTokenModel.id == self.DEFAULT_TOKEN_ID
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    # Listen up - OAuth callback calls this after successful auth! UPSERT pattern:
+    # if token exists → update, else → create. Sets is_valid=True and clears errors.
+    async def upsert_token(
+        self,
+        access_token: str,
+        refresh_token: str,
+        token_expires_at: datetime,
+        scopes: str | None = None,
+    ) -> "SpotifyTokenModel":
+        """Store or update the OAuth token after successful authentication.
+        
+        Uses UPSERT pattern: creates new row if none exists, updates if exists.
+        Sets is_valid=True and clears any previous errors.
+        
+        Args:
+            access_token: New access token from Spotify
+            refresh_token: New refresh token from Spotify
+            token_expires_at: When the access token expires
+            scopes: Space-separated scopes granted (optional)
+            
+        Returns:
+            The created or updated SpotifyTokenModel
+        """
+        from .models import SpotifyTokenModel
+
+        stmt = select(SpotifyTokenModel).where(
+            SpotifyTokenModel.id == self.DEFAULT_TOKEN_ID
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        now = datetime.now(UTC)
+
+        if model:
+            # Update existing token
+            model.access_token = access_token
+            model.refresh_token = refresh_token
+            model.token_expires_at = token_expires_at
+            model.scopes = scopes
+            model.is_valid = True  # Reset validity on new auth
+            model.last_error = None  # Clear previous errors
+            model.last_error_at = None
+            model.updated_at = now
+            model.last_refreshed_at = now
+        else:
+            # Create new token
+            model = SpotifyTokenModel(
+                id=self.DEFAULT_TOKEN_ID,
+                access_token=access_token,
+                refresh_token=refresh_token,
+                token_expires_at=token_expires_at,
+                scopes=scopes,
+                is_valid=True,
+                created_at=now,
+                updated_at=now,
+                last_refreshed_at=now,
+            )
+            self.session.add(model)
+
+        return model
+
+    # Hey - TokenRefreshWorker calls this after successful refresh!
+    # Updates access_token, expiry, and last_refreshed_at timestamp.
+    async def update_after_refresh(
+        self,
+        access_token: str,
+        token_expires_at: datetime,
+        refresh_token: str | None = None,
+    ) -> bool:
+        """Update token after successful refresh.
+        
+        Called by TokenRefreshWorker after Spotify returns new tokens.
+        Optionally updates refresh_token if Spotify returned a new one.
+        
+        Args:
+            access_token: New access token
+            token_expires_at: New expiration time
+            refresh_token: New refresh token (optional, Spotify sometimes rotates)
+            
+        Returns:
+            True if token was updated, False if no token exists
+        """
+        from .models import SpotifyTokenModel
+
+        stmt = select(SpotifyTokenModel).where(
+            SpotifyTokenModel.id == self.DEFAULT_TOKEN_ID
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        if not model:
+            return False
+
+        now = datetime.now(UTC)
+        model.access_token = access_token
+        model.token_expires_at = token_expires_at
+        model.updated_at = now
+        model.last_refreshed_at = now
+        model.is_valid = True  # Successful refresh confirms validity
+        model.last_error = None  # Clear any previous errors
+        model.last_error_at = None
+
+        # Spotify sometimes rotates refresh tokens
+        if refresh_token:
+            model.refresh_token = refresh_token
+
+        return True
+
+    # Yo - call this when refresh FAILS (401, 403, network error, etc.)
+    # Sets is_valid=False which triggers UI warning and pauses workers.
+    async def mark_invalid(self, error_message: str) -> bool:
+        """Mark token as invalid after refresh failure.
+        
+        This triggers:
+        1. UI warning banner telling user to re-authenticate
+        2. Background workers skip their work (no crash loop)
+        
+        Args:
+            error_message: Description of what went wrong (for debugging)
+            
+        Returns:
+            True if token was marked invalid, False if no token exists
+        """
+        from .models import SpotifyTokenModel
+
+        stmt = select(SpotifyTokenModel).where(
+            SpotifyTokenModel.id == self.DEFAULT_TOKEN_ID
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        if not model:
+            return False
+
+        now = datetime.now(UTC)
+        model.is_valid = False
+        model.last_error = error_message
+        model.last_error_at = now
+        model.updated_at = now
+
+        return True
+
+    # Listen - TokenRefreshWorker calls this to find tokens needing refresh!
+    # Default: refresh tokens expiring within 10 minutes (proactive refresh).
+    async def get_expiring_soon(self, minutes: int = 10) -> "SpotifyTokenModel | None":
+        """Get token if it expires within given minutes.
+        
+        Used by TokenRefreshWorker for proactive refresh before expiration.
+        Only returns valid tokens (is_valid=True).
+        
+        Args:
+            minutes: Threshold in minutes (default 10)
+            
+        Returns:
+            SpotifyTokenModel if expiring soon and valid, None otherwise
+        """
+        from .models import SpotifyTokenModel
+
+        threshold = datetime.now(UTC) + timedelta(minutes=minutes)
+
+        stmt = select(SpotifyTokenModel).where(
+            SpotifyTokenModel.id == self.DEFAULT_TOKEN_ID,
+            SpotifyTokenModel.is_valid == True,  # noqa: E712
+            SpotifyTokenModel.token_expires_at <= threshold,
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    # Hey - cleanup method, probably not needed for single-user but good to have
+    async def delete_token(self) -> bool:
+        """Delete the token (logout/revoke).
+        
+        Returns:
+            True if token was deleted, False if none existed
+        """
+        from .models import SpotifyTokenModel
+
+        stmt = select(SpotifyTokenModel).where(
+            SpotifyTokenModel.id == self.DEFAULT_TOKEN_ID
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        if not model:
+            return False
+
+        await self.session.delete(model)
+        return True

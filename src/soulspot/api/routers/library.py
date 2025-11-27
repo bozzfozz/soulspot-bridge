@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from soulspot.api.dependencies import get_db_session
+from soulspot.api.dependencies import get_db_session, get_job_queue, get_library_scanner_service
+from soulspot.application.services.library_scanner_service import LibraryScannerService
 from soulspot.application.use_cases.check_album_completeness import (
     CheckAlbumCompletenessUseCase,
 )
@@ -18,6 +19,7 @@ from soulspot.application.use_cases.scan_library import (
     GetDuplicatesUseCase,
     ScanLibraryUseCase,
 )
+from soulspot.application.workers.job_queue import JobQueue, JobStatus, JobType
 from soulspot.config import Settings, get_settings
 
 router = APIRouter(prefix="/library", tags=["library"])
@@ -418,3 +420,201 @@ async def get_broken_files_summary(
         raise HTTPException(
             status_code=500, detail=f"Failed to get broken files summary: {str(e)}"
         ) from e
+
+
+# =============================================================================
+# LIBRARY IMPORT ENDPOINTS (NEW - with fuzzy matching and background jobs)
+# =============================================================================
+
+
+class ImportScanRequest(BaseModel):
+    """Request to start a library import scan."""
+
+    incremental: bool = True  # Only scan new/modified files
+
+
+class ImportScanResponse(BaseModel):
+    """Response from import scan start."""
+
+    job_id: str
+    status: str
+    message: str
+
+
+# Hey future me - this starts a BACKGROUND JOB for library import!
+# Uses JobQueue for async processing (large libraries can take hours).
+# The job uses LibraryScannerService which has:
+# - Fuzzy matching (85% threshold) for artists/albums
+# - Incremental scan (only new/modified files based on mtime)
+# - Metadata extraction via mutagen
+# Poll /import/status/{job_id} to check progress!
+@router.post("/import/scan", response_model=ImportScanResponse)
+async def start_import_scan(
+    request: ImportScanRequest = ImportScanRequest(),
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> ImportScanResponse:
+    """Start a library import scan as background job.
+
+    Scans the music directory, extracts metadata, and imports tracks
+    into the database with fuzzy artist/album matching.
+
+    Args:
+        request: Scan request with incremental flag
+        job_queue: Job queue for background processing
+
+    Returns:
+        Job ID for status polling
+    """
+    try:
+        # Queue the scan job
+        job_id = await job_queue.enqueue(
+            job_type=JobType.LIBRARY_SCAN,
+            payload={"incremental": request.incremental},
+            max_retries=1,  # Don't retry full scans
+            priority=5,  # Medium priority
+        )
+
+        return ImportScanResponse(
+            job_id=job_id,
+            status="pending",
+            message=f"Library import scan queued (incremental={request.incremental})",
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to start import scan: {str(e)}"
+        ) from e
+
+
+@router.get("/import/status/{job_id}")
+async def get_import_scan_status(
+    job_id: str,
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> dict[str, Any]:
+    """Get import scan job status.
+
+    Args:
+        job_id: Job ID from start_import_scan
+        job_queue: Job queue instance
+
+    Returns:
+        Job status and progress
+    """
+    job = await job_queue.get_job(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    response = {
+        "job_id": job.id,
+        "status": job.status.value,
+        "created_at": job.created_at.isoformat(),
+    }
+
+    if job.started_at:
+        response["started_at"] = job.started_at.isoformat()
+    if job.completed_at:
+        response["completed_at"] = job.completed_at.isoformat()
+    if job.error:
+        response["error"] = job.error
+
+    # Include progress from result if available
+    if job.result:
+        if isinstance(job.result, dict):
+            if "progress" in job.result:
+                response["progress"] = job.result["progress"]
+            if "stats" in job.result:
+                response["stats"] = job.result["stats"]
+            else:
+                # Final result (stats dict directly)
+                response["stats"] = job.result
+
+    return response
+
+
+@router.get("/import/summary")
+async def get_import_summary(
+    scanner: LibraryScannerService = Depends(get_library_scanner_service),
+) -> dict[str, Any]:
+    """Get current library import summary.
+
+    Returns counts of artists, albums, tracks, and local files.
+
+    Args:
+        scanner: Library scanner service
+
+    Returns:
+        Summary statistics
+    """
+    try:
+        summary = await scanner.get_scan_summary()
+        return summary
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get import summary: {str(e)}"
+        ) from e
+
+
+@router.get("/import/jobs")
+async def list_import_jobs(
+    status: str | None = Query(None, description="Filter by status"),
+    limit: int = Query(20, description="Max jobs to return"),
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> dict[str, Any]:
+    """List recent library import jobs.
+
+    Args:
+        status: Optional status filter
+        limit: Maximum jobs to return
+        job_queue: Job queue instance
+
+    Returns:
+        List of import jobs
+    """
+    status_filter = JobStatus(status) if status else None
+
+    jobs = await job_queue.list_jobs(
+        status=status_filter,
+        job_type=JobType.LIBRARY_SCAN,
+        limit=limit,
+    )
+
+    return {
+        "jobs": [
+            {
+                "job_id": job.id,
+                "status": job.status.value,
+                "created_at": job.created_at.isoformat(),
+                "started_at": job.started_at.isoformat() if job.started_at else None,
+                "completed_at": job.completed_at.isoformat() if job.completed_at else None,
+                "error": job.error,
+            }
+            for job in jobs
+        ],
+        "total": len(jobs),
+    }
+
+
+@router.post("/import/cancel/{job_id}")
+async def cancel_import_job(
+    job_id: str,
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> dict[str, Any]:
+    """Cancel a running import job.
+
+    Args:
+        job_id: Job ID to cancel
+        job_queue: Job queue instance
+
+    Returns:
+        Cancellation result
+    """
+    success = await job_queue.cancel_job(job_id)
+
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="Job not found or cannot be cancelled (already completed/failed)",
+        )
+
+    return {"job_id": job_id, "cancelled": True}

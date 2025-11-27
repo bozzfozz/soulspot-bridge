@@ -9,9 +9,13 @@ from fastapi.templating import Jinja2Templates
 
 from soulspot.api.dependencies import (
     get_download_repository,
+    get_job_queue,
+    get_library_scanner_service,
     get_playlist_repository,
     get_track_repository,
 )
+from soulspot.application.services.library_scanner_service import LibraryScannerService
+from soulspot.application.workers.job_queue import JobQueue, JobStatus, JobType
 from soulspot.infrastructure.persistence.repositories import (
     DownloadRepository,
     PlaylistRepository,
@@ -468,6 +472,92 @@ async def library(
     )
 
 
+# =============================================================================
+# LIBRARY IMPORT UI ROUTES
+# =============================================================================
+
+
+@router.get("/library/import", response_class=HTMLResponse)
+async def library_import_page(
+    request: Request,
+    scanner: LibraryScannerService = Depends(get_library_scanner_service),
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> Any:
+    """Library import page with scan controls and status."""
+    # Get current summary
+    summary = await scanner.get_scan_summary()
+
+    # Check for active scan job
+    active_job = None
+    jobs = await job_queue.list_jobs(job_type=JobType.LIBRARY_SCAN, limit=1)
+    if jobs and jobs[0].status in (JobStatus.PENDING, JobStatus.RUNNING):
+        job = jobs[0]
+        active_job = {
+            "job_id": job.id,
+            "status": job.status.value,
+            "progress": job.result.get("progress", 0) if job.result else 0,
+            "stats": job.result.get("stats") if job.result else None,
+        }
+
+    return templates.TemplateResponse(
+        "library_import.html",
+        {
+            "request": request,
+            "summary": summary,
+            "active_job": active_job,
+        },
+    )
+
+
+@router.get("/library/import/jobs-list", response_class=HTMLResponse)
+async def library_import_jobs_list(
+    request: Request,
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> Any:
+    """HTMX partial: Recent import jobs list."""
+    jobs = await job_queue.list_jobs(job_type=JobType.LIBRARY_SCAN, limit=10)
+
+    jobs_data = [
+        {
+            "job_id": job.id,
+            "status": job.status.value,
+            "created_at": job.created_at.strftime("%Y-%m-%d %H:%M"),
+            "completed_at": job.completed_at.strftime("%Y-%m-%d %H:%M") if job.completed_at else None,
+            "stats": job.result if isinstance(job.result, dict) and "progress" not in job.result else None,
+        }
+        for job in jobs
+    ]
+
+    # Return simple HTML table
+    if not jobs_data:
+        return HTMLResponse("<p class='text-muted'>No recent scans found.</p>")
+
+    html = "<table class='table'><thead><tr>"
+    html += "<th>Date</th><th>Status</th><th>Imported</th><th>Errors</th>"
+    html += "</tr></thead><tbody>"
+
+    for job in jobs_data:
+        status_class = {
+            "completed": "text-success",
+            "failed": "text-danger",
+            "running": "text-warning",
+            "pending": "text-muted",
+        }.get(job["status"], "")
+
+        imported = job["stats"].get("imported", "-") if job["stats"] else "-"
+        errors = job["stats"].get("errors", "-") if job["stats"] else "-"
+
+        html += f"<tr>"
+        html += f"<td>{job['created_at']}</td>"
+        html += f"<td class='{status_class}'>{job['status']}</td>"
+        html += f"<td>{imported}</td>"
+        html += f"<td>{errors}</td>"
+        html += f"</tr>"
+
+    html += "</tbody></table>"
+    return HTMLResponse(html)
+
+
 # Listen up - this groups ALL tracks by artist name in Python! Loads entire track library into memory
 # which is super inefficient. Should be a SQL GROUP BY query with COUNT and DISTINCT. The artists_dict
 # accumulates track counts and unique album names using set(). Converting set to len() for album_count
@@ -885,15 +975,317 @@ async def track_metadata_editor(
         )
 
 
+# =============================================================================
+# SPOTIFY BROWSE ROUTES
+# =============================================================================
+# Hey future me - these routes are for browsing SPOTIFY data (followed artists, their albums,
+# tracks). Data comes from spotify_* tables (separate from local library!). Auto-sync happens
+# on page load with cooldown to avoid hammering Spotify API. No "Sync" button needed!
+# The flow: /spotify/artists → auto-sync → show grid → click artist → /spotify/artists/{id}
+# → auto-sync albums → show albums → click album → /spotify/artists/{a}/albums/{b} → show tracks
+# =============================================================================
+
+from soulspot.api.dependencies import (
+    get_session_id,
+    get_session_store,
+    get_spotify_sync_service,
+)
+from soulspot.application.services.session_store import DatabaseSessionStore
+from soulspot.application.services.spotify_sync_service import SpotifySyncService
+import json
+
+
+@router.get("/spotify/artists", response_class=HTMLResponse)
+async def spotify_artists_page(
+    request: Request,
+    session_id: str | None = Depends(get_session_id),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
+    sync_service: SpotifySyncService = Depends(get_spotify_sync_service),
+) -> Any:
+    """Spotify followed artists page with auto-sync.
+    
+    Auto-syncs followed artists from Spotify on page load (with cooldown).
+    Shows all followed artists from DB after sync.
+    """
+    artists = []
+    sync_stats = None
+    error = None
+
+    try:
+        # Get access token from session
+        access_token = None
+        if session_id:
+            session = await session_store.get_session(session_id)
+            if session and session.access_token:
+                access_token = session.access_token
+
+        if access_token:
+            # Auto-sync (respects cooldown)
+            sync_stats = await sync_service.sync_followed_artists(access_token)
+            
+            # Get artists from DB
+            artist_models = await sync_service.get_artists(limit=500)
+            
+            # Convert to template-friendly format
+            for artist in artist_models:
+                genres = []
+                if artist.genres:
+                    try:
+                        genres = json.loads(artist.genres) if isinstance(artist.genres, str) else artist.genres
+                    except (json.JSONDecodeError, TypeError):
+                        genres = []
+                
+                artists.append({
+                    "spotify_id": artist.spotify_id,
+                    "name": artist.name,
+                    "image_url": artist.image_url,
+                    "genres": genres[:3],  # Max 3 genres for display
+                    "genres_count": len(genres),
+                    "popularity": artist.popularity,
+                    "follower_count": artist.follower_count,
+                })
+        else:
+            error = "Nicht mit Spotify verbunden. Bitte zuerst einloggen."
+
+    except Exception as e:
+        error = str(e)
+
+    return templates.TemplateResponse(
+        "spotify_artists.html",
+        {
+            "request": request,
+            "artists": artists,
+            "sync_stats": sync_stats,
+            "error": error,
+            "total_count": len(artists),
+        },
+    )
+
+
+@router.get("/spotify/artists/{artist_id}", response_class=HTMLResponse)
+async def spotify_artist_detail_page(
+    request: Request,
+    artist_id: str,
+    session_id: str | None = Depends(get_session_id),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
+    sync_service: SpotifySyncService = Depends(get_spotify_sync_service),
+) -> Any:
+    """Spotify artist detail page with albums.
+    
+    Auto-syncs artist's albums from Spotify on page load (with cooldown).
+    Shows artist info and album grid.
+    """
+    artist = None
+    albums = []
+    sync_stats = None
+    error = None
+
+    try:
+        # Get access token
+        access_token = None
+        if session_id:
+            session = await session_store.get_session(session_id)
+            if session and session.access_token:
+                access_token = session.access_token
+
+        # Get artist from DB
+        artist_model = await sync_service.get_artist(artist_id)
+        
+        if not artist_model:
+            return templates.TemplateResponse(
+                "error.html",
+                {
+                    "request": request,
+                    "error_code": 404,
+                    "error_message": f"Artist {artist_id} nicht gefunden",
+                },
+                status_code=404,
+            )
+
+        # Parse artist data
+        genres = []
+        if artist_model.genres:
+            try:
+                genres = json.loads(artist_model.genres) if isinstance(artist_model.genres, str) else artist_model.genres
+            except (json.JSONDecodeError, TypeError):
+                genres = []
+
+        artist = {
+            "spotify_id": artist_model.spotify_id,
+            "name": artist_model.name,
+            "image_url": artist_model.image_url,
+            "genres": genres,
+            "popularity": artist_model.popularity,
+            "follower_count": artist_model.follower_count,
+        }
+
+        if access_token:
+            # Auto-sync albums (respects cooldown)
+            sync_stats = await sync_service.sync_artist_albums(access_token, artist_id)
+
+        # Get albums from DB
+        album_models = await sync_service.get_artist_albums(artist_id, limit=200)
+        
+        for album in album_models:
+            albums.append({
+                "spotify_id": album.spotify_id,
+                "name": album.name,
+                "image_url": album.image_url,
+                "release_date": album.release_date,
+                "album_type": album.album_type,
+                "total_tracks": album.total_tracks,
+            })
+
+        # Sort: albums first, then singles, by release date desc
+        type_order = {"album": 0, "single": 1, "compilation": 2}
+        albums.sort(
+            key=lambda a: (type_order.get(a["album_type"], 99), a["release_date"] or ""),
+            reverse=True,
+        )
+
+    except Exception as e:
+        error = str(e)
+
+    return templates.TemplateResponse(
+        "spotify_artist_detail.html",
+        {
+            "request": request,
+            "artist": artist,
+            "albums": albums,
+            "sync_stats": sync_stats,
+            "error": error,
+            "album_count": len(albums),
+        },
+    )
+
+
+@router.get("/spotify/artists/{artist_id}/albums/{album_id}", response_class=HTMLResponse)
+async def spotify_album_detail_page(
+    request: Request,
+    artist_id: str,
+    album_id: str,
+    session_id: str | None = Depends(get_session_id),
+    session_store: DatabaseSessionStore = Depends(get_session_store),
+    sync_service: SpotifySyncService = Depends(get_spotify_sync_service),
+) -> Any:
+    """Spotify album detail page with tracks.
+    
+    Auto-syncs album's tracks from Spotify on page load (with cooldown).
+    Shows album info and track list with download buttons.
+    """
+    artist = None
+    album = None
+    tracks = []
+    sync_stats = None
+    error = None
+
+    try:
+        # Get access token
+        access_token = None
+        if session_id:
+            session = await session_store.get_session(session_id)
+            if session and session.access_token:
+                access_token = session.access_token
+
+        # Get artist from DB
+        artist_model = await sync_service.get_artist(artist_id)
+        if artist_model:
+            artist = {
+                "spotify_id": artist_model.spotify_id,
+                "name": artist_model.name,
+            }
+
+        # Get album from DB
+        album_model = await sync_service.get_album(album_id)
+        
+        if not album_model:
+            return templates.TemplateResponse(
+                "error.html",
+                {
+                    "request": request,
+                    "error_code": 404,
+                    "error_message": f"Album {album_id} nicht gefunden",
+                },
+                status_code=404,
+            )
+
+        album = {
+            "spotify_id": album_model.spotify_id,
+            "name": album_model.name,
+            "image_url": album_model.image_url,
+            "release_date": album_model.release_date,
+            "album_type": album_model.album_type,
+            "total_tracks": album_model.total_tracks,
+        }
+
+        if access_token:
+            # Auto-sync tracks (respects cooldown)
+            sync_stats = await sync_service.sync_album_tracks(access_token, album_id)
+
+        # Get tracks from DB
+        track_models = await sync_service.get_album_tracks(album_id, limit=100)
+        
+        for track in track_models:
+            # Format duration
+            duration_sec = track.duration_ms // 1000
+            duration_min = duration_sec // 60
+            duration_sec_rem = duration_sec % 60
+            duration_str = f"{duration_min}:{duration_sec_rem:02d}"
+            
+            tracks.append({
+                "spotify_id": track.spotify_id,
+                "name": track.name,
+                "track_number": track.track_number,
+                "disc_number": track.disc_number,
+                "duration_ms": track.duration_ms,
+                "duration_str": duration_str,
+                "explicit": track.explicit,
+                "preview_url": track.preview_url,
+                "isrc": track.isrc,
+                "local_track_id": track.local_track_id,
+                "is_downloaded": track.local_track_id is not None,
+            })
+
+        # Sort by disc number, then track number
+        tracks.sort(key=lambda t: (t["disc_number"], t["track_number"]))
+
+        # Calculate total duration
+        total_ms = sum(t["duration_ms"] for t in tracks)
+        total_min = total_ms // 60000
+        total_sec = (total_ms % 60000) // 1000
+
+    except Exception as e:
+        error = str(e)
+        total_min = 0
+        total_sec = 0
+
+    return templates.TemplateResponse(
+        "spotify_album_detail.html",
+        {
+            "request": request,
+            "artist": artist,
+            "album": album,
+            "tracks": tracks,
+            "sync_stats": sync_stats,
+            "error": error,
+            "track_count": len(tracks),
+            "total_duration": f"{total_min} min {total_sec} sec",
+        },
+    )
+
+
 # Hey future me, this renders the followed artists sync page! It's a simple GET that loads the template
 # with empty state. The actual sync happens client-side via HTMX POST to /api/automation/followed-artists/sync
 # which returns JSON that gets rendered by JavaScript in the template. No DB queries on initial page load -
 # keeps it fast. Users see empty state with "Sync from Spotify" button. After sync, artists list populates
 # and users can select which artists to add to watchlists. The bulk create uses POST to /api/automation/
 # followed-artists/watchlists/bulk. This page requires Spotify OAuth token in session or sync will fail!
+# DEPRECATED: Use /spotify/artists instead for auto-sync experience!
 @router.get("/automation/followed-artists", response_class=HTMLResponse)
 async def followed_artists_page(request: Request) -> Any:
     """Followed artists sync and watchlist creation page.
+    
+    DEPRECATED: Use /spotify/artists for auto-sync experience.
 
     Args:
         request: FastAPI request object

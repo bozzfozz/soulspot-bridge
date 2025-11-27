@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Library Import - SoulSpot{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="header-content">
+        <h1>
+            <i class="fa-solid fa-folder-open"></i>
+            Library Import
+        </h1>
+        <p class="subtitle">Scan and import your local music collection</p>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="stats-grid" id="summary-stats">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-value" id="total-artists">{{ summary.total_artists | default(0) }}</span>
+            <span class="stat-label">Artists</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fa-solid fa-compact-disc"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-value" id="total-albums">{{ summary.total_albums | default(0) }}</span>
+            <span class="stat-label">Albums</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fa-solid fa-music"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-value" id="total-tracks">{{ summary.total_tracks | default(0) }}</span>
+            <span class="stat-label">Tracks</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fa-solid fa-file-audio"></i>
+        </div>
+        <div class="stat-content">
+            <span class="stat-value" id="local-files">{{ summary.local_files | default(0) }}</span>
+            <span class="stat-label">Local Files</span>
+        </div>
+    </div>
+</div>
+
+<!-- Scan Controls -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3><i class="fa-solid fa-play"></i> Start Scan</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted" style="margin-bottom: 1rem;">
+            <i class="fa-solid fa-folder"></i>
+            Music Path: <code>{{ summary.music_path | default('/music') }}</code>
+        </p>
+
+        <div class="scan-options" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <!-- Incremental Scan (Default) -->
+            <button 
+                class="btn btn-primary"
+                id="btn-incremental-scan"
+                hx-post="/api/library/import/scan"
+                hx-vals='{"incremental": true}'
+                hx-target="#scan-status"
+                hx-swap="innerHTML"
+                hx-indicator="#scan-loading"
+            >
+                <i class="fa-solid fa-bolt"></i>
+                Incremental Scan
+            </button>
+
+            <!-- Full Scan -->
+            <button 
+                class="btn btn-secondary"
+                id="btn-full-scan"
+                hx-post="/api/library/import/scan"
+                hx-vals='{"incremental": false}'
+                hx-target="#scan-status"
+                hx-swap="innerHTML"
+                hx-indicator="#scan-loading"
+            >
+                <i class="fa-solid fa-sync"></i>
+                Full Scan
+            </button>
+        </div>
+
+        <div class="scan-info" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+            <p><strong>Incremental:</strong> Only scan new or modified files (fast)</p>
+            <p><strong>Full:</strong> Re-scan all files, update metadata (slow)</p>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="scan-loading" class="htmx-indicator" style="text-align: center; padding: 1rem;">
+    <div class="loading-spinner"></div>
+    <p>Starting scan...</p>
+</div>
+
+<!-- Scan Status -->
+<div id="scan-status" style="margin-top: 1.5rem;">
+    {% if active_job %}
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-tasks"></i> Scan in Progress</h3>
+        </div>
+        <div class="card-body"
+             hx-get="/api/library/import/status/{{ active_job.job_id }}"
+             hx-trigger="every 2s"
+             hx-swap="outerHTML">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ active_job.progress | default(0) }}%;"></div>
+                </div>
+                <span class="progress-text">{{ active_job.progress | default(0) | round(1) }}%</span>
+            </div>
+            
+            {% if active_job.stats %}
+            <div class="scan-stats" style="margin-top: 1rem;">
+                <span><i class="fa-solid fa-file"></i> Scanned: {{ active_job.stats.scanned | default(0) }}</span>
+                <span><i class="fa-solid fa-check text-success"></i> Imported: {{ active_job.stats.imported | default(0) }}</span>
+                <span><i class="fa-solid fa-forward"></i> Skipped: {{ active_job.stats.skipped | default(0) }}</span>
+                <span><i class="fa-solid fa-exclamation-triangle text-warning"></i> Errors: {{ active_job.stats.errors | default(0) }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Jobs -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3><i class="fa-solid fa-history"></i> Recent Scans</h3>
+    </div>
+    <div class="card-body"
+         hx-get="/library/import/jobs-list"
+         hx-trigger="load, every 30s"
+         hx-swap="innerHTML">
+        <p class="text-muted">Loading recent jobs...</p>
+    </div>
+</div>
+
+<style>
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-card {
+    background: var(--surface-elevated);
+    border-radius: 8px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--accent-primary-alpha);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-primary);
+    font-size: 1.25rem;
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--surface-base);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-primary);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-weight: 600;
+    min-width: 60px;
+    text-align: right;
+}
+
+.scan-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.scan-stats span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.scan-options .btn {
+    min-width: 180px;
+}
+
+.scan-info p {
+    margin: 0.25rem 0;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--surface-elevated);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: block;
+}
+
+.htmx-request.htmx-indicator {
+    display: block;
+}
+</style>
+
+<script>
+// Handle scan response
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.pathInfo.requestPath === '/api/library/import/scan') {
+        try {
+            const response = JSON.parse(evt.detail.xhr.responseText);
+            if (response.job_id) {
+                // Show job status and start polling
+                const statusDiv = document.getElementById('scan-status');
+                statusDiv.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-tasks"></i> Scan Started</h3>
+                        </div>
+                        <div class="card-body"
+                             hx-get="/api/library/import/status/${response.job_id}"
+                             hx-trigger="load, every 2s"
+                             hx-swap="innerHTML">
+                            <p>Job ID: ${response.job_id}</p>
+                            <p>Status: ${response.status}</p>
+                        </div>
+                    </div>
+                `;
+                htmx.process(statusDiv);
+            }
+        } catch (e) {
+            console.error('Error parsing scan response:', e);
+        }
+    }
+});
+</script>
+{% endblock %}

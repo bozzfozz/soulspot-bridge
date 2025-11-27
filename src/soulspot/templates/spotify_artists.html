@@ -1,0 +1,265 @@
+{# Hey future me - Spotify Followed Artists page with AUTO-SYNC!
+   Shows all artists you follow on Spotify. Data syncs automatically on page load
+   (no button needed!). Click artist to see their albums. Green Spotify branding. #}
+
+{% extends "base.html" %}
+
+{% block title %}Followed Artists - Spotify - SoulSpot{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb -->
+<nav style="margin-bottom: var(--space-4);">
+    <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
+        <li style="color: var(--text-muted);">
+            <i class="fa-brands fa-spotify" style="color: #1DB954;"></i> Spotify
+        </li>
+        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>Followed Artists</li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
+    <div style="display: flex; align-items: center; gap: var(--space-4);">
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #1DB954, #1ed760); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-heart" style="color: white; font-size: 1.25rem;"></i>
+        </div>
+        <div>
+            <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Followed Artists</h1>
+            <p style="color: var(--text-muted); font-size: var(--font-size-sm);">
+                {% if total_count > 0 %}
+                {{ total_count }} artist{{ 's' if total_count != 1 else '' }} you follow on Spotify
+                {% else %}
+                Artists you follow on Spotify
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    <div style="display: flex; gap: var(--space-3); align-items: center;">
+        {% if sync_stats and sync_stats.synced %}
+        <span style="font-size: var(--font-size-sm); color: var(--text-muted);">
+            <i class="fa-solid fa-check" style="color: #1DB954;"></i>
+            Synced: +{{ sync_stats.added }} / -{{ sync_stats.removed }}
+        </span>
+        {% elif sync_stats and sync_stats.skipped_cooldown %}
+        <span style="font-size: var(--font-size-sm); color: var(--text-muted);">
+            <i class="fa-solid fa-clock"></i> From cache
+        </span>
+        {% endif %}
+        <input type="text" 
+               id="artist-search"
+               placeholder="Search artists..."
+               class="form-input"
+               style="min-width: 220px;">
+    </div>
+</div>
+
+{% if error %}
+<!-- Error Alert -->
+<div class="alert alert-error" style="margin-bottom: var(--space-6);">
+    <i class="fa-solid fa-exclamation-triangle"></i>
+    <span>{{ error }}</span>
+</div>
+{% endif %}
+
+<!-- Artists Grid -->
+<div id="artists-list">
+    {% if artists %}
+    <div class="artists-grid">
+        {% for artist in artists %}
+        <a href="/spotify/artists/{{ artist.spotify_id }}" class="artist-card">
+            {% if artist.image_url %}
+            <img src="{{ artist.image_url }}" alt="{{ artist.name }}" class="artist-image">
+            {% else %}
+            <div class="artist-avatar">
+                {{ artist.name[0]|upper }}
+            </div>
+            {% endif %}
+            <h3 class="artist-name" title="{{ artist.name }}">{{ artist.name }}</h3>
+            <div class="artist-genres">
+                {% for genre in artist.genres %}
+                <span class="genre-tag">{{ genre }}</span>
+                {% endfor %}
+                {% if artist.genres_count > 3 %}
+                <span class="genre-tag genre-more">+{{ artist.genres_count - 3 }}</span>
+                {% endif %}
+            </div>
+            {% if artist.popularity %}
+            <div class="artist-popularity">
+                <div class="popularity-bar" style="width: {{ artist.popularity }}%;"></div>
+            </div>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon" style="background: linear-gradient(135deg, #1DB954, #1ed760);">
+            <i class="fa-brands fa-spotify" style="color: white;"></i>
+        </div>
+        <h3>No followed artists</h3>
+        <p>You don't follow any artists on Spotify, or you need to connect your Spotify account first.</p>
+        <a href="/auth" class="btn btn-primary" style="background: #1DB954;">
+            <i class="fa-brands fa-spotify"></i>
+            Connect Spotify
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+    .artists-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: var(--space-4);
+    }
+    .artist-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-5);
+        text-align: center;
+        text-decoration: none;
+        color: var(--text-primary);
+        transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    }
+    .artist-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-xl);
+        border-color: #1DB954;
+    }
+    .artist-image {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto var(--space-4);
+        border-radius: 50%;
+        object-fit: cover;
+        transition: transform var(--transition-fast);
+    }
+    .artist-card:hover .artist-image {
+        transform: scale(1.05);
+    }
+    .artist-avatar {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto var(--space-4);
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1DB954, #1ed760);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-4xl);
+        font-weight: var(--font-weight-bold);
+        color: white;
+        transition: transform var(--transition-fast);
+    }
+    .artist-card:hover .artist-avatar {
+        transform: scale(1.05);
+    }
+    .artist-name {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-bold);
+        margin-bottom: var(--space-2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .artist-card:hover .artist-name {
+        color: #1DB954;
+    }
+    .artist-genres {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--space-1);
+        margin-bottom: var(--space-3);
+        min-height: 28px;
+    }
+    .genre-tag {
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+        font-size: var(--font-size-xs);
+        padding: 2px 8px;
+        border-radius: var(--radius-full);
+    }
+    .genre-more {
+        background: #1DB954;
+        color: white;
+    }
+    .artist-popularity {
+        height: 4px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+    .popularity-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #1DB954, #1ed760);
+        border-radius: var(--radius-full);
+    }
+    .empty-state {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-xl);
+        padding: var(--space-12);
+        text-align: center;
+    }
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto var(--space-4);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-3xl);
+    }
+    .empty-state h3 {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-bold);
+        margin-bottom: var(--space-2);
+    }
+    .empty-state p {
+        color: var(--text-muted);
+        margin-bottom: var(--space-6);
+    }
+    .alert {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        border-radius: var(--radius-lg);
+    }
+    .alert-error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+</style>
+<script>
+// Client-side search filter
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('artist-search');
+    if (searchInput) {
+        let debounceTimer;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                const artistCards = document.querySelectorAll('.artist-card');
+                
+                artistCards.forEach(card => {
+                    const artistName = card.querySelector('.artist-name').textContent.toLowerCase();
+                    const genres = Array.from(card.querySelectorAll('.genre-tag'))
+                        .map(el => el.textContent.toLowerCase())
+                        .join(' ');
+                    const match = artistName.includes(searchTerm) || genres.includes(searchTerm);
+                    card.style.display = match ? '' : 'none';
+                });
+            }, 200);
+        });
+    }
+});
+</script>
+{% endblock %}
