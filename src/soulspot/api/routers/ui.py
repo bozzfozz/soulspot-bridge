@@ -568,46 +568,68 @@ async def library_import_jobs_list(
     return HTMLResponse(html)
 
 
-# Listen up - this groups ALL tracks by artist name in Python! Loads entire track library into memory
-# which is super inefficient. Should be a SQL GROUP BY query with COUNT and DISTINCT. The artists_dict
-# accumulates track counts and unique album names using set(). Converting set to len() for album_count
-# works but we lose the actual album list. Sorting happens in Python after grouping - should be in SQL.
-# No pagination means this returns ALL artists - could be 1000s! Will freeze browser with big library.
+# Hey future me – refactored to load ArtistModel directly with album/track counts!
+# Now includes image_url from Spotify CDN. SQL does aggregation via subqueries instead
+# of loading all tracks into Python memory. Still no pagination (TODO for big libraries).
+# image_url comes from Spotify sync – falls back to None if artist wasn't synced.
 @router.get("/library/artists", response_class=HTMLResponse)
 async def library_artists(
     request: Request,
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Library artists browser page."""
-    tracks = await track_repository.list_all()
+    from sqlalchemy import func, select
 
-    # Group tracks by artist
-    artists_dict: dict[str, dict[str, Any]] = {}
-    for track in tracks:
-        if not track.artist:  # type: ignore[attr-defined]
-            continue
-        if track.artist not in artists_dict:  # type: ignore[attr-defined]
-            artists_dict[track.artist] = {  # type: ignore[attr-defined]
-                "name": track.artist,  # type: ignore[attr-defined]
-                "track_count": 0,
-                "album_count": 0,
-                "albums": set(),
-            }
-        artists_dict[track.artist]["track_count"] += 1  # type: ignore[attr-defined]
-        if track.album:  # type: ignore[attr-defined]
-            artists_dict[track.artist]["albums"].add(track.album)  # type: ignore[attr-defined]
+    from soulspot.api.dependencies import get_db_session
+    from soulspot.infrastructure.persistence.models import (
+        AlbumModel,
+        ArtistModel,
+        TrackModel,
+    )
 
-    # Convert to list and calculate album counts
+    # Get session for direct DB query
+    session = await anext(get_db_session(request))
+
+    # Subquery for track count per artist
+    track_count_subq = (
+        select(TrackModel.artist_id, func.count(TrackModel.id).label("track_count"))
+        .group_by(TrackModel.artist_id)
+        .subquery()
+    )
+
+    # Subquery for album count per artist
+    album_count_subq = (
+        select(AlbumModel.artist_id, func.count(AlbumModel.id).label("album_count"))
+        .group_by(AlbumModel.artist_id)
+        .subquery()
+    )
+
+    # Main query joining artist with counts
+    stmt = (
+        select(
+            ArtistModel,
+            track_count_subq.c.track_count,
+            album_count_subq.c.album_count,
+        )
+        .outerjoin(track_count_subq, ArtistModel.id == track_count_subq.c.artist_id)
+        .outerjoin(album_count_subq, ArtistModel.id == album_count_subq.c.artist_id)
+        .order_by(ArtistModel.name)
+    )
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    # Convert to template-friendly format with image_url
     artists = [
         {
-            "name": artist_data["name"],
-            "track_count": artist_data["track_count"],
-            "album_count": len(artist_data["albums"]),
+            "name": artist.name,
+            "track_count": track_count or 0,
+            "album_count": album_count or 0,
+            "image_url": artist.image_url,  # Spotify CDN URL or None
         }
-        for artist_data in artists_dict.values()
+        for artist, track_count, album_count in rows
     ]
 
-    # Sort by name
+    # Sort by name (already ordered in SQL, but ensure consistency)
     artists.sort(key=lambda x: x["name"].lower())
 
     return templates.TemplateResponse(
@@ -615,38 +637,54 @@ async def library_artists(
     )
 
 
-# Yo - same problem as artists! Loads ALL tracks, groups in Python, returns ALL albums unfiltered.
-# The album_key uses "::" delimiter to combine artist+album (ugly but works). "Unknown" fallback for
-# missing artist is good. year field is hardcoded None because Track doesn't have year (should pull
-# from Album relationship). Sorting by artist then album in Python - should be SQL ORDER BY. No
-# pagination! This is doomed with 1000+ albums. Needs DB-level aggregation or pagination badly!
+# Hey future me – refactored to load AlbumModel directly with artist join!
+# This gives us access to artwork_url from Spotify CDN. SQL does the grouping via
+# relationship, not manual Python dict. Still no pagination (TODO for big libraries).
+# The artwork_url comes from Spotify sync – if album wasn't synced, falls back to None.
 @router.get("/library/albums", response_class=HTMLResponse)
 async def library_albums(
     request: Request,
-    track_repository: TrackRepository = Depends(get_track_repository),
+    _track_repository: TrackRepository = Depends(get_track_repository),
 ) -> Any:
     """Library albums browser page."""
-    tracks = await track_repository.list_all()
+    from sqlalchemy import func, select
+    from sqlalchemy.orm import joinedload
 
-    # Group tracks by album
-    albums_dict: dict[str, dict[str, Any]] = {}
-    for track in tracks:
-        if not track.album:  # type: ignore[attr-defined]
-            continue
-        album_key = f"{track.artist or 'Unknown'}::{track.album}"  # type: ignore[attr-defined]
-        if album_key not in albums_dict:
-            albums_dict[album_key] = {
-                "title": track.album,  # type: ignore[attr-defined]
-                "artist": track.artist or "Unknown Artist",  # type: ignore[attr-defined]
-                "track_count": 0,
-                "year": None,  # Could be extracted from metadata
-            }
-        albums_dict[album_key]["track_count"] += 1
+    from soulspot.api.dependencies import get_db_session
+    from soulspot.infrastructure.persistence.models import AlbumModel, TrackModel
 
-    # Convert to list
-    albums = list(albums_dict.values())
+    # Get session for direct DB query
+    session = await anext(get_db_session(request))
 
-    # Sort by artist then album
+    # Query albums with artist join and track count subquery
+    track_count_subq = (
+        select(TrackModel.album_id, func.count(TrackModel.id).label("track_count"))
+        .group_by(TrackModel.album_id)
+        .subquery()
+    )
+
+    stmt = (
+        select(AlbumModel, track_count_subq.c.track_count)
+        .outerjoin(track_count_subq, AlbumModel.id == track_count_subq.c.album_id)
+        .options(joinedload(AlbumModel.artist))
+        .order_by(AlbumModel.title)
+    )
+    result = await session.execute(stmt)
+    rows = result.unique().all()
+
+    # Convert to template-friendly format with artwork_url
+    albums = [
+        {
+            "title": album.title,
+            "artist": album.artist.name if album.artist else "Unknown Artist",
+            "track_count": track_count or 0,
+            "year": album.release_year,
+            "artwork_url": album.artwork_url,  # Spotify CDN URL or None
+        }
+        for album, track_count in rows
+    ]
+
+    # Sort by artist then album title
     albums.sort(key=lambda x: (x["artist"].lower(), x["title"].lower()))
 
     return templates.TemplateResponse(
@@ -756,7 +794,7 @@ async def library_artist_detail(
             status_code=404,
         )
 
-    # Group tracks by album
+    # Group tracks by album, including artwork_url from album
     albums_dict: dict[str, dict[str, Any]] = {}
     for track in track_models:
         if track.album:
@@ -766,7 +804,8 @@ async def library_artist_detail(
                     "id": f"{artist_name}::{track.album.title}",
                     "title": track.album.title,
                     "track_count": 0,
-                    "year": track.album.year if hasattr(track.album, "year") else None,
+                    "year": track.album.release_year if hasattr(track.album, "release_year") else None,
+                    "artwork_url": track.album.artwork_url if hasattr(track.album, "artwork_url") else None,
                 }
             albums_dict[album_key]["track_count"] += 1
 
@@ -789,11 +828,21 @@ async def library_artist_detail(
     # Sort tracks by album, then track number/title
     tracks_data.sort(key=lambda x: (x["album"] or "", x["title"].lower()))  # type: ignore[union-attr]
 
+    # Hey future me – get image_url from the artist model for Spotify CDN profile pic
+    image_url = (
+        track_models[0].artist.image_url
+        if track_models
+        and track_models[0].artist
+        and hasattr(track_models[0].artist, "image_url")
+        else None
+    )
+
     artist_data = {
         "name": artist_name,
         "albums": albums,
         "tracks": tracks_data,
         "track_count": len(tracks_data),
+        "image_url": image_url,  # Spotify CDN URL or None
     }
 
     return templates.TemplateResponse(
@@ -888,12 +937,21 @@ async def library_album_detail(
     # Calculate total duration
     total_duration_ms = sum(t["duration_ms"] or 0 for t in tracks_data)  # type: ignore[misc]
 
-    # Get year from first track's album
+    # Get year and artwork_url from first track's album
     year = (
-        track_models[0].album.year
+        track_models[0].album.release_year
         if track_models
         and track_models[0].album
-        and hasattr(track_models[0].album, "year")
+        and hasattr(track_models[0].album, "release_year")
+        else None
+    )
+
+    # Hey future me – get artwork_url from album model for Spotify CDN cover
+    artwork_url = (
+        track_models[0].album.artwork_url
+        if track_models
+        and track_models[0].album
+        and hasattr(track_models[0].album, "artwork_url")
         else None
     )
 
@@ -904,6 +962,7 @@ async def library_album_detail(
         "tracks": tracks_data,
         "year": year,
         "total_duration_ms": total_duration_ms,
+        "artwork_url": artwork_url,  # Spotify CDN URL or None
     }
 
     return templates.TemplateResponse(

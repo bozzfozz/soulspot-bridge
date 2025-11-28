@@ -1,5 +1,6 @@
 {# Hey future me - Artist detail page!
-   Shows artist avatar, album grid, and all tracks table.
+   Shows artist image from Spotify (image_url) or letter fallback.
+   Album grid now shows artwork_url from Spotify CDN if available.
    Tracks table has status badges and edit buttons. #}
 
 {% extends "base.html" %}
@@ -19,10 +20,14 @@
 
 <!-- Artist Header -->
 <div style="display: flex; align-items: center; gap: var(--space-6); margin-bottom: var(--space-8);">
-    <div class="artist-avatar" style="width: 120px; height: 120px; background: linear-gradient(135deg, #a855f7, #7c3aed); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+    <div class="artist-avatar-large" {% if not artist.image_url %}style="background: linear-gradient(135deg, #a855f7, #7c3aed);"{% endif %}>
+        {% if artist.image_url %}
+        <img src="{{ artist.image_url }}" alt="{{ artist.name }}" loading="lazy">
+        {% else %}
         <span style="font-size: 3rem; font-weight: var(--font-weight-bold); color: white;">
             {{ artist.name[0]|upper }}
         </span>
+        {% endif %}
     </div>
     <div>
         <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-2);">{{ artist.name }}</h1>
@@ -41,7 +46,11 @@
         {% for album in artist.albums %}
         <a href="/ui/library/albums/{{ album.id }}" class="album-card">
             <div class="album-cover">
+                {% if album.artwork_url %}
+                <img src="{{ album.artwork_url }}" alt="{{ album.title }}" loading="lazy">
+                {% else %}
                 <i class="bi bi-disc"></i>
+                {% endif %}
             </div>
             <h3 class="album-title" title="{{ album.title }}">{{ album.title }}</h3>
             <div class="album-meta">
@@ -126,6 +135,22 @@
 
 {% block extra_scripts %}
 <style>
+    .artist-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+    .artist-avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
     .albums-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -153,6 +178,12 @@
         justify-content: center;
         font-size: 2.5rem;
         color: rgba(255, 255, 255, 0.4);
+        overflow: hidden;
+    }
+    .album-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     .album-title {
         font-size: var(--font-size-sm);

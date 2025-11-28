@@ -33,6 +33,7 @@ This documentation describes the Library Management system for SoulSpot, inspire
 | **[DATA_MODELS.md](./DATA_MODELS.md)** | Artist, Album, Track data structures and relationships |
 | **[API_REFERENCE.md](./API_REFERENCE.md)** | REST API endpoints for library operations |
 | **[UI_PATTERNS.md](./UI_PATTERNS.md)** | Views, filters, sorting, and UI components |
+| **[ARTWORK_IMPLEMENTATION.md](./ARTWORK_IMPLEMENTATION.md)** | Artwork handling from Spotify CDN with fallbacks |
 | **[QUALITY_PROFILES.md](./QUALITY_PROFILES.md)** | Audio quality tiers and upgrade system |
 | **[NAMING_CONVENTIONS.md](./NAMING_CONVENTIONS.md)** | File/folder naming tokens and formats |
 | **[WORKFLOWS.md](./WORKFLOWS.md)** | Key user workflows and processes |

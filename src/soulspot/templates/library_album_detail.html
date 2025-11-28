@@ -1,5 +1,6 @@
 {# Hey future me - Album detail page with stats, bulk actions, and track table.
-   Shows album cover placeholder, artist link, year, track count, duration.
+   Shows album cover from Spotify CDN (artwork_url) or placeholder icon.
+   artwork_url comes from album.artwork_url. Fallback to bi-disc icon if no artwork.
    Stats cards show total/downloaded/missing/broken counts.
    Bulk selection like playlist_detail but scoped to album tracks.
    Download all missing button queues multiple API calls. #}
@@ -22,7 +23,11 @@
 <!-- Album Header -->
 <div style="display: flex; flex-wrap: wrap; gap: var(--space-6); margin-bottom: var(--space-8);">
     <div class="album-cover-large">
+        {% if album.artwork_url %}
+        <img src="{{ album.artwork_url }}" alt="{{ album.title }}" loading="lazy">
+        {% else %}
         <i class="bi bi-disc"></i>
+        {% endif %}
     </div>
     <div style="flex: 1; min-width: 200px;">
         <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-2);">{{ album.title }}</h1>
@@ -223,6 +228,12 @@
         color: rgba(255, 255, 255, 0.4);
         flex-shrink: 0;
         box-shadow: var(--shadow-xl);
+        overflow: hidden;
+    }
+    .album-cover-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     .stats-grid {
         display: grid;

@@ -1,5 +1,6 @@
 {# Hey future me - Albums browse page!
-   Shows all albums as cards with cover placeholder, artist name, track count, year.
+   Shows all albums as cards with Spotify artwork (or placeholder), artist name, track count, year.
+   artwork_url comes from Spotify CDN via album.artwork_url. Fallback to bi-disc icon if no artwork.
    Client-side search AND sorting via data attributes on cards. Works together so you can search THEN sort. #}
 
 {% extends "base.html" %}
@@ -57,7 +58,11 @@
            data-year="{{ album.year or 0 }}"
            data-track-count="{{ album.track_count }}">
             <div class="album-cover">
+                {% if album.artwork_url %}
+                <img src="{{ album.artwork_url }}" alt="{{ album.title }}" loading="lazy">
+                {% else %}
                 <i class="bi bi-disc"></i>
+                {% endif %}
             </div>
             <h3 class="album-title" title="{{ album.title }}">{{ album.title }}</h3>
             <p class="album-artist" title="{{ album.artist }}">{{ album.artist }}</p>
@@ -117,6 +122,12 @@
         font-size: 3rem;
         color: rgba(255, 255, 255, 0.4);
         transition: transform var(--transition-fast);
+        overflow: hidden;
+    }
+    .album-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
     .album-card:hover .album-cover {
         transform: scale(1.02);
