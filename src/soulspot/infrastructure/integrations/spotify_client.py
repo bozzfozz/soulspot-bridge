@@ -714,6 +714,96 @@ class SpotifyClient(ISpotifyClient):
         response.raise_for_status()
         return cast(dict[str, Any], response.json())
 
+    # =========================================================================
+    # USER LIBRARY: LIKED SONGS & SAVED ALBUMS
+    # =========================================================================
+    # Hey future me - these endpoints access the user's PERSONAL library!
+    # - "Liked Songs" = tracks the user explicitly saved (the ❤️ button)
+    # - "Saved Albums" = albums the user explicitly saved (saves all tracks)
+    # Both use cursor-based pagination. Max 50 items per request.
+    # IMPORTANT: Requires "user-library-read" scope!
+    # =========================================================================
+
+    async def get_saved_tracks(
+        self, access_token: str, limit: int = 50, offset: int = 0
+    ) -> dict[str, Any]:
+        """Get user's Liked Songs (saved tracks).
+
+        This is the "Liked Songs" playlist that every Spotify user has.
+        Returns tracks the user has explicitly saved with the heart button.
+
+        Args:
+            access_token: OAuth access token
+            limit: Maximum number of tracks to return (1-50, default 50)
+            offset: The index of the first item to return
+
+        Returns:
+            Paginated response with:
+            - items: List of saved track objects, each containing:
+              - added_at: Timestamp when user saved this track
+              - track: Full track object with album, artists, etc.
+            - next: URL for next page (null if no more)
+            - total: Total number of saved tracks
+            - limit/offset: Pagination parameters
+
+        Raises:
+            httpx.HTTPError: If the request fails
+
+        Note:
+            Requires "user-library-read" scope in OAuth flow.
+        """
+        client = await self._get_client()
+
+        limit = min(limit, 50)
+
+        response = await client.get(
+            f"{self.API_BASE_URL}/me/tracks",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"limit": limit, "offset": offset},
+        )
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
+    async def get_saved_albums(
+        self, access_token: str, limit: int = 50, offset: int = 0
+    ) -> dict[str, Any]:
+        """Get user's Saved Albums.
+
+        Returns albums the user has explicitly saved to their library.
+        Different from artist albums - these are user-curated.
+
+        Args:
+            access_token: OAuth access token
+            limit: Maximum number of albums to return (1-50, default 50)
+            offset: The index of the first album to return
+
+        Returns:
+            Paginated response with:
+            - items: List of saved album objects, each containing:
+              - added_at: Timestamp when user saved this album
+              - album: Full album object with artists, tracks, images
+            - next: URL for next page (null if no more)
+            - total: Total number of saved albums
+            - limit/offset: Pagination parameters
+
+        Raises:
+            httpx.HTTPError: If the request fails
+
+        Note:
+            Requires "user-library-read" scope in OAuth flow.
+        """
+        client = await self._get_client()
+
+        limit = min(limit, 50)
+
+        response = await client.get(
+            f"{self.API_BASE_URL}/me/albums",
+            headers={"Authorization": f"Bearer {access_token}"},
+            params={"limit": limit, "offset": offset},
+        )
+        response.raise_for_status()
+        return cast(dict[str, Any], response.json())
+
     # Hey future me, these context manager methods let you use this client with
     # "async with SpotifyClient(...) as client:" syntax. This is THE preferred way
     # to use this client - it guarantees cleanup even if exceptions happen. Use it!

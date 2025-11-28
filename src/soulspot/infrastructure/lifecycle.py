@@ -168,6 +168,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.token_refresh_worker = token_refresh_worker
         logger.info("Token refresh worker started (checks every 5 min)")
 
+        # =================================================================
+        # Start Spotify Sync Worker (automatic background syncing)
+        # =================================================================
+        # Hey future me - this worker automatically syncs Spotify data based on settings!
+        # It respects the app_settings table for enable/disable and intervals.
+        # Runs after token_refresh_worker so tokens are always fresh.
+        from soulspot.application.workers.spotify_sync_worker import SpotifySyncWorker
+
+        spotify_sync_worker = SpotifySyncWorker(
+            db=db,
+            token_manager=db_token_manager,
+            settings=settings,
+            check_interval_seconds=60,  # Check every minute if syncs are due
+        )
+        await spotify_sync_worker.start()
+        app.state.spotify_sync_worker = spotify_sync_worker
+        logger.info("Spotify sync worker started (checks every 60s)")
+
         # Initialize job queue with configured max concurrent downloads
         from soulspot.application.workers.download_worker import DownloadWorker
         from soulspot.application.workers.job_queue import JobQueue
@@ -248,6 +266,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     finally:
         # Shutdown - always attempt cleanup
         logger.info("Shutting down application")
+
+        # Stop Spotify sync worker first (depends on token manager)
+        if hasattr(app.state, "spotify_sync_worker"):
+            try:
+                logger.info("Stopping Spotify sync worker...")
+                await app.state.spotify_sync_worker.stop()
+                logger.info("Spotify sync worker stopped")
+            except Exception as e:
+                logger.exception("Error stopping Spotify sync worker: %s", e)
 
         # Stop token refresh worker
         if token_refresh_worker is not None:

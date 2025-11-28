@@ -38,6 +38,10 @@
             <i class="fa-solid fa-sliders"></i>
             General
         </button>
+        <button class="tab-btn" data-tab="spotify-sync" onclick="switchTab('spotify-sync')">
+            <i class="fa-brands fa-spotify" style="color: #1DB954;"></i>
+            Spotify Sync
+        </button>
         <button class="tab-btn" data-tab="integration" onclick="switchTab('integration')">
             <i class="fa-solid fa-plug"></i>
             Integration
@@ -89,6 +93,225 @@
                     </label>
                     <p class="form-helper" style="margin-left: 1.75rem;">Show detailed debug information (not recommended for production)</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spotify Sync Settings Tab -->
+    <div id="tab-spotify-sync" class="tab-content" style="display: none;">
+        <div class="card" style="padding: var(--space-6);">
+            <!-- Master Toggle -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border-primary);">
+                <div>
+                    <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-1);">
+                        <i class="fa-brands fa-spotify" style="color: #1DB954; margin-right: var(--space-2);"></i>
+                        Spotify Auto-Sync
+                    </h2>
+                    <p style="color: var(--text-muted); font-size: var(--font-size-sm);">Automatically sync data from your Spotify account</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="spotify-auto-sync-enabled" checked onchange="toggleSpotifySyncSetting('auto_sync_enabled')">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <!-- Sync Types -->
+            <div class="form-stack" id="spotify-sync-options">
+                <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-2);">What to Sync</h3>
+                
+                <div class="sync-option-card">
+                    <div class="sync-option-info">
+                        <div class="sync-option-icon" style="background: linear-gradient(135deg, #1DB954, #169c46);">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <div class="sync-option-title">Followed Artists</div>
+                            <div class="sync-option-desc">Sync artists you follow on Spotify</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="spotify-sync-artists" checked onchange="toggleSpotifySyncSetting('auto_sync_artists')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="sync-option-card">
+                    <div class="sync-option-info">
+                        <div class="sync-option-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
+                            <i class="fa-solid fa-list-music"></i>
+                        </div>
+                        <div>
+                            <div class="sync-option-title">Playlists</div>
+                            <div class="sync-option-desc">Sync your Spotify playlists</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="spotify-sync-playlists" checked onchange="toggleSpotifySyncSetting('auto_sync_playlists')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="sync-option-card">
+                    <div class="sync-option-info">
+                        <div class="sync-option-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <div>
+                            <div class="sync-option-title">Liked Songs</div>
+                            <div class="sync-option-desc">Sync your Liked Songs playlist</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="spotify-sync-liked-songs" checked onchange="toggleSpotifySyncSetting('auto_sync_liked_songs')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="sync-option-card">
+                    <div class="sync-option-info">
+                        <div class="sync-option-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="fa-solid fa-compact-disc"></i>
+                        </div>
+                        <div>
+                            <div class="sync-option-title">Saved Albums</div>
+                            <div class="sync-option-desc">Sync albums you've saved to your library</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="spotify-sync-saved-albums" checked onchange="toggleSpotifySyncSetting('auto_sync_saved_albums')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Sync Intervals -->
+            <div style="margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-primary);">
+                <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4);">Sync Intervals</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="artists-sync-interval">Artists Sync Cooldown</label>
+                        <div class="input-with-suffix">
+                            <input type="number" id="artists-sync-interval" class="form-input" value="5" min="1" max="60" style="max-width: 100px;">
+                            <span class="input-suffix">minutes</span>
+                        </div>
+                        <p class="form-helper">Minimum time between artist sync runs</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="playlists-sync-interval">Playlists Sync Cooldown</label>
+                        <div class="input-with-suffix">
+                            <input type="number" id="playlists-sync-interval" class="form-input" value="10" min="1" max="60" style="max-width: 100px;">
+                            <span class="input-suffix">minutes</span>
+                        </div>
+                        <p class="form-helper">Minimum time between playlist sync runs</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Download -->
+            <div style="margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-primary);">
+                <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4);">Image Storage</h3>
+                
+                <div class="sync-option-card">
+                    <div class="sync-option-info">
+                        <div class="sync-option-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                            <i class="fa-solid fa-images"></i>
+                        </div>
+                        <div>
+                            <div class="sync-option-title">Download Images Locally</div>
+                            <div class="sync-option-desc">Store artist, album, and playlist images on disk for offline access</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="spotify-download-images" checked onchange="toggleSpotifySyncSetting('download_images')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <!-- Disk Usage Stats -->
+                <div id="image-stats-container" class="stats-container" style="margin-top: var(--space-4);">
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-artists-count">-</div>
+                            <div class="stat-label">Artist Images</div>
+                            <div class="stat-size" id="stat-artists-size">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="fa-solid fa-compact-disc"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-albums-count">-</div>
+                            <div class="stat-label">Album Covers</div>
+                            <div class="stat-size" id="stat-albums-size">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="fa-solid fa-list-music"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-playlists-count">-</div>
+                            <div class="stat-label">Playlist Covers</div>
+                            <div class="stat-size" id="stat-playlists-size">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-box stat-total">
+                        <div class="stat-icon"><i class="fa-solid fa-hard-drive"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-total-count">-</div>
+                            <div class="stat-label">Total Images</div>
+                            <div class="stat-size" id="stat-total-size">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cleanup Behavior -->
+            <div style="margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-primary);">
+                <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4);">Cleanup Behavior</h3>
+                
+                <div class="sync-option-card">
+                    <div class="sync-option-info">
+                        <div class="sync-option-icon" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">
+                            <i class="fa-solid fa-user-minus"></i>
+                        </div>
+                        <div>
+                            <div class="sync-option-title">Remove Unfollowed Artists</div>
+                            <div class="sync-option-desc">Automatically remove artists when you unfollow them on Spotify</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="spotify-remove-unfollowed-artists" checked onchange="toggleSpotifySyncSetting('remove_unfollowed_artists')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="sync-option-card" style="margin-top: var(--space-3);">
+                    <div class="sync-option-info">
+                        <div class="sync-option-icon" style="background: linear-gradient(135deg, #f59e0b, #b45309);">
+                            <i class="fa-solid fa-list-xmark"></i>
+                        </div>
+                        <div>
+                            <div class="sync-option-title">Remove Deleted Playlists</div>
+                            <div class="sync-option-desc">Automatically remove playlists when you delete them on Spotify</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="spotify-remove-unfollowed-playlists" onchange="toggleSpotifySyncSetting('remove_unfollowed_playlists')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="alert alert-info" style="margin-top: var(--space-4);">
+                    <i class="fa-solid fa-info-circle"></i>
+                    <span>Downloaded tracks are never automatically removed. Only metadata and images are affected by these settings.</span>
+                </div>
+            </div>
+
+            <!-- Save Button for Intervals -->
+            <div style="margin-top: var(--space-6); display: flex; justify-content: flex-end;">
+                <button class="btn btn-primary" onclick="saveSpotifySyncSettings()">
+                    <i class="fa-solid fa-save"></i>
+                    Save Sync Settings
+                </button>
             </div>
         </div>
     </div>
@@ -424,6 +647,147 @@
         background: rgba(234, 179, 8, 0.1);
         color: #eab308;
     }
+    /* Toggle Switch Styles */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+        flex-shrink: 0;
+    }
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--bg-tertiary);
+        border-radius: 26px;
+        transition: all var(--transition-fast);
+    }
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        border-radius: 50%;
+        transition: all var(--transition-fast);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+        background-color: #1DB954;
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(22px);
+    }
+    .toggle-switch input:disabled + .toggle-slider {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    /* Sync Option Cards */
+    .sync-option-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-4);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-lg);
+        transition: all var(--transition-fast);
+    }
+    .sync-option-card:hover {
+        border-color: var(--border-secondary);
+    }
+    .sync-option-info {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+    }
+    .sync-option-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+    }
+    .sync-option-title {
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-sm);
+        color: var(--text-primary);
+    }
+    .sync-option-desc {
+        font-size: var(--font-size-xs);
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+    /* Stats Container */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: var(--space-3);
+    }
+    .stat-box {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-primary);
+        border-radius: var(--radius-md);
+    }
+    .stat-box.stat-total {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--bg-tertiary);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+    .stat-content {
+        flex: 1;
+    }
+    .stat-value {
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        color: var(--text-primary);
+    }
+    .stat-label {
+        font-size: var(--font-size-xs);
+        color: var(--text-muted);
+    }
+    .stat-size {
+        font-size: var(--font-size-xs);
+        color: var(--accent-primary);
+        margin-top: 2px;
+    }
+    /* Input with suffix */
+    .input-with-suffix {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    .input-suffix {
+        font-size: var(--font-size-sm);
+        color: var(--text-muted);
+    }
 </style>
 <script>
     // Hey future me - All the settings page logic is here!
@@ -576,9 +940,264 @@
         }
     }
 
+    // =====================================================
+    // Spotify Sync Settings Functions
+    // =====================================================
+    
+    // Hey future me – diese Funktion lädt die Spotify Sync Settings aus der DB.
+    // Die API gibt ein SpotifySyncSettingsResponse zurück mit settings-Objekt drin!
+    // Die Felder heißen auto_sync_enabled, auto_sync_artists etc (mit "auto_" prefix).
+    // WICHTIG: Die HTML-IDs folgen dem Muster "spotify-xyz" nicht "sync-xyz-enabled"!
+    async function loadSpotifySyncSettings() {
+        try {
+            const response = await fetch('/api/settings/spotify-sync');
+            if (!response.ok) throw new Error('Failed to load Spotify sync settings');
+            
+            const data = await response.json();
+            // API returns { settings: {...}, image_stats: {...} }
+            const settings = data.settings || data;
+            
+            // Master toggle
+            const masterToggle = document.getElementById('spotify-auto-sync-enabled');
+            if (masterToggle) masterToggle.checked = settings.auto_sync_enabled ?? true;
+            
+            // Individual sync toggles
+            const artistToggle = document.getElementById('spotify-sync-artists');
+            if (artistToggle) artistToggle.checked = settings.auto_sync_artists ?? true;
+            
+            const playlistToggle = document.getElementById('spotify-sync-playlists');
+            if (playlistToggle) playlistToggle.checked = settings.auto_sync_playlists ?? true;
+            
+            const likedToggle = document.getElementById('spotify-sync-liked-songs');
+            if (likedToggle) likedToggle.checked = settings.auto_sync_liked_songs ?? true;
+            
+            const albumsToggle = document.getElementById('spotify-sync-saved-albums');
+            if (albumsToggle) albumsToggle.checked = settings.auto_sync_saved_albums ?? true;
+            
+            // Intervals
+            const artistInterval = document.getElementById('artists-sync-interval');
+            if (artistInterval) artistInterval.value = settings.artists_sync_interval_minutes ?? 5;
+            
+            const playlistInterval = document.getElementById('playlists-sync-interval');
+            if (playlistInterval) playlistInterval.value = settings.playlists_sync_interval_minutes ?? 10;
+            
+            // Image download toggle
+            const imageToggle = document.getElementById('spotify-download-images');
+            if (imageToggle) imageToggle.checked = settings.download_images ?? true;
+            
+            // Cleanup toggles
+            const removeArtists = document.getElementById('spotify-remove-unfollowed-artists');
+            if (removeArtists) removeArtists.checked = settings.remove_unfollowed_artists ?? true;
+            
+            const removePlaylists = document.getElementById('spotify-remove-unfollowed-playlists');
+            if (removePlaylists) removePlaylists.checked = settings.remove_unfollowed_playlists ?? false;
+            
+            // Update UI state based on master toggle
+            updateSyncOptionsState(settings.auto_sync_enabled ?? true);
+            
+            // Load image stats from response if available, otherwise fetch separately
+            if (data.image_stats) {
+                updateImageStatsDisplay(data.image_stats);
+            } else {
+                await loadImageStats();
+            }
+            
+        } catch (error) {
+            console.error('Failed to load Spotify sync settings:', error);
+        }
+    }
+    
+    // Hey future me – diese Funktion speichert die Spotify Sync Settings.
+    // Wichtig: Die API erwartet snake_case Keys mit "auto_" prefix!
+    // Die Interval-Werte werden als Integer gesendet (Minuten).
+    async function saveSpotifySyncSettings() {
+        const settings = {
+            auto_sync_enabled: document.getElementById('spotify-auto-sync-enabled')?.checked ?? true,
+            auto_sync_artists: document.getElementById('spotify-sync-artists')?.checked ?? true,
+            auto_sync_playlists: document.getElementById('spotify-sync-playlists')?.checked ?? true,
+            auto_sync_liked_songs: document.getElementById('spotify-sync-liked-songs')?.checked ?? true,
+            auto_sync_saved_albums: document.getElementById('spotify-sync-saved-albums')?.checked ?? true,
+            artists_sync_interval_minutes: parseInt(document.getElementById('artists-sync-interval')?.value) || 5,
+            playlists_sync_interval_minutes: parseInt(document.getElementById('playlists-sync-interval')?.value) || 10,
+            download_images: document.getElementById('spotify-download-images')?.checked ?? true,
+            remove_unfollowed_artists: document.getElementById('spotify-remove-unfollowed-artists')?.checked ?? true,
+            remove_unfollowed_playlists: document.getElementById('spotify-remove-unfollowed-playlists')?.checked ?? false,
+        };
+        
+        try {
+            const response = await fetch('/api/settings/spotify-sync', {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(settings),
+            });
+            
+            if (!response.ok) throw new Error('Failed to save Spotify sync settings');
+            
+            SoulSpot.showNotification('Spotify sync settings saved', 'success');
+            
+            // Update UI state
+            updateSyncOptionsState(settings.auto_sync_enabled);
+            
+        } catch (error) {
+            console.error('Failed to save Spotify sync settings:', error);
+            SoulSpot.showNotification('Failed to save Spotify sync settings', 'error');
+        }
+    }
+    
+    // Hey future me – diese Funktion toggled ein einzelnes Setting und speichert es sofort.
+    // Wird von den onchange-Handlern der Toggles aufgerufen.
+    // settingName ist der kurze Name ohne "spotify." prefix (z.B. "auto_sync_enabled")
+    async function toggleSpotifySyncSetting(settingName) {
+        try {
+            const response = await fetch(`/api/settings/spotify-sync/toggle/${settingName}`, {
+                method: 'POST',
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Toggle failed');
+            }
+            
+            const result = await response.json();
+            
+            // Update UI state if master toggle changed
+            if (settingName === 'auto_sync_enabled') {
+                updateSyncOptionsState(result.new_value);
+            }
+            
+            // Subtle feedback - no notification for quick toggles
+            console.log(`Toggled ${settingName}: ${result.old_value} -> ${result.new_value}`);
+            
+        } catch (error) {
+            console.error(`Failed to toggle ${settingName}:`, error);
+            SoulSpot.showNotification(`Failed to update setting: ${error.message}`, 'error');
+            
+            // Revert toggle on error
+            await loadSpotifySyncSettings();
+        }
+    }
+    
+    // Hey future me – diese Funktion triggert einen sofortigen Sync.
+    // syncType kann sein: 'artists', 'playlists', 'liked', 'albums', oder 'all'.
+    // Die API gibt sofort zurück, der Sync läuft im Background.
+    // Der Button wird während des Syncs disabled um Doppelklicks zu vermeiden.
+    async function triggerManualSync(syncType) {
+        const button = event?.target?.closest('button');
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
+        }
+        
+        try {
+            const response = await fetch(`/api/settings/spotify-sync/trigger/${syncType}`, {
+                method: 'POST',
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Sync failed');
+            }
+            
+            const result = await response.json();
+            SoulSpot.showNotification(result.message || `${syncType} sync started`, 'success');
+            
+            // Reload image stats after sync
+            setTimeout(loadImageStats, 2000);
+            
+        } catch (error) {
+            console.error(`Failed to trigger ${syncType} sync:`, error);
+            SoulSpot.showNotification(error.message || `Failed to sync ${syncType}`, 'error');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                // Restore original button text based on syncType
+                const labels = {
+                    'artists': '<i class="fas fa-sync mr-2"></i>Sync Now',
+                    'playlists': '<i class="fas fa-sync mr-2"></i>Sync Now',
+                    'liked': '<i class="fas fa-sync mr-2"></i>Sync Now',
+                    'albums': '<i class="fas fa-sync mr-2"></i>Sync Now',
+                    'all': '<i class="fas fa-sync mr-2"></i>Sync All Now',
+                };
+                button.innerHTML = labels[syncType] || '<i class="fas fa-sync mr-2"></i>Sync Now';
+            }
+        }
+    }
+    
+    // Hey future me – diese Funktion lädt die Image Statistics für Spotify Images.
+    // Die API gibt bytes zurück, wir formatieren das zu human-readable.
+    // Wenn keine Images existieren, zeigen wir "0 B" und "0" an.
+    async function loadImageStats() {
+        try {
+            const response = await fetch('/api/settings/spotify-sync/disk-usage');
+            if (!response.ok) throw new Error('Failed to load image stats');
+            
+            const stats = await response.json();
+            updateImageStatsDisplay(stats);
+            
+        } catch (error) {
+            console.error('Failed to load image stats:', error);
+        }
+    }
+    
+    // Hey future me – separierte Funktion um die Image Stats anzuzeigen.
+    // Wird sowohl von loadImageStats als auch von loadSpotifySyncSettings verwendet
+    // (wenn die Daten schon in der Response sind).
+    // Die HTML-IDs folgen dem Muster "stat-{type}-{count|size}"
+    function updateImageStatsDisplay(stats) {
+        // Artist images
+        const artistsCountEl = document.getElementById('stat-artists-count');
+        if (artistsCountEl) artistsCountEl.textContent = stats.artists_count ?? 0;
+        const artistsSizeEl = document.getElementById('stat-artists-size');
+        if (artistsSizeEl) artistsSizeEl.textContent = formatBytes(stats.artists_bytes ?? 0);
+        
+        // Album covers
+        const albumsCountEl = document.getElementById('stat-albums-count');
+        if (albumsCountEl) albumsCountEl.textContent = stats.albums_count ?? 0;
+        const albumsSizeEl = document.getElementById('stat-albums-size');
+        if (albumsSizeEl) albumsSizeEl.textContent = formatBytes(stats.albums_bytes ?? 0);
+        
+        // Playlist covers
+        const playlistsCountEl = document.getElementById('stat-playlists-count');
+        if (playlistsCountEl) playlistsCountEl.textContent = stats.playlists_count ?? 0;
+        const playlistsSizeEl = document.getElementById('stat-playlists-size');
+        if (playlistsSizeEl) playlistsSizeEl.textContent = formatBytes(stats.playlists_bytes ?? 0);
+        
+        // Totals
+        const totalCountEl = document.getElementById('stat-total-count');
+        if (totalCountEl) totalCountEl.textContent = stats.total_count ?? 0;
+        const totalSizeEl = document.getElementById('stat-total-size');
+        if (totalSizeEl) totalSizeEl.textContent = formatBytes(stats.total_bytes ?? 0);
+    }
+    
+    // Hey future me – simple Bytes-zu-Human-Readable Konvertierung.
+    // Nutzt 1024 als Basis (KiB, MiB, GiB) weil das für Festplatten üblicher ist.
+    // Bei 0 Bytes geben wir "0 B" zurück, nicht "0 undefined".
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Hey future me – diese Funktion updated den UI State basierend auf dem Master Toggle.
+    // Wenn Sync disabled ist, werden alle Sub-Toggles ausgegraut aber behalten ihren Wert.
+    // Das ist wichtig damit der User seine Einstellungen nicht verliert wenn er Sync kurz deaktiviert.
+    // Die HTML-ID für die Optionen-Container ist "spotify-sync-options" nicht "sync-options-container"
+    function updateSyncOptionsState(enabled) {
+        const syncOptions = document.getElementById('spotify-sync-options');
+        if (syncOptions) {
+            syncOptions.style.opacity = enabled ? '1' : '0.5';
+            syncOptions.style.pointerEvents = enabled ? 'auto' : 'none';
+        }
+    }
+
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
         loadSettings();
+        loadSpotifySyncSettings();
     });
 </script>
 {% endblock %}

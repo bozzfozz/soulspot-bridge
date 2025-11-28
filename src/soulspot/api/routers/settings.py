@@ -2,9 +2,12 @@
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from soulspot.api.dependencies import get_db
+from soulspot.application.services.app_settings_service import AppSettingsService
 from soulspot.config import get_settings
 
 router = APIRouter()
@@ -293,4 +296,453 @@ async def get_default_settings() -> AllSettings:
             circuit_breaker_failure_threshold=circuit_breaker_defaults.failure_threshold,
             circuit_breaker_timeout=circuit_breaker_defaults.timeout,
         ),
+    )
+
+
+# =============================================================================
+# SPOTIFY SYNC SETTINGS (DYNAMIC, DB-STORED)
+# =============================================================================
+# Hey future me - these are DIFFERENT from the static IntegrationSettings above!
+# These settings are stored in the app_settings table and can be changed at runtime
+# without restarting the app. They control Spotify sync behavior.
+# =============================================================================
+
+
+class SpotifySyncSettings(BaseModel):
+    """Spotify sync configuration - changeable at runtime.
+
+    These settings control how SoulSpot syncs data from Spotify.
+    They're stored in DB and can be toggled from Settings UI.
+    """
+
+    auto_sync_enabled: bool = Field(
+        default=True, description="Master switch for all auto-sync"
+    )
+    auto_sync_artists: bool = Field(
+        default=True, description="Auto-sync followed artists"
+    )
+    auto_sync_playlists: bool = Field(
+        default=True, description="Auto-sync user playlists"
+    )
+    auto_sync_liked_songs: bool = Field(
+        default=True, description="Auto-sync Liked Songs"
+    )
+    auto_sync_saved_albums: bool = Field(
+        default=True, description="Auto-sync Saved Albums"
+    )
+    artists_sync_interval_minutes: int = Field(
+        default=5, ge=1, le=60, description="Cooldown between artist syncs (minutes)"
+    )
+    playlists_sync_interval_minutes: int = Field(
+        default=10, ge=1, le=60, description="Cooldown between playlist syncs (minutes)"
+    )
+    download_images: bool = Field(
+        default=True, description="Download and store images locally"
+    )
+    remove_unfollowed_artists: bool = Field(
+        default=True, description="Remove artists when unfollowed on Spotify"
+    )
+    remove_unfollowed_playlists: bool = Field(
+        default=False, description="Remove playlists when deleted on Spotify"
+    )
+
+
+class SpotifyImageStats(BaseModel):
+    """Disk usage statistics for Spotify images."""
+
+    artists_bytes: int = Field(description="Bytes used by artist images")
+    albums_bytes: int = Field(description="Bytes used by album covers")
+    playlists_bytes: int = Field(description="Bytes used by playlist covers")
+    total_bytes: int = Field(description="Total bytes used")
+    artists_count: int = Field(description="Number of artist images")
+    albums_count: int = Field(description="Number of album covers")
+    playlists_count: int = Field(description="Number of playlist covers")
+    total_count: int = Field(description="Total number of images")
+
+
+class SpotifySyncSettingsResponse(BaseModel):
+    """Response for Spotify sync settings with additional metadata."""
+
+    settings: SpotifySyncSettings
+    image_stats: SpotifyImageStats | None = Field(
+        default=None, description="Image disk usage (if available)"
+    )
+
+
+@router.get("/spotify-sync")
+async def get_spotify_sync_settings(
+    db: AsyncSession = Depends(get_db),
+) -> SpotifySyncSettingsResponse:
+    """Get Spotify sync settings.
+
+    Returns current sync configuration from database.
+    These are runtime-editable settings, not env vars.
+
+    Returns:
+        Current Spotify sync settings and image statistics
+    """
+    settings_service = AppSettingsService(db)
+    summary = await settings_service.get_spotify_settings_summary()
+
+    # Get image stats if possible
+    image_stats = None
+    try:
+        from soulspot.application.services.spotify_image_service import (
+            SpotifyImageService,
+        )
+
+        app_settings = get_settings()
+        image_service = SpotifyImageService(app_settings)
+
+        disk_usage = image_service.get_disk_usage()
+        image_count = image_service.get_image_count()
+
+        image_stats = SpotifyImageStats(
+            artists_bytes=disk_usage.get("artists", 0),
+            albums_bytes=disk_usage.get("albums", 0),
+            playlists_bytes=disk_usage.get("playlists", 0),
+            total_bytes=disk_usage.get("total", 0),
+            artists_count=image_count.get("artists", 0),
+            albums_count=image_count.get("albums", 0),
+            playlists_count=image_count.get("playlists", 0),
+            total_count=image_count.get("total", 0),
+        )
+    except Exception:
+        # Image stats are optional, don't fail if service unavailable
+        pass
+
+    return SpotifySyncSettingsResponse(
+        settings=SpotifySyncSettings(**summary),
+        image_stats=image_stats,
+    )
+
+
+@router.put("/spotify-sync")
+async def update_spotify_sync_settings(
+    settings_update: SpotifySyncSettings,
+    db: AsyncSession = Depends(get_db),
+) -> SpotifySyncSettings:
+    """Update Spotify sync settings.
+
+    These changes take effect immediately - no restart required!
+
+    Args:
+        settings_update: New settings values
+
+    Returns:
+        Updated settings
+    """
+    settings_service = AppSettingsService(db)
+
+    # Update each setting
+    await settings_service.set(
+        "spotify.auto_sync_enabled",
+        settings_update.auto_sync_enabled,
+        value_type="boolean",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.auto_sync_artists",
+        settings_update.auto_sync_artists,
+        value_type="boolean",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.auto_sync_playlists",
+        settings_update.auto_sync_playlists,
+        value_type="boolean",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.auto_sync_liked_songs",
+        settings_update.auto_sync_liked_songs,
+        value_type="boolean",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.auto_sync_saved_albums",
+        settings_update.auto_sync_saved_albums,
+        value_type="boolean",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.artists_sync_interval_minutes",
+        settings_update.artists_sync_interval_minutes,
+        value_type="integer",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.playlists_sync_interval_minutes",
+        settings_update.playlists_sync_interval_minutes,
+        value_type="integer",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.download_images",
+        settings_update.download_images,
+        value_type="boolean",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.remove_unfollowed_artists",
+        settings_update.remove_unfollowed_artists,
+        value_type="boolean",
+        category="spotify",
+    )
+    await settings_service.set(
+        "spotify.remove_unfollowed_playlists",
+        settings_update.remove_unfollowed_playlists,
+        value_type="boolean",
+        category="spotify",
+    )
+
+    await db.commit()
+
+    return settings_update
+
+
+@router.post("/spotify-sync/toggle/{setting_name}")
+async def toggle_spotify_sync_setting(
+    setting_name: str,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Toggle a boolean Spotify sync setting.
+
+    Quick toggle for UI switches - flips current value.
+
+    Args:
+        setting_name: Name of the setting (e.g., "auto_sync_enabled")
+
+    Returns:
+        New setting value
+    """
+    # Map simple names to full setting keys
+    key_mapping = {
+        "auto_sync_enabled": "spotify.auto_sync_enabled",
+        "auto_sync_artists": "spotify.auto_sync_artists",
+        "auto_sync_playlists": "spotify.auto_sync_playlists",
+        "auto_sync_liked_songs": "spotify.auto_sync_liked_songs",
+        "auto_sync_saved_albums": "spotify.auto_sync_saved_albums",
+        "download_images": "spotify.download_images",
+        "remove_unfollowed_artists": "spotify.remove_unfollowed_artists",
+        "remove_unfollowed_playlists": "spotify.remove_unfollowed_playlists",
+    }
+
+    setting_key = key_mapping.get(setting_name)
+    if not setting_key:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown setting: {setting_name}. Valid settings: {list(key_mapping.keys())}",
+        )
+
+    settings_service = AppSettingsService(db)
+
+    # Get current value and toggle
+    current_value = await settings_service.get_bool(setting_key, default=True)
+    new_value = not current_value
+
+    await settings_service.set(
+        setting_key,
+        new_value,
+        value_type="boolean",
+        category="spotify",
+    )
+    await db.commit()
+
+    return {
+        "setting": setting_name,
+        "old_value": current_value,
+        "new_value": new_value,
+    }
+
+
+@router.get("/spotify-sync/image-stats")
+async def get_spotify_image_stats() -> SpotifyImageStats:
+    """Get disk usage statistics for Spotify images.
+
+    Returns breakdown of storage used by artist, album, and playlist images.
+    """
+    from soulspot.application.services.spotify_image_service import SpotifyImageService
+
+    app_settings = get_settings()
+    image_service = SpotifyImageService(app_settings)
+
+    disk_usage = image_service.get_disk_usage()
+    image_count = image_service.get_image_count()
+
+    return SpotifyImageStats(
+        artists_bytes=disk_usage.get("artists", 0),
+        albums_bytes=disk_usage.get("albums", 0),
+        playlists_bytes=disk_usage.get("playlists", 0),
+        total_bytes=disk_usage.get("total", 0),
+        artists_count=image_count.get("artists", 0),
+        albums_count=image_count.get("albums", 0),
+        playlists_count=image_count.get("playlists", 0),
+        total_count=image_count.get("total", 0),
+    )
+
+
+# Hey future me – dieser Endpoint ist ein Alias für image-stats, damit das JS von der
+# Settings-Seite funktioniert. Der URL-Pfad /disk-usage ist intuitiver für UI-Entwickler.
+@router.get("/spotify-sync/disk-usage")
+async def get_spotify_disk_usage() -> SpotifyImageStats:
+    """Alias for image-stats - get disk usage for Spotify images."""
+    return await get_spotify_image_stats()
+
+
+class SyncTriggerResponse(BaseModel):
+    """Response for manual sync trigger."""
+
+    success: bool = Field(description="Whether sync was started")
+    message: str = Field(description="Status message")
+    sync_type: str = Field(description="Type of sync triggered")
+
+
+# Hey future me – dieser Endpoint triggert einen manuellen Sync. Er läuft synchron,
+# d.h. er wartet auf den Sync bevor er zurückkehrt. Das ist für kleine Syncs OK,
+# aber bei großen Bibliotheken könnte das ein Timeout geben. Dann müsste man das
+# auf Background Tasks umstellen (FastAPI BackgroundTasks oder Celery).
+# WICHTIG: Die sync_type Werte müssen mit dem JavaScript matchen!
+@router.post("/spotify-sync/trigger/{sync_type}")
+async def trigger_manual_sync(
+    sync_type: str,
+    db: AsyncSession = Depends(get_db),
+) -> SyncTriggerResponse:
+    """Trigger a manual Spotify sync.
+
+    Runs the specified sync immediately, regardless of cooldown timers.
+
+    Args:
+        sync_type: Type of sync - 'artists', 'playlists', 'liked', 'albums', or 'all'
+
+    Returns:
+        Success status and message
+    """
+    from soulspot.application.services.app_settings_service import AppSettingsService
+    from soulspot.application.services.spotify_image_service import SpotifyImageService
+    from soulspot.application.services.spotify_sync_service import SpotifySyncService
+    from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
+    from soulspot.infrastructure.persistence.repositories import (
+        SpotifyBrowseRepository,
+    )
+    from soulspot.infrastructure.token_management import DatabaseTokenManager
+
+    valid_types = {"artists", "playlists", "liked", "albums", "all"}
+    if sync_type not in valid_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid sync type: {sync_type}. Valid types: {valid_types}",
+        )
+
+    app_settings = get_settings()
+
+    # Initialize services
+    token_manager = DatabaseTokenManager(db)
+    token = await token_manager.get_token()
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated with Spotify. Please connect your account first.",
+        )
+
+    spotify_client = SpotifyClient(app_settings.spotify, token_manager)
+    repository = SpotifyBrowseRepository(db)
+    image_service = SpotifyImageService(app_settings)
+    settings_service = AppSettingsService(db)
+
+    sync_service = SpotifySyncService(
+        spotify_client=spotify_client,
+        repository=repository,
+        image_service=image_service,
+        settings_service=settings_service,
+    )
+
+    # Hey future me – das access_token holen wir aus dem gespeicherten Token.
+    # Der token_manager hat das Token schon, wir müssen es nur extrahieren.
+    access_token = token.access_token
+
+    try:
+        if sync_type == "artists":
+            result = await sync_service.sync_followed_artists(access_token, force=True)
+            message = f"Artists synced: {result.get('synced', 0)} updated, {result.get('removed', 0)} removed"
+
+        elif sync_type == "playlists":
+            result = await sync_service.sync_user_playlists(access_token, force=True)
+            message = f"Playlists synced: {result.get('synced', 0)} updated, {result.get('removed', 0)} removed"
+
+        elif sync_type == "liked":
+            result = await sync_service.sync_liked_songs(access_token, force=True)
+            message = f"Liked Songs synced: {result.get('track_count', 0)} tracks"
+
+        elif sync_type == "albums":
+            result = await sync_service.sync_saved_albums(access_token, force=True)
+            message = f"Saved Albums synced: {result.get('synced', 0)} updated"
+
+        elif sync_type == "all":
+            # Run all syncs
+            results = await sync_service.run_full_sync(access_token, force=True)
+            # Die Ergebnisse sind dicts mit details, extrahiere die Counts
+            artists_count = results.get('artists', {}).get('synced', 0) if results.get('artists') else 0
+            playlists_count = results.get('playlists', {}).get('synced', 0) if results.get('playlists') else 0
+            albums_count = results.get('saved_albums', {}).get('synced', 0) if results.get('saved_albums') else 0
+            message = f"Full sync complete: {artists_count} artists, {playlists_count} playlists, {albums_count} albums"
+
+        await db.commit()
+
+        return SyncTriggerResponse(
+            success=True,
+            message=message,
+            sync_type=sync_type,
+        )
+
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Sync failed: {str(e)}",
+        ) from e
+
+
+class SyncWorkerStatus(BaseModel):
+    """Status information for the Spotify sync worker."""
+
+    running: bool = Field(description="Whether the worker is currently running")
+    check_interval_seconds: int = Field(description="How often the worker checks for due syncs")
+    last_sync: dict[str, str | None] = Field(description="Last sync time for each sync type")
+    stats: dict[str, dict[str, Any]] = Field(description="Sync statistics")
+
+
+# Hey future me – dieser Endpoint gibt den Status des SpotifySyncWorkers zurück.
+# Nützlich für Monitoring und Debugging. Zeigt an wann der letzte Sync war und
+# ob es Fehler gab.
+@router.get("/spotify-sync/worker-status")
+async def get_spotify_sync_worker_status(
+    request: Request,
+) -> SyncWorkerStatus:
+    """Get the status of the Spotify sync background worker.
+
+    Returns information about:
+    - Whether the worker is running
+    - Last sync times for each type
+    - Sync statistics and errors
+
+    Returns:
+        Worker status information
+    """
+    # Get worker from app state
+    if not hasattr(request.app.state, "spotify_sync_worker"):
+        raise HTTPException(
+            status_code=503,
+            detail="Spotify sync worker not initialized",
+        )
+
+    worker = request.app.state.spotify_sync_worker
+    status = worker.get_status()
+
+    return SyncWorkerStatus(
+        running=status["running"],
+        check_interval_seconds=status["check_interval_seconds"],
+        last_sync=status["last_sync"],
+        stats=status["stats"],
     )

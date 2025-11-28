@@ -4,6 +4,8 @@ from soulspot.application.workers.download_worker import DownloadWorker
 from soulspot.application.workers.job_queue import JobQueue, JobStatus, JobType
 from soulspot.application.workers.metadata_worker import MetadataWorker
 from soulspot.application.workers.playlist_sync_worker import PlaylistSyncWorker
+from soulspot.application.workers.spotify_sync_worker import SpotifySyncWorker
+from soulspot.application.workers.token_refresh_worker import TokenRefreshWorker
 
 __all__ = [
     "JobQueue",
@@ -12,4 +14,6 @@ __all__ = [
     "DownloadWorker",
     "MetadataWorker",
     "PlaylistSyncWorker",
+    "SpotifySyncWorker",
+    "TokenRefreshWorker",
 ]

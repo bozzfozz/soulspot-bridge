@@ -15,7 +15,7 @@
 import asyncio
 import contextlib
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from soulspot.application.services.token_manager import DatabaseTokenManager
@@ -130,6 +130,27 @@ class TokenRefreshWorker:
     def is_running(self) -> bool:
         """Check if worker is currently running."""
         return self._running
+
+    def get_status(self) -> dict[str, Any]:
+        """Get current worker status for monitoring/UI.
+
+        Hey future me - diese Methode ist für den Worker-Status-Indicator in der Sidebar.
+        Sie gibt Infos zurück die das Frontend braucht um den Status anzuzeigen:
+        - running: Ob der Worker läuft
+        - status: 'idle', 'active', oder 'error' für die Animation
+        - has_valid_token: Ob ein gültiger Token vorhanden ist (sync check)
+        - check_interval_seconds: Wie oft geprüft wird
+        - refresh_threshold_minutes: Wann refreshed wird
+
+        Beachte: has_valid_token ist hier synchron NICHT abfragbar (async operation).
+        Das wird vom API-Endpoint separat geholt.
+        """
+        return {
+            "running": self._running,
+            "status": "idle" if self._running else "stopped",
+            "check_interval_seconds": self.check_interval_seconds,
+            "refresh_threshold_minutes": self.refresh_threshold_minutes,
+        }
 
     async def force_refresh(self) -> bool:
         """Force an immediate token refresh (bypass threshold check).

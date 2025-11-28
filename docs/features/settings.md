@@ -1,15 +1,22 @@
 # Settings
 
-> **Version:** 1.0  
-> **Last Updated:** 2025-11-25
+> **Version:** 1.1  
+> **Last Updated:** 2025-11-28
 
 ---
 
 ## Übersicht
 
-Die Settings-Verwaltung ermöglicht das Anzeigen der Anwendungskonfiguration. Die Einstellungen sind in Kategorien gruppiert: Allgemein, Integrationen, Download, Darstellung und Erweitert.
+Die Settings-Verwaltung ermöglicht das Anzeigen und Konfigurieren der Anwendung. Die Einstellungen sind in Kategorien gruppiert:
 
-> ⚠️ **Hinweis:** Die Bearbeitung von Einstellungen über die API ist derzeit nur lesend implementiert. Änderungen über die UI werden akzeptiert, aber nicht persistent gespeichert. Verwende die `.env` Datei für dauerhafte Konfigurationsänderungen.
+- **Spotify Sync** - Auto-Sync Einstellungen (Runtime, DB-gespeichert) ⭐ NEU
+- **Allgemein** - App-Name, Logging, Debug
+- **Integrationen** - Spotify, slskd, MusicBrainz Credentials
+- **Download** - Download-Queue Konfiguration
+- **Darstellung** - Theme-Einstellungen
+- **Erweitert** - API-Server, Circuit Breaker
+
+> 💡 **Neu:** Spotify Sync Settings werden in der Datenbank gespeichert und können zur Laufzeit ohne Neustart geändert werden. Siehe [Spotify Sync](./spotify-sync.md) für Details.
 
 ---
 
@@ -332,6 +339,7 @@ Diese werden in der API-Response mit `***` maskiert.
 
 ## Verwandte Features
 
+- [Spotify Sync](./spotify-sync.md) - Auto-Sync Einstellungen ⭐ NEU
 - [Authentication](./authentication.md) - Spotify OAuth Konfiguration
 - [Download Management](./download-management.md) - Download-Einstellungen
 - [Metadata Enrichment](./metadata-enrichment.md) - MusicBrainz-Konfiguration

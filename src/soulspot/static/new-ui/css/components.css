@@ -803,3 +803,278 @@
     height: 18px;
     accent-color: var(--accent-primary);
 }
+
+/* ===== WORKER STATUS INDICATOR ===== */
+/* Hey future me - diese Styles sind für den Worker-Status im Sidebar-Footer!
+   Die Icons zeigen den Status der Background-Worker (Token Refresh, Spotify Sync).
+   Animation basiert auf data-status Attribut: idle, active, error, stopped.
+   Tooltip erscheint bei Hover/Focus nach oben (da Footer unten ist). */
+
+.worker-status {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Single indicator (ein Icon für alle Worker) */
+.worker-indicator-single {
+    position: relative;
+    padding: var(--space-2);
+}
+
+/* Legacy: Multiple indicators nebeneinander */
+.worker-indicators {
+    display: flex;
+    gap: var(--space-3);
+    position: relative;
+    padding: var(--space-2);
+}
+
+.worker-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background-color: var(--bg-tertiary);
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+.worker-icon:hover {
+    background-color: var(--bg-quaternary);
+    transform: scale(1.1);
+}
+
+.worker-icon:focus {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+/* Status: Idle - sanftes Pulsieren, grün */
+.worker-icon[data-status="idle"] {
+    color: #1DB954;
+    animation: worker-pulse 2s ease-in-out infinite;
+}
+
+/* Status: Active - drehendes Icon */
+.worker-icon[data-status="active"] i {
+    animation: spin 1s linear infinite;
+}
+
+.worker-icon[data-status="active"] {
+    color: #1DB954;
+}
+
+/* Status: Error - rot mit Pulsieren */
+.worker-icon[data-status="error"] {
+    color: var(--color-error);
+    animation: worker-pulse 1s ease-in-out infinite;
+}
+
+/* Status: Stopped - grau, keine Animation */
+.worker-icon[data-status="stopped"] {
+    color: var(--text-muted);
+    animation: none;
+}
+
+/* Keyframes */
+@keyframes worker-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Tooltip Container */
+.worker-tooltip {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 240px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+    z-index: 100;
+    pointer-events: none;
+}
+
+/* Tooltip Arrow */
+.worker-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: var(--bg-secondary);
+}
+
+/* Show tooltip on hover/focus */
+.worker-indicators:hover .worker-tooltip,
+.worker-indicators:focus .worker-tooltip,
+.worker-indicators:focus-within .worker-tooltip,
+.worker-indicator-single:hover .worker-tooltip,
+.worker-indicator-single:focus .worker-tooltip,
+.worker-indicator-single:focus-within .worker-tooltip {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+/* Tooltip Content */
+.tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--border-primary);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.tooltip-badge {
+    font-size: var(--font-size-xs);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-weight: var(--font-weight-medium);
+}
+
+.tooltip-badge-idle {
+    background-color: rgba(29, 185, 84, 0.2);
+    color: #1DB954;
+}
+
+.tooltip-badge-active {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.tooltip-badge-error {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: var(--color-error);
+}
+
+.tooltip-badge-stopped {
+    background-color: var(--bg-tertiary);
+    color: var(--text-muted);
+}
+
+.tooltip-section {
+    margin-bottom: var(--space-3);
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.tooltip-row i {
+    margin-right: var(--space-2);
+}
+
+.tooltip-status {
+    font-size: 10px;
+}
+
+.tooltip-status-idle { color: #1DB954; }
+.tooltip-status-active { color: #3b82f6; }
+.tooltip-status-error { color: var(--color-error); }
+.tooltip-status-stopped { color: var(--text-muted); }
+
+.tooltip-detail {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    margin-left: var(--space-5);
+}
+
+.tooltip-divider {
+    height: 1px;
+    background-color: var(--border-primary);
+    margin: var(--space-3) 0;
+}
+
+.tooltip-sync-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-1) var(--space-3);
+    margin-top: var(--space-2);
+    margin-left: var(--space-5);
+}
+
+.tooltip-sync-row {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.tooltip-sync-row span {
+    color: var(--text-muted);
+}
+
+/* Mobile: Tooltip links ausrichten statt zentriert */
+@media (max-width: 768px) {
+    .worker-tooltip {
+        left: 8px;
+        right: 8px;
+        transform: none;
+        min-width: auto;
+    }
+    
+    .worker-tooltip::after {
+        left: 50px;
+    }
+}
+
+/* Collapsed Sidebar: Icon bleibt sichtbar */
+.app-sidebar.collapsed .worker-status {
+    justify-content: center;
+}
+
+.app-sidebar.collapsed .worker-indicator-single .worker-tooltip,
+.app-sidebar.collapsed .worker-indicators .worker-tooltip {
+    left: calc(100% + 12px);
+    bottom: auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.app-sidebar.collapsed .worker-indicator-single .worker-tooltip::after,
+.app-sidebar.collapsed .worker-indicators .worker-tooltip::after {
+    top: 50%;
+    left: -16px;
+    right: auto;
+    transform: translateY(-50%);
+    border: 8px solid transparent;
+    border-right-color: var(--bg-secondary);
+    border-top-color: transparent;
+}
+
+/* Reduced Motion: Keine Animationen */
+@media (prefers-reduced-motion: reduce) {
+    .worker-icon[data-status="idle"],
+    .worker-icon[data-status="error"] {
+        animation: none;
+    }
+    
+    .worker-icon[data-status="active"] i {
+        animation: none;
+    }
+}

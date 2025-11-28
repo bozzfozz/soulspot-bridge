@@ -22,6 +22,7 @@ from soulspot.api.routers import (
     settings,
     sse,
     tracks,
+    workers,
 )
 
 # Yo, this is the main API router that aggregates everything! Gets mounted at /api in main.py.
@@ -39,6 +40,7 @@ api_router.include_router(metadata.router, prefix="/metadata", tags=["Metadata"]
 api_router.include_router(library.router, tags=["Library"])
 api_router.include_router(automation.router, tags=["Automation"])
 api_router.include_router(sse.router, tags=["SSE"])
+api_router.include_router(workers.router, prefix="/workers", tags=["Workers"])
 
 __all__ = [
     "api_router",
@@ -53,4 +55,5 @@ __all__ = [
     "settings",
     "sse",
     "tracks",
+    "workers",
 ]

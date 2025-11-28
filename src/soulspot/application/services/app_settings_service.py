@@ -1,0 +1,425 @@
+"""App Settings Service - Dynamic Runtime Configuration.
+
+Hey future me - this service provides runtime configuration that can be changed
+via Settings UI without restarting the app. Unlike env vars in config/settings.py,
+these settings are stored in the DB and read on-demand.
+
+Use cases:
+- Toggle Spotify auto-sync on/off
+- Change sync intervals
+- Enable/disable image downloading
+- Feature flags
+
+Pattern: Simple key-value store with type coercion.
+- Keys are dot-notation strings: 'spotify.auto_sync_enabled'
+- Values are stored as strings, converted to proper types on read
+- Categories group related settings for UI display
+
+The service caches settings in memory with a TTL to avoid constant DB hits,
+while still allowing real-time changes from the Settings page.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from datetime import datetime, timedelta
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from soulspot.infrastructure.persistence.models import AppSettingsModel
+
+logger = logging.getLogger(__name__)
+
+
+# Hey future me - cache timeout is short (30s) because we want Settings UI changes
+# to take effect quickly, but we also don't want to hit DB on every sync check
+CACHE_TTL_SECONDS = 30
+
+
+class AppSettingsService:
+    """Service for managing dynamic application settings.
+
+    Settings are stored in DB and can be changed at runtime without restart.
+    Provides typed access with automatic conversion from string storage.
+
+    Usage:
+        settings_service = AppSettingsService(session)
+        auto_sync = await settings_service.get_bool('spotify.auto_sync_enabled', default=True)
+        interval = await settings_service.get_int('spotify.artists_sync_interval_minutes', default=5)
+        await settings_service.set('spotify.auto_sync_enabled', False)
+    """
+
+    # Class-level cache to share across instances within same process
+    # Hey future me - this is intentionally simple. If you need distributed caching, use Redis.
+    _cache: dict[str, tuple[Any, datetime]] = {}
+
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialize with async DB session.
+
+        Args:
+            session: SQLAlchemy async session for DB operations.
+        """
+        self._session = session
+
+    def _get_from_cache(self, key: str) -> tuple[Any, bool]:
+        """Get value from cache if not expired.
+
+        Args:
+            key: Setting key.
+
+        Returns:
+            Tuple of (value, cache_hit). If cache miss or expired, returns (None, False).
+        """
+        if key in self._cache:
+            value, cached_at = self._cache[key]
+            if datetime.utcnow() - cached_at < timedelta(seconds=CACHE_TTL_SECONDS):
+                return value, True
+            # Expired, remove from cache
+            del self._cache[key]
+        return None, False
+
+    def _set_cache(self, key: str, value: Any) -> None:
+        """Store value in cache with current timestamp.
+
+        Args:
+            key: Setting key.
+            value: Parsed value to cache.
+        """
+        self._cache[key] = (value, datetime.utcnow())
+
+    def invalidate_cache(self, key: str | None = None) -> None:
+        """Invalidate cache for specific key or all keys.
+
+        Call this after updating settings to ensure fresh reads.
+
+        Args:
+            key: Specific key to invalidate, or None to clear all cache.
+        """
+        if key is None:
+            self._cache.clear()
+            logger.debug("Cleared all app settings cache")
+        elif key in self._cache:
+            del self._cache[key]
+            logger.debug(f"Invalidated cache for: {key}")
+
+    async def get_raw(self, key: str) -> AppSettingsModel | None:
+        """Get raw setting model from DB.
+
+        Args:
+            key: Setting key (e.g., 'spotify.auto_sync_enabled').
+
+        Returns:
+            AppSettingsModel or None if not found.
+        """
+        stmt = select(AppSettingsModel).where(AppSettingsModel.key == key)
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_string(self, key: str, default: str | None = None) -> str | None:
+        """Get setting value as string.
+
+        Args:
+            key: Setting key.
+            default: Default value if setting not found.
+
+        Returns:
+            Setting value as string, or default.
+        """
+        # Check cache first
+        cached_value, cache_hit = self._get_from_cache(key)
+        if cache_hit:
+            return cached_value
+
+        setting = await self.get_raw(key)
+        value = setting.value if setting else default
+
+        self._set_cache(key, value)
+        return value
+
+    async def get_bool(self, key: str, default: bool = False) -> bool:
+        """Get setting value as boolean.
+
+        Interprets 'true', '1', 'yes' as True (case-insensitive).
+        Everything else is False.
+
+        Args:
+            key: Setting key.
+            default: Default value if setting not found.
+
+        Returns:
+            Setting value as boolean.
+        """
+        # Check cache first
+        cached_value, cache_hit = self._get_from_cache(key)
+        if cache_hit:
+            return cached_value
+
+        setting = await self.get_raw(key)
+        if setting is None or setting.value is None:
+            value = default
+        else:
+            value = setting.value.lower() in ("true", "1", "yes")
+
+        self._set_cache(key, value)
+        return value
+
+    async def get_int(self, key: str, default: int = 0) -> int:
+        """Get setting value as integer.
+
+        Args:
+            key: Setting key.
+            default: Default value if setting not found or invalid.
+
+        Returns:
+            Setting value as integer.
+        """
+        # Check cache first
+        cached_value, cache_hit = self._get_from_cache(key)
+        if cache_hit:
+            return cached_value
+
+        setting = await self.get_raw(key)
+        if setting is None or setting.value is None:
+            value = default
+        else:
+            try:
+                value = int(setting.value)
+            except ValueError:
+                logger.warning(f"Invalid integer value for {key}: {setting.value}")
+                value = default
+
+        self._set_cache(key, value)
+        return value
+
+    async def get_json(self, key: str, default: Any = None) -> Any:
+        """Get setting value as parsed JSON.
+
+        Args:
+            key: Setting key.
+            default: Default value if setting not found or invalid JSON.
+
+        Returns:
+            Parsed JSON value (dict, list, etc.).
+        """
+        # Check cache first
+        cached_value, cache_hit = self._get_from_cache(key)
+        if cache_hit:
+            return cached_value
+
+        setting = await self.get_raw(key)
+        if setting is None or setting.value is None:
+            value = default
+        else:
+            try:
+                value = json.loads(setting.value)
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON value for {key}: {setting.value}")
+                value = default
+
+        self._set_cache(key, value)
+        return value
+
+    async def set(
+        self,
+        key: str,
+        value: Any,
+        value_type: str = "string",
+        category: str = "general",
+        description: str | None = None,
+    ) -> AppSettingsModel:
+        """Set a setting value (insert or update).
+
+        Automatically converts value to string for storage.
+        Invalidates cache for this key.
+
+        Args:
+            key: Setting key.
+            value: Value to store (will be converted to string).
+            value_type: Type hint ('string', 'boolean', 'integer', 'json').
+            category: Category for UI grouping.
+            description: Human-readable description.
+
+        Returns:
+            Updated or created AppSettingsModel.
+        """
+        # Convert value to string for storage
+        if value_type == "json" and not isinstance(value, str):
+            str_value = json.dumps(value)
+        elif value_type == "boolean":
+            str_value = "true" if value else "false"
+        else:
+            str_value = str(value) if value is not None else None
+
+        # Upsert pattern
+        setting = await self.get_raw(key)
+        if setting is None:
+            setting = AppSettingsModel(
+                key=key,
+                value=str_value,
+                value_type=value_type,
+                category=category,
+                description=description,
+            )
+            self._session.add(setting)
+        else:
+            setting.value = str_value
+            if value_type != "string":  # Only update if explicitly set
+                setting.value_type = value_type
+            if description:
+                setting.description = description
+
+        await self._session.flush()
+
+        # Invalidate cache
+        self.invalidate_cache(key)
+
+        logger.debug(f"Set app setting: {key} = {str_value}")
+        return setting
+
+    async def delete(self, key: str) -> bool:
+        """Delete a setting.
+
+        Args:
+            key: Setting key to delete.
+
+        Returns:
+            True if deleted, False if not found.
+        """
+        setting = await self.get_raw(key)
+        if setting:
+            await self._session.delete(setting)
+            await self._session.flush()
+            self.invalidate_cache(key)
+            logger.debug(f"Deleted app setting: {key}")
+            return True
+        return False
+
+    async def get_by_category(self, category: str) -> list[AppSettingsModel]:
+        """Get all settings in a category.
+
+        Useful for Settings UI to display all Spotify settings at once.
+
+        Args:
+            category: Category name (e.g., 'spotify').
+
+        Returns:
+            List of settings in that category.
+        """
+        stmt = (
+            select(AppSettingsModel)
+            .where(AppSettingsModel.category == category)
+            .order_by(AppSettingsModel.key)
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_all(self) -> list[AppSettingsModel]:
+        """Get all settings.
+
+        Returns:
+            List of all app settings.
+        """
+        stmt = select(AppSettingsModel).order_by(
+            AppSettingsModel.category, AppSettingsModel.key
+        )
+        result = await self._session.execute(stmt)
+        return list(result.scalars().all())
+
+    # =========================================================================
+    # SPOTIFY-SPECIFIC CONVENIENCE METHODS
+    # =========================================================================
+    # Hey future me - these are shortcuts for common Spotify settings.
+    # They use the generic get_* methods under the hood, just with nicer names.
+    # =========================================================================
+
+    async def is_spotify_auto_sync_enabled(self) -> bool:
+        """Check if Spotify auto-sync is globally enabled.
+
+        This is the master switch - if False, no sync happens at all.
+        """
+        return await self.get_bool("spotify.auto_sync_enabled", default=True)
+
+    async def is_spotify_artists_sync_enabled(self) -> bool:
+        """Check if followed artists auto-sync is enabled."""
+        if not await self.is_spotify_auto_sync_enabled():
+            return False
+        return await self.get_bool("spotify.auto_sync_artists", default=True)
+
+    async def is_spotify_playlists_sync_enabled(self) -> bool:
+        """Check if playlists auto-sync is enabled."""
+        if not await self.is_spotify_auto_sync_enabled():
+            return False
+        return await self.get_bool("spotify.auto_sync_playlists", default=True)
+
+    async def is_spotify_liked_songs_sync_enabled(self) -> bool:
+        """Check if Liked Songs sync is enabled."""
+        if not await self.is_spotify_auto_sync_enabled():
+            return False
+        return await self.get_bool("spotify.auto_sync_liked_songs", default=True)
+
+    async def is_spotify_saved_albums_sync_enabled(self) -> bool:
+        """Check if Saved Albums sync is enabled."""
+        if not await self.is_spotify_auto_sync_enabled():
+            return False
+        return await self.get_bool("spotify.auto_sync_saved_albums", default=True)
+
+    async def get_artists_sync_interval(self) -> int:
+        """Get cooldown between artist sync runs in minutes."""
+        return await self.get_int("spotify.artists_sync_interval_minutes", default=5)
+
+    async def get_playlists_sync_interval(self) -> int:
+        """Get cooldown between playlist sync runs in minutes."""
+        return await self.get_int("spotify.playlists_sync_interval_minutes", default=10)
+
+    async def should_download_images(self) -> bool:
+        """Check if image downloading is enabled."""
+        return await self.get_bool("spotify.download_images", default=True)
+
+    async def should_remove_unfollowed_artists(self) -> bool:
+        """Check if unfollowed artists should be removed from DB."""
+        return await self.get_bool("spotify.remove_unfollowed_artists", default=True)
+
+    async def should_remove_unfollowed_playlists(self) -> bool:
+        """Check if deleted playlists should be removed from DB."""
+        return await self.get_bool("spotify.remove_unfollowed_playlists", default=False)
+
+    async def get_spotify_settings_summary(self) -> dict[str, Any]:
+        """Get summary of all Spotify sync settings for UI display.
+
+        Returns a dict with all settings, useful for Settings page.
+        """
+        return {
+            "auto_sync_enabled": await self.get_bool(
+                "spotify.auto_sync_enabled", default=True
+            ),
+            "auto_sync_artists": await self.get_bool(
+                "spotify.auto_sync_artists", default=True
+            ),
+            "auto_sync_playlists": await self.get_bool(
+                "spotify.auto_sync_playlists", default=True
+            ),
+            "auto_sync_liked_songs": await self.get_bool(
+                "spotify.auto_sync_liked_songs", default=True
+            ),
+            "auto_sync_saved_albums": await self.get_bool(
+                "spotify.auto_sync_saved_albums", default=True
+            ),
+            "artists_sync_interval_minutes": await self.get_int(
+                "spotify.artists_sync_interval_minutes", default=5
+            ),
+            "playlists_sync_interval_minutes": await self.get_int(
+                "spotify.playlists_sync_interval_minutes", default=10
+            ),
+            "download_images": await self.get_bool(
+                "spotify.download_images", default=True
+            ),
+            "remove_unfollowed_artists": await self.get_bool(
+                "spotify.remove_unfollowed_artists", default=True
+            ),
+            "remove_unfollowed_playlists": await self.get_bool(
+                "spotify.remove_unfollowed_playlists", default=False
+            ),
+        }

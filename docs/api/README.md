@@ -1,7 +1,7 @@
 # API Documentation
 
-> **Version:** 1.0  
-> **Last Updated:** 2025-11-25
+> **Version:** 1.1  
+> **Last Updated:** 2025-11-28
 
 ---
 
@@ -12,6 +12,16 @@ This directory contains API documentation for SoulSpot version 1.0.
 ---
 
 ## Available APIs
+
+### [Spotify Sync API](spotify-sync-api.md) ⭐ NEU
+Control Spotify auto-sync settings and trigger manual synchronization.
+
+**Key Features:**
+- Runtime-configurable sync settings (stored in DB)
+- Toggle individual sync types (Artists, Playlists, Liked Songs, Albums)
+- Manual sync triggers
+- Disk usage statistics for cached images
+- Cleanup behavior configuration
 
 ### [Advanced Search API](advanced-search-api.md)
 Advanced search capabilities for tracks, albums, and artists with filtering, sorting, and pagination.

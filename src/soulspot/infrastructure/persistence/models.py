@@ -215,7 +215,16 @@ class TrackModel(Base):
 
 
 class PlaylistModel(Base):
-    """SQLAlchemy model for Playlist entity."""
+    """SQLAlchemy model for Playlist entity.
+
+    Hey future me - playlists can come from multiple sources:
+    - MANUAL: Created in SoulSpot
+    - SPOTIFY: Synced from user's Spotify playlists
+    - LIKED_SONGS: Special Spotify playlist (is_liked_songs=True)
+
+    cover_url = Spotify CDN URL (for comparison if image changed)
+    cover_path = Local path to downloaded image (for offline/fast access)
+    """
 
     __tablename__ = "playlists"
 
@@ -229,6 +238,12 @@ class PlaylistModel(Base):
         String(255), nullable=True, unique=True, index=True
     )
     cover_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Local path to downloaded cover image (e.g., "artwork/spotify/playlists/abc123.webp")
+    cover_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # True for the special "Liked Songs" playlist - no Spotify URI for this one!
+    is_liked_songs: Mapped[bool] = mapped_column(
+        sa.Boolean(), nullable=False, server_default="0", default=False
+    )
     created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=utc_now, onupdate=utc_now, nullable=False
@@ -585,9 +600,15 @@ class SessionModel(Base):
 class SpotifyArtistModel(Base):
     """Spotify artist from user's followed artists.
 
-    This is NOT the same as ArtistModel! ArtistModel = local library,
-    SpotifyArtistModel = synced from Spotify account. They can reference
-    the same real-world artist but serve different purposes.
+    Hey future me - this is NOT the same as ArtistModel!
+    - ArtistModel = local library (tracks you downloaded)
+    - SpotifyArtistModel = synced from Spotify account
+
+    They can reference the same real-world artist but serve different purposes.
+    SpotifyArtistModel persists even if you haven't downloaded any tracks yet.
+
+    image_url = Spotify CDN URL (for comparison if image changed)
+    image_path = Local path to downloaded image (for offline/fast access)
     """
 
     __tablename__ = "spotify_artists"
@@ -596,6 +617,8 @@ class SpotifyArtistModel(Base):
     spotify_id: Mapped[str] = mapped_column(String(32), primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Local path to downloaded image (e.g., "artwork/spotify/artists/0OdUWJ0sBjDrqHygGUXeCF.webp")
+    image_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     # Genres stored as JSON text: '["rock", "alternative"]'
     genres: Mapped[str | None] = mapped_column(Text, nullable=True)
     popularity: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -628,8 +651,17 @@ class SpotifyArtistModel(Base):
 class SpotifyAlbumModel(Base):
     """Spotify album from a followed artist.
 
-    Synced when user navigates to artist detail page. Contains albums,
-    singles, and compilations. Tracks are lazily loaded when user opens album.
+    Hey future me - albums get synced in two ways:
+    1. Artist album sync: When user views artist, we sync all their albums
+    2. Saved Albums: User explicitly saved this album (is_saved=True)
+
+    is_saved=True means user has this in their "Saved Albums" collection,
+    independent of whether they follow the artist. This affects sync behavior:
+    - Artist albums get deleted if artist is unfollowed
+    - Saved Albums persist until user removes them from saved albums
+
+    image_url = Spotify CDN URL (for comparison if image changed)
+    image_path = Local path to downloaded cover (for offline/fast access)
     """
 
     __tablename__ = "spotify_albums"
@@ -643,6 +675,12 @@ class SpotifyAlbumModel(Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Local path to downloaded cover (e.g., "artwork/spotify/albums/abc123.webp")
+    image_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # True if user has this album in "Saved Albums" (not just from followed artist)
+    is_saved: Mapped[bool] = mapped_column(
+        sa.Boolean(), nullable=False, server_default="0", default=False
+    )
     # Release date can be "2023", "2023-05", or "2023-05-15"
     release_date: Mapped[str | None] = mapped_column(
         String(10), nullable=True, index=True
@@ -843,3 +881,65 @@ class SpotifyTokenModel(Base):
 
         threshold = utc_now() + timedelta(minutes=minutes)
         return ensure_utc_aware(self.token_expires_at) <= threshold
+
+
+# =============================================================================
+# APP SETTINGS MODEL (Dynamic Configuration without Restart)
+# =============================================================================
+# Hey future me - this is KEY-VALUE storage for runtime config!
+# Unlike env-based Settings (pydantic-settings), these can be changed via UI
+# without restarting the app. Used for: Spotify sync toggles, intervals, feature flags.
+#
+# Why not just use env vars?
+# - Env vars require restart
+# - Users want to toggle sync on/off from Settings page
+# - Different settings per category (spotify, downloads, ui, etc.)
+#
+# Value types supported:
+# - 'string': Plain text
+# - 'boolean': 'true'/'false' (parsed in service layer)
+# - 'integer': Numeric strings (parsed in service layer)
+# - 'json': Complex objects/arrays (parsed via json.loads)
+# =============================================================================
+
+
+class AppSettingsModel(Base):
+    """Dynamic application settings stored in DB.
+
+    Key-value store for runtime configuration. Unlike env vars, these
+    can be changed via Settings UI without app restart.
+
+    Example keys:
+    - 'spotify.auto_sync_enabled' (boolean)
+    - 'spotify.artists_sync_interval_minutes' (integer)
+    - 'spotify.download_images' (boolean)
+    """
+
+    __tablename__ = "app_settings"
+
+    # Setting key (e.g., "spotify.auto_sync_enabled")
+    key: Mapped[str] = mapped_column(String(100), primary_key=True)
+    # Value as string (parsed based on value_type)
+    value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Type hint: 'string', 'boolean', 'integer', 'json'
+    value_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default="string", default="string"
+    )
+    # Category for grouping in UI (e.g., "spotify", "downloads", "ui")
+    category: Mapped[str] = mapped_column(
+        String(50), nullable=False, server_default="general", default="general"
+    )
+    # Human-readable description for Settings UI tooltips
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    # Index for fast category lookups (get all "spotify" settings)
+    __table_args__ = (Index("ix_app_settings_category", "category"),)

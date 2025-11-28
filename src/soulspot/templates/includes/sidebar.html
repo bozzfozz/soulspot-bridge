@@ -103,14 +103,29 @@
         </div>
     </nav>
 
-    <!-- Sidebar Footer -->
+    <!-- Sidebar Footer: Worker Status Indicator -->
+    {# Hey future me - dieser Footer zeigt den Status der Background-Worker!
+       Ein einzelnes Spotify-Icon zeigt den kombinierten Status aller Worker.
+       Bei Hover erscheint ein Tooltip mit Details (letzter Sync, etc).
+       Klick navigiert zu den Settings.
+       
+       Animation:
+       - Idle: sanftes Pulsieren (grün)
+       - Active/Syncing: drehendes Icon
+       - Error: rotes Icon mit Pulsieren
+       
+       Auf Mobile: Touch auf Container öffnet Tooltip (via :focus-within)
+    #}
     <div class="sidebar-footer">
-        <div class="sidebar-user">
-            <img src="{{ user.avatar if user is defined and user and user.avatar else 'https://ui-avatars.com/api/?name=' ~ (user.name if user is defined and user and user.name else 'User') }}"
-                alt="{{ user.name if user is defined and user and user.name else 'User' }}" class="sidebar-user-avatar">
-            <div class="sidebar-user-info">
-                <div class="sidebar-user-name">{{ user.name if user is defined and user and user.name else 'User' }}</div>
-                <div class="sidebar-user-status">Online</div>
+        <div class="worker-status"
+             hx-get="/api/workers/status/html"
+             hx-trigger="load, every 10s"
+             hx-swap="innerHTML">
+            <!-- Fallback bis HTMX lädt -->
+            <div class="worker-indicator-single" tabindex="0">
+                <a href="/settings?tab=spotify" class="worker-icon" data-status="idle" aria-label="Background Workers Status">
+                    <i class="fa-solid fa-compact-disc"></i>
+                </a>
             </div>
         </div>
     </div>

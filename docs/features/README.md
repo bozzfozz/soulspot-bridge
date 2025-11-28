@@ -1,7 +1,7 @@
 # SoulSpot Feature Documentation
 
-> **Version:** 1.0  
-> **Last Updated:** 2025-11-25
+> **Version:** 1.1  
+> **Last Updated:** 2025-11-28
 
 ---
 
@@ -15,6 +15,7 @@ Diese Dokumentation beschreibt alle implementierten Features von SoulSpot. Jedes
 
 | Feature | Beschreibung | Status |
 |---------|--------------|--------|
+| [Spotify Sync](./spotify-sync.md) | Auto-Sync von Artists, Playlists, Liked Songs, Albums + Bilderspeicherung | ⭐ **NEU** |
 | [Playlist Management](./playlist-management.md) | Import, Sync und Export von Spotify-Playlists | ✅ Implementiert |
 | [Download Management](./download-management.md) | Download-Queue, Priorisierung und Batch-Downloads | ✅ Implementiert |
 | [Metadata Enrichment](./metadata-enrichment.md) | Multi-Source Metadaten-Anreicherung (Spotify, MusicBrainz, Last.fm) | ✅ Implementiert |
@@ -32,6 +33,7 @@ Diese Dokumentation beschreibt alle implementierten Features von SoulSpot. Jedes
 ## Quick Links
 
 ### Für Anwender
+- [Spotify Auto-Sync einrichten](./spotify-sync.md#einstellungen) ⭐ NEU
 - [Playlist importieren](./playlist-management.md#playlist-importieren)
 - [Downloads verwalten](./download-management.md#download-queue)
 - [Artist folgen und Watchlist erstellen](./automation-watchlists.md#watchlist-erstellen)

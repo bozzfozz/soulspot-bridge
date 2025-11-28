@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 if TYPE_CHECKING:
     from soulspot.application.services.session_store import Session
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -2378,6 +2378,7 @@ class SpotifyBrowseRepository:
         spotify_id: str,
         name: str,
         image_url: str | None = None,
+        image_path: str | None = None,
         genres: list[str] | None = None,
         popularity: int | None = None,
         follower_count: int | None = None,
@@ -2399,6 +2400,8 @@ class SpotifyBrowseRepository:
             # Update existing
             model.name = name
             model.image_url = image_url
+            if image_path is not None:
+                model.image_path = image_path
             model.genres = genres_json
             model.popularity = popularity
             model.follower_count = follower_count
@@ -2410,6 +2413,7 @@ class SpotifyBrowseRepository:
                 spotify_id=spotify_id,
                 name=name,
                 image_url=image_url,
+                image_path=image_path,
                 genres=genres_json,
                 popularity=popularity,
                 follower_count=follower_count,
@@ -2477,10 +2481,12 @@ class SpotifyBrowseRepository:
         artist_id: str,
         name: str,
         image_url: str | None = None,
+        image_path: str | None = None,
         release_date: str | None = None,
         release_date_precision: str | None = None,
         album_type: str = "album",
         total_tracks: int = 0,
+        is_saved: bool = False,
     ) -> None:
         """Insert or update a Spotify album."""
         from .models import SpotifyAlbumModel
@@ -2496,10 +2502,15 @@ class SpotifyBrowseRepository:
         if model:
             model.name = name
             model.image_url = image_url
+            if image_path is not None:
+                model.image_path = image_path
             model.release_date = release_date
             model.release_date_precision = release_date_precision
             model.album_type = album_type
             model.total_tracks = total_tracks
+            # Only set is_saved to True, never back to False via this method
+            if is_saved:
+                model.is_saved = True
             model.updated_at = now
         else:
             model = SpotifyAlbumModel(
@@ -2507,10 +2518,12 @@ class SpotifyBrowseRepository:
                 artist_id=artist_id,
                 name=name,
                 image_url=image_url,
+                image_path=image_path,
                 release_date=release_date,
                 release_date_precision=release_date_precision,
                 album_type=album_type,
                 total_tracks=total_tracks,
+                is_saved=is_saved,
             )
             self.session.add(model)
 
@@ -2708,6 +2721,295 @@ class SpotifyBrowseRepository:
         if not status.next_sync_at:
             return True
         return bool(datetime.now(UTC) >= status.next_sync_at)
+
+    # =========================================================================
+    # PLAYLISTS (SPOTIFY-SYNCED)
+    # =========================================================================
+    # Hey future me - playlists are in the playlists table (not spotify_* prefix)!
+    # We identify Spotify playlists by source='SPOTIFY' and spotify_uri NOT NULL.
+    # =========================================================================
+
+    async def get_spotify_playlist_uris(self) -> set[str]:
+        """Get all Spotify playlist URIs in the database.
+
+        Used for diff-sync: compare with Spotify API result.
+        """
+        from .models import PlaylistModel
+
+        stmt = select(PlaylistModel.spotify_uri).where(
+            PlaylistModel.source == "SPOTIFY",
+            PlaylistModel.spotify_uri.isnot(None),
+            PlaylistModel.is_liked_songs == False,  # noqa: E712
+        )
+        result = await self.session.execute(stmt)
+        return {row[0] for row in result.all() if row[0]}
+
+    async def get_playlist_by_uri(self, spotify_uri: str) -> Any | None:
+        """Get a playlist by Spotify URI."""
+        from .models import PlaylistModel
+
+        stmt = select(PlaylistModel).where(PlaylistModel.spotify_uri == spotify_uri)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def count_spotify_playlists(self) -> int:
+        """Count Spotify-synced playlists (excluding Liked Songs)."""
+        from .models import PlaylistModel
+
+        stmt = select(func.count(PlaylistModel.id)).where(
+            PlaylistModel.source == "SPOTIFY",
+            PlaylistModel.is_liked_songs == False,  # noqa: E712
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    async def upsert_playlist(
+        self,
+        spotify_uri: str,
+        name: str,
+        description: str | None = None,
+        cover_url: str | None = None,
+        cover_path: str | None = None,
+        source: str = "SPOTIFY",
+    ) -> None:
+        """Insert or update a Spotify playlist."""
+        import uuid
+
+        from .models import PlaylistModel
+
+        stmt = select(PlaylistModel).where(PlaylistModel.spotify_uri == spotify_uri)
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        now = datetime.now(UTC)
+
+        if model:
+            model.name = name
+            model.description = description
+            model.cover_url = cover_url
+            if cover_path is not None:
+                model.cover_path = cover_path
+            model.updated_at = now
+        else:
+            model = PlaylistModel(
+                id=str(uuid.uuid4()),
+                name=name,
+                description=description,
+                source=source,
+                spotify_uri=spotify_uri,
+                cover_url=cover_url,
+                cover_path=cover_path,
+                is_liked_songs=False,
+                created_at=now,
+                updated_at=now,
+            )
+            self.session.add(model)
+
+    async def delete_playlists_by_uris(self, spotify_uris: set[str]) -> int:
+        """Delete playlists by Spotify URIs."""
+        from .models import PlaylistModel
+
+        if not spotify_uris:
+            return 0
+
+        stmt = delete(PlaylistModel).where(PlaylistModel.spotify_uri.in_(spotify_uris))
+        result = await self.session.execute(stmt)
+        return result.rowcount or 0  # type: ignore[attr-defined]
+
+    # =========================================================================
+    # LIKED SONGS (SPECIAL PLAYLIST)
+    # =========================================================================
+
+    async def get_or_create_liked_songs_playlist(self) -> Any:
+        """Get or create the Liked Songs special playlist."""
+        import uuid
+
+        from .models import PlaylistModel
+
+        stmt = select(PlaylistModel).where(PlaylistModel.is_liked_songs == True)  # noqa: E712
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        if model:
+            return model
+
+        # Create Liked Songs playlist
+        now = datetime.now(UTC)
+        model = PlaylistModel(
+            id=str(uuid.uuid4()),
+            name="Liked Songs",
+            description="Your Spotify Liked Songs",
+            source="SPOTIFY",
+            spotify_uri=None,  # No URI for Liked Songs
+            is_liked_songs=True,
+            created_at=now,
+            updated_at=now,
+        )
+        self.session.add(model)
+        await self.session.flush()  # Get ID immediately
+        return model
+
+    async def count_liked_songs_tracks(self) -> int:
+        """Count tracks in Liked Songs playlist."""
+        from .models import PlaylistModel, PlaylistTrackModel
+
+        # Get Liked Songs playlist
+        stmt = select(PlaylistModel.id).where(PlaylistModel.is_liked_songs == True)  # noqa: E712
+        result = await self.session.execute(stmt)
+        playlist_id = result.scalar_one_or_none()
+
+        if not playlist_id:
+            return 0
+
+        # Count tracks
+        stmt = select(func.count(PlaylistTrackModel.track_id)).where(
+            PlaylistTrackModel.playlist_id == playlist_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    async def sync_liked_songs_tracks(
+        self,
+        playlist_id: str,
+        tracks: list[dict[str, Any]],
+    ) -> int:
+        """Sync tracks to Liked Songs playlist.
+
+        Replaces all existing tracks with new set from Spotify.
+        Creates TrackModel entries if they don't exist.
+
+        Args:
+            playlist_id: ID of the Liked Songs playlist
+            tracks: List of track data from Spotify API
+
+        Returns:
+            Number of tracks added
+        """
+        from .models import PlaylistTrackModel, TrackModel
+
+        # Delete existing playlist tracks
+        delete_stmt = delete(PlaylistTrackModel).where(
+            PlaylistTrackModel.playlist_id == playlist_id
+        )
+        await self.session.execute(delete_stmt)
+
+        added_count = 0
+        now = datetime.now(UTC)
+
+        for position, track_data in enumerate(tracks):
+            track_id = track_data.get("id")
+            if not track_id:
+                continue
+
+            # Ensure track exists in tracks table
+            await self._ensure_track_exists(track_data)
+
+            # Add to playlist
+            playlist_track = PlaylistTrackModel(
+                playlist_id=playlist_id,
+                track_id=track_id,
+                position=position,
+                added_at=now,
+            )
+            self.session.add(playlist_track)
+            added_count += 1
+
+        return added_count
+
+    async def _ensure_track_exists(self, track_data: dict[str, Any]) -> None:
+        """Ensure a track exists in the tracks table.
+
+        Creates minimal track entry if not exists.
+        """
+        import uuid
+
+        from .models import TrackModel
+
+        spotify_id = track_data.get("id")
+        if not spotify_id:
+            return
+
+        # Check if track exists (by spotify_uri)
+        spotify_uri = f"spotify:track:{spotify_id}"
+        stmt = select(TrackModel).where(TrackModel.spotify_uri == spotify_uri)
+        result = await self.session.execute(stmt)
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            return
+
+        # Create track entry
+        name = track_data.get("name", "Unknown")
+        duration_ms = track_data.get("duration_ms", 0)
+        explicit = track_data.get("explicit", False)
+
+        # Get artist info
+        artists = track_data.get("artists", [])
+        artist_name = artists[0].get("name") if artists else "Unknown"
+
+        # Get album info
+        album = track_data.get("album", {})
+        album_name = album.get("name")
+
+        # ISRC if available
+        external_ids = track_data.get("external_ids", {})
+        isrc = external_ids.get("isrc")
+
+        model = TrackModel(
+            id=spotify_id,  # Use Spotify ID as primary key for consistency
+            title=name,
+            artist=artist_name,
+            album=album_name,
+            duration_ms=duration_ms,
+            is_explicit=explicit,
+            isrc=isrc,
+            spotify_uri=spotify_uri,
+            source="SPOTIFY",
+        )
+        self.session.add(model)
+
+    # =========================================================================
+    # SAVED ALBUMS
+    # =========================================================================
+
+    async def get_saved_album_ids(self) -> set[str]:
+        """Get all Spotify album IDs marked as saved."""
+        from .models import SpotifyAlbumModel
+
+        stmt = select(SpotifyAlbumModel.spotify_id).where(
+            SpotifyAlbumModel.is_saved == True  # noqa: E712
+        )
+        result = await self.session.execute(stmt)
+        return {row[0] for row in result.all()}
+
+    async def count_saved_albums(self) -> int:
+        """Count albums marked as saved."""
+        from .models import SpotifyAlbumModel
+
+        stmt = select(func.count(SpotifyAlbumModel.spotify_id)).where(
+            SpotifyAlbumModel.is_saved == True  # noqa: E712
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    async def unmark_albums_as_saved(self, spotify_ids: set[str]) -> int:
+        """Remove is_saved flag from albums (user removed from saved).
+
+        Note: This doesn't delete the album - it might still exist from
+        followed artist sync. Just removes the "saved" status.
+        """
+        from .models import SpotifyAlbumModel
+
+        if not spotify_ids:
+            return 0
+
+        stmt = (
+            update(SpotifyAlbumModel)
+            .where(SpotifyAlbumModel.spotify_id.in_(spotify_ids))
+            .values(is_saved=False, updated_at=datetime.now(UTC))
+        )
+        result = await self.session.execute(stmt)
+        return result.rowcount or 0  # type: ignore[attr-defined]
 
 
 # =============================================================================
