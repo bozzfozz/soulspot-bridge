@@ -70,7 +70,7 @@ async def index(
         ),
     }
     return templates.TemplateResponse(
-        "index.html", {"request": request, "stats": stats}
+        request, "index.html", context={"stats": stats}
     )
 
 
@@ -96,7 +96,7 @@ async def playlists(
     ]
 
     return templates.TemplateResponse(
-        "playlists.html", {"request": request, "playlists": playlists_data}
+        request, "playlists.html", context={"playlists": playlists_data}
     )
 
 
@@ -128,9 +128,9 @@ async def playlist_missing_tracks(
 
         if not playlist:
             return templates.TemplateResponse(
+                request,
                 "error.html",
-                {
-                    "request": request,
+                context={
                     "error_code": 404,
                     "error_message": "Playlist not found",
                 },
@@ -168,15 +168,16 @@ async def playlist_missing_tracks(
                 )
 
         return templates.TemplateResponse(
+            request,
             "partials/missing_tracks.html",
-            {"request": request, "missing_tracks": missing_tracks},
+            context={"missing_tracks": missing_tracks},
         )
 
     except ValueError:
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {
-                "request": request,
+            context={
                 "error_code": 400,
                 "error_message": "Invalid playlist ID",
             },
@@ -192,7 +193,7 @@ async def playlist_missing_tracks(
 @router.get("/playlists/import", response_class=HTMLResponse)
 async def import_playlist(request: Request) -> Any:
     """Import playlist page."""
-    return templates.TemplateResponse("import_playlist.html", {"request": request})
+    return templates.TemplateResponse(request, "import_playlist.html")
 
 
 # Listen, this renders the full playlist detail page with ALL tracks! Does N queries in a loop
@@ -219,9 +220,9 @@ async def playlist_detail(
         if not playlist:
             # Return 404 page or redirect
             return templates.TemplateResponse(
+                request,
                 "error.html",
-                {
-                    "request": request,
+                context={
                     "error_code": 404,
                     "error_message": "Playlist not found",
                 },
@@ -261,14 +262,14 @@ async def playlist_detail(
         }
 
         return templates.TemplateResponse(
-            "playlist_detail.html", {"request": request, "playlist": playlist_data}
+            request, "playlist_detail.html", context={"playlist": playlist_data}
         )
 
     except ValueError:
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {
-                "request": request,
+            context={
                 "error_code": 400,
                 "error_message": "Invalid playlist ID",
             },
@@ -307,7 +308,7 @@ async def downloads(
     ]
 
     return templates.TemplateResponse(
-        "downloads.html", {"request": request, "downloads": downloads_data}
+        request, "downloads.html", context={"downloads": downloads_data}
     )
 
 
@@ -315,7 +316,7 @@ async def downloads(
 @router.get("/auth", response_class=HTMLResponse)
 async def auth(request: Request) -> Any:
     """Auth page."""
-    return templates.TemplateResponse("auth.html", {"request": request})
+    return templates.TemplateResponse(request, "auth.html")
 
 
 # Hey future me - this is the UI styleguide page showing all components! Use it to verify the
@@ -324,13 +325,13 @@ async def auth(request: Request) -> Any:
 @router.get("/styleguide", response_class=HTMLResponse)
 async def styleguide(request: Request) -> Any:
     """UI Styleguide page showing all components and design tokens."""
-    return templates.TemplateResponse("styleguide.html", {"request": request})
+    return templates.TemplateResponse(request, "styleguide.html")
 
 
 @router.get("/search", response_class=HTMLResponse)
 async def search(request: Request) -> Any:
     """Advanced search page."""
-    return templates.TemplateResponse("search.html", {"request": request})
+    return templates.TemplateResponse(request, "search.html")
 
 
 # Hey future me - this is the HTMX quick-search endpoint for the header search bar! It returns a
@@ -405,15 +406,16 @@ async def quick_search(
         )
 
     return templates.TemplateResponse(
+        request,
         "partials/quick_search_results.html",
-        {"request": request, "query": query, "results": results},
+        context={"query": query, "results": results},
     )
 
 
 @router.get("/settings", response_class=HTMLResponse)
 async def settings(request: Request) -> Any:
     """Settings configuration page."""
-    return templates.TemplateResponse("settings.html", {"request": request})
+    return templates.TemplateResponse(request, "settings.html")
 
 
 # Hey, this is the new customizable dashboard! page=None means content loads via HTMX after initial
@@ -424,9 +426,9 @@ async def settings(request: Request) -> Any:
 async def dashboard(request: Request) -> Any:
     """Dynamic dashboard with customizable widgets."""
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
-        {
-            "request": request,
+        context={
             "page": None,  # Will be loaded via HTMX
             "edit_mode": False,
         },
@@ -439,7 +441,7 @@ async def dashboard(request: Request) -> Any:
 @router.get("/onboarding", response_class=HTMLResponse)
 async def onboarding(request: Request) -> Any:
     """First-run onboarding page for new users."""
-    return templates.TemplateResponse("onboarding.html", {"request": request})
+    return templates.TemplateResponse(request, "onboarding.html")
 
 
 # Yo, this is the library overview page with aggregated stats! Loads ALL tracks into memory using
@@ -474,7 +476,7 @@ async def library(
     }
 
     return templates.TemplateResponse(
-        "library.html", {"request": request, "stats": stats}
+        request, "library.html", context={"stats": stats}
     )
 
 
@@ -506,9 +508,9 @@ async def library_import_page(
         }
 
     return templates.TemplateResponse(
+        request,
         "library_import.html",
-        {
-            "request": request,
+        context={
             "summary": summary,
             "active_job": active_job,
         },
@@ -633,7 +635,7 @@ async def library_artists(
     artists.sort(key=lambda x: x["name"].lower())
 
     return templates.TemplateResponse(
-        "library_artists.html", {"request": request, "artists": artists}
+        request, "library_artists.html", context={"artists": artists}
     )
 
 
@@ -688,7 +690,7 @@ async def library_albums(
     albums.sort(key=lambda x: (x["artist"].lower(), x["title"].lower()))
 
     return templates.TemplateResponse(
-        "library_albums.html", {"request": request, "albums": albums}
+        request, "library_albums.html", context={"albums": albums}
     )
 
 
@@ -742,7 +744,7 @@ async def library_tracks(
     )
 
     return templates.TemplateResponse(
-        "library_tracks.html", {"request": request, "tracks": tracks_data}
+        request, "library_tracks.html", context={"tracks": tracks_data}
     )
 
 
@@ -785,9 +787,9 @@ async def library_artist_detail(
 
     if not track_models:
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {
-                "request": request,
+            context={
                 "error_code": 404,
                 "error_message": f"Artist '{artist_name}' not found",
             },
@@ -846,7 +848,7 @@ async def library_artist_detail(
     }
 
     return templates.TemplateResponse(
-        "library_artist_detail.html", {"request": request, "artist": artist_data}
+        request, "library_artist_detail.html", context={"artist": artist_data}
     )
 
 
@@ -877,9 +879,9 @@ async def library_album_detail(
     # Split key into artist and album
     if "::" not in album_key:
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {
-                "request": request,
+            context={
                 "error_code": 400,
                 "error_message": "Invalid album key format",
             },
@@ -907,9 +909,9 @@ async def library_album_detail(
 
     if not track_models:
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {
-                "request": request,
+            context={
                 "error_code": 404,
                 "error_message": f"Album '{album_title}' by '{artist_name}' not found",
             },
@@ -966,7 +968,7 @@ async def library_album_detail(
     }
 
     return templates.TemplateResponse(
-        "library_album_detail.html", {"request": request, "album": album_data}
+        request, "library_album_detail.html", context={"album": album_data}
     )
 
 
@@ -1003,9 +1005,9 @@ async def track_metadata_editor(
 
         if not track_model:
             return templates.TemplateResponse(
+                request,
                 "error.html",
-                {
-                    "request": request,
+                context={
                     "error_code": 404,
                     "error_message": "Track not found",
                 },
@@ -1028,15 +1030,16 @@ async def track_metadata_editor(
         }
 
         return templates.TemplateResponse(
+            request,
             "partials/metadata_editor.html",
-            {"request": request, "track": track_data},
+            context={"track": track_data},
         )
 
     except ValueError:
         return templates.TemplateResponse(
+            request,
             "error.html",
-            {
-                "request": request,
+            context={
                 "error_code": 400,
                 "error_message": "Invalid track ID",
             },
@@ -1072,9 +1075,9 @@ async def library_duplicates_page(request: Request) -> Any:
     """
     # Initial stats will be loaded via HTMX from /api/library/duplicates
     return templates.TemplateResponse(
+        request,
         "duplicates.html",
-        {
-            "request": request,
+        context={
             "stats": None,  # Loaded via HTMX
         },
     )
@@ -1102,10 +1105,9 @@ async def library_broken_files_page(request: Request) -> Any:
     """
     # Stats and broken files list loaded via HTMX from /api/library/broken-files
     return templates.TemplateResponse(
+        request,
         "broken_files.html",
-        {
-            "request": request,
-        },
+        context={},
     )
 
 
@@ -1131,10 +1133,9 @@ async def library_incomplete_albums_page(request: Request) -> Any:
     """
     # Album data loaded via HTMX from /api/library/incomplete-albums
     return templates.TemplateResponse(
+        request,
         "incomplete_albums.html",
-        {
-            "request": request,
-        },
+        context={},
     )
 
 
@@ -1212,9 +1213,9 @@ async def spotify_artists_page(
         error = str(e)
 
     return templates.TemplateResponse(
+        request,
         "spotify_artists.html",
-        {
-            "request": request,
+        context={
             "artists": artists,
             "sync_stats": sync_stats,
             "error": error,
@@ -1253,9 +1254,9 @@ async def spotify_artist_detail_page(
 
         if not artist_model:
             return templates.TemplateResponse(
+                request,
                 "error.html",
-                {
-                    "request": request,
+                context={
                     "error_code": 404,
                     "error_message": f"Artist {artist_id} nicht gefunden",
                 },
@@ -1316,9 +1317,9 @@ async def spotify_artist_detail_page(
         error = str(e)
 
     return templates.TemplateResponse(
+        request,
         "spotify_artist_detail.html",
-        {
-            "request": request,
+        context={
             "artist": artist,
             "albums": albums,
             "sync_stats": sync_stats,
@@ -1370,9 +1371,9 @@ async def spotify_album_detail_page(
 
         if not album_model:
             return templates.TemplateResponse(
+                request,
                 "error.html",
-                {
-                    "request": request,
+                context={
                     "error_code": 404,
                     "error_message": f"Album {album_id} nicht gefunden",
                 },
@@ -1432,9 +1433,9 @@ async def spotify_album_detail_page(
         total_sec = 0
 
     return templates.TemplateResponse(
+        request,
         "spotify_album_detail.html",
-        {
-            "request": request,
+        context={
             "artist": artist,
             "album": album,
             "tracks": tracks,
@@ -1466,6 +1467,7 @@ async def followed_artists_page(request: Request) -> Any:
         HTML page for managing followed artists
     """
     return templates.TemplateResponse(
+        request,
         "followed_artists.html",
-        {"request": request},
+        context={},
     )
