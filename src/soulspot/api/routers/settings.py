@@ -622,9 +622,6 @@ async def trigger_manual_sync(
     from soulspot.application.services.spotify_image_service import SpotifyImageService
     from soulspot.application.services.spotify_sync_service import SpotifySyncService
     from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
-    from soulspot.infrastructure.persistence.repositories import (
-        SpotifyBrowseRepository,
-    )
     from soulspot.infrastructure.token_management import DatabaseTokenManager
 
     valid_types = {"artists", "playlists", "liked", "albums", "all"}
@@ -646,14 +643,13 @@ async def trigger_manual_sync(
             detail="Not authenticated with Spotify. Please connect your account first.",
         )
 
-    spotify_client = SpotifyClient(app_settings.spotify, token_manager)
-    repository = SpotifyBrowseRepository(db)
+    spotify_client = SpotifyClient(app_settings.spotify)
     image_service = SpotifyImageService(app_settings)
     settings_service = AppSettingsService(db)
 
     sync_service = SpotifySyncService(
+        session=db,
         spotify_client=spotify_client,
-        repository=repository,
         image_service=image_service,
         settings_service=settings_service,
     )

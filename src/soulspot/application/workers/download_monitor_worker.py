@@ -146,7 +146,9 @@ class DownloadMonitorWorker:
         while self._running:
             try:
                 await self._poll_downloads()
-                self._stats["polls_completed"] += 1
+                self._stats["polls_completed"] = (
+                    (self._stats["polls_completed"] or 0) + 1
+                )
                 self._stats["last_poll_at"] = datetime.now(UTC).isoformat()
                 self._stats["last_error"] = None
             except Exception as e:
@@ -268,7 +270,9 @@ class DownloadMonitorWorker:
         """
         job.status = JobStatus.COMPLETED
         job.result["completed_at"] = datetime.now(UTC).isoformat()
-        self._stats["downloads_completed"] += 1
+        self._stats["downloads_completed"] = (
+            (self._stats["downloads_completed"] or 0) + 1
+        )
         logger.info(f"Download job {job.id} completed successfully")
 
         # Note: AutoImportService will pick up the file from downloads folder
@@ -284,5 +288,5 @@ class DownloadMonitorWorker:
         job.status = JobStatus.FAILED
         job.result["error"] = error_message
         job.result["failed_at"] = datetime.now(UTC).isoformat()
-        self._stats["downloads_failed"] += 1
+        self._stats["downloads_failed"] = (self._stats["downloads_failed"] or 0) + 1
         logger.warning(f"Download job {job.id} failed: {error_message}")

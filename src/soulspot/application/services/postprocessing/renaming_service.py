@@ -52,7 +52,7 @@ class RenamingService:
         """
         self._settings = settings
         self._template = settings.postprocessing.file_naming_template
-        self._app_settings_service: "AppSettingsService | None" = None
+        self._app_settings_service: AppSettingsService | None = None
 
         # Cache for dynamic settings (refreshed on each call)
         self._cached_artist_folder: str | None = None
