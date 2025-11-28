@@ -92,6 +92,13 @@ class TestWatchlistWorker:
     @pytest.mark.asyncio
     async def test_check_watchlists_no_watchlists(self, worker):
         """Test checking watchlists when none are due."""
+        # Mock token manager to return a valid token
+        mock_token_manager = MagicMock()
+        mock_token_manager.get_token_for_background = AsyncMock(
+            return_value="valid-token"
+        )
+        worker._token_manager = mock_token_manager
+
         with patch.object(
             worker.watchlist_service, "list_due_for_check", new_callable=AsyncMock
         ) as mock_list:
@@ -106,6 +113,13 @@ class TestWatchlistWorker:
         self, worker, mock_session
     ):
         """Test checking watchlists without Spotify client."""
+        # Mock token manager to return a valid token
+        mock_token_manager = MagicMock()
+        mock_token_manager.get_token_for_background = AsyncMock(
+            return_value="valid-token"
+        )
+        worker._token_manager = mock_token_manager
+
         # Create mock watchlist
         mock_watchlist = MagicMock()
         mock_watchlist.artist_id = MagicMock()
@@ -139,6 +153,28 @@ class TestWatchlistWorker:
         self, worker, mock_session, mock_spotify_client
     ):
         """Test checking watchlists with auto_download enabled."""
+        # Mock token manager to return a valid token
+        mock_token_manager = MagicMock()
+        mock_token_manager.get_token_for_background = AsyncMock(
+            return_value="valid-token"
+        )
+        worker._token_manager = mock_token_manager
+
+        # Mock Spotify client to return albums with new releases
+        mock_spotify_client.get_artist_albums = AsyncMock(
+            return_value=[
+                {
+                    "id": "album-123",
+                    "name": "New Album",
+                    "album_type": "album",
+                    "release_date": "2025-11-01",  # Recent release
+                    "total_tracks": 10,
+                    "images": [],
+                }
+            ]
+        )
+        worker.spotify_client = mock_spotify_client
+
         # Create mock watchlist with auto_download enabled
         mock_watchlist = MagicMock()
         mock_watchlist.artist_id = MagicMock()
@@ -148,6 +184,7 @@ class TestWatchlistWorker:
         mock_watchlist.auto_download = True
         mock_watchlist.quality_profile = "high"
         mock_watchlist.update_check = MagicMock()
+        mock_watchlist.last_checked_at = None  # No previous check, all releases are new
 
         with (
             patch.object(

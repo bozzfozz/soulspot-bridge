@@ -216,30 +216,26 @@ class SpotifySyncWorker:
             # Artists sync
             if await settings_service.get_bool(
                 "spotify.auto_sync_artists", default=True
-            ):
-                if self._is_sync_due("artists", artists_interval, now):
-                    await self._run_artists_sync(session, access_token, now)
+            ) and self._is_sync_due("artists", artists_interval, now):
+                await self._run_artists_sync(session, access_token, now)
 
             # Playlists sync
             if await settings_service.get_bool(
                 "spotify.auto_sync_playlists", default=True
-            ):
-                if self._is_sync_due("playlists", playlists_interval, now):
-                    await self._run_playlists_sync(session, access_token, now)
+            ) and self._is_sync_due("playlists", playlists_interval, now):
+                await self._run_playlists_sync(session, access_token, now)
 
             # Liked Songs sync (uses playlists interval)
             if await settings_service.get_bool(
                 "spotify.auto_sync_liked_songs", default=True
-            ):
-                if self._is_sync_due("liked_songs", playlists_interval, now):
-                    await self._run_liked_songs_sync(session, access_token, now)
+            ) and self._is_sync_due("liked_songs", playlists_interval, now):
+                await self._run_liked_songs_sync(session, access_token, now)
 
             # Saved Albums sync (uses playlists interval)
             if await settings_service.get_bool(
                 "spotify.auto_sync_saved_albums", default=True
-            ):
-                if self._is_sync_due("saved_albums", playlists_interval, now):
-                    await self._run_saved_albums_sync(session, access_token, now)
+            ) and self._is_sync_due("saved_albums", playlists_interval, now):
+                await self._run_saved_albums_sync(session, access_token, now)
 
             # Commit any changes
             await session.commit()

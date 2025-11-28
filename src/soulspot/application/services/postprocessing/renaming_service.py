@@ -39,10 +39,12 @@ class RenamingService:
     ILLEGAL_CHARS = r'[<>:"/\\|?*\x00-\x1f]'
 
     # Default templates (Lidarr-compatible)
+    # Hey future me - Python's str.format uses :02d for zero-padding, not :00
+    # Lidarr uses :00 but that's a custom parser. We use Python's standard format.
     DEFAULT_ARTIST_FOLDER = "{Artist Name}"
     DEFAULT_ALBUM_FOLDER = "{Album Title} ({Release Year})"
-    DEFAULT_TRACK_FORMAT = "{Track Number:00} - {Track Title}"
-    DEFAULT_MULTI_DISC_FORMAT = "{Medium:00}-{Track Number:00} - {Track Title}"
+    DEFAULT_TRACK_FORMAT = "{Track Number:02d} - {Track Title}"
+    DEFAULT_MULTI_DISC_FORMAT = "{Medium:02d}-{Track Number:02d} - {Track Title}"
 
     def __init__(self, settings: Settings) -> None:
         """Initialize renaming service.

@@ -111,11 +111,13 @@ class SpotifySyncService:
 
         try:
             # Check if artists sync is enabled
-            if self._settings_service:
-                if not await self._settings_service.is_spotify_artists_sync_enabled():
-                    stats["skipped_disabled"] = True
-                    logger.debug("Artists sync is disabled in settings")
-                    return stats
+            if (
+                self._settings_service
+                and not await self._settings_service.is_spotify_artists_sync_enabled()
+            ):
+                stats["skipped_disabled"] = True
+                logger.debug("Artists sync is disabled in settings")
+                return stats
 
             # Check cooldown
             if not force and not await self.repo.should_sync("followed_artists"):
@@ -581,11 +583,13 @@ class SpotifySyncService:
 
         try:
             # Check if playlist sync is enabled
-            if self._settings_service:
-                if not await self._settings_service.is_spotify_playlists_sync_enabled():
-                    stats["skipped_disabled"] = True
-                    logger.debug("Playlist sync is disabled in settings")
-                    return stats
+            if (
+                self._settings_service
+                and not await self._settings_service.is_spotify_playlists_sync_enabled()
+            ):
+                stats["skipped_disabled"] = True
+                logger.debug("Playlist sync is disabled in settings")
+                return stats
 
             # Check cooldown
             if not force and not await self.repo.should_sync("user_playlists"):
@@ -793,11 +797,13 @@ class SpotifySyncService:
 
         try:
             # Check if Liked Songs sync is enabled
-            if self._settings_service:
-                if not await self._settings_service.is_spotify_liked_songs_sync_enabled():
-                    stats["skipped_disabled"] = True
-                    logger.debug("Liked Songs sync is disabled in settings")
-                    return stats
+            if (
+                self._settings_service
+                and not await self._settings_service.is_spotify_liked_songs_sync_enabled()
+            ):
+                stats["skipped_disabled"] = True
+                logger.debug("Liked Songs sync is disabled in settings")
+                return stats
 
             # Check cooldown
             if not force and not await self.repo.should_sync("liked_songs"):
@@ -926,11 +932,13 @@ class SpotifySyncService:
 
         try:
             # Check if Saved Albums sync is enabled
-            if self._settings_service:
-                if not await self._settings_service.is_spotify_saved_albums_sync_enabled():
-                    stats["skipped_disabled"] = True
-                    logger.debug("Saved Albums sync is disabled in settings")
-                    return stats
+            if (
+                self._settings_service
+                and not await self._settings_service.is_spotify_saved_albums_sync_enabled()
+            ):
+                stats["skipped_disabled"] = True
+                logger.debug("Saved Albums sync is disabled in settings")
+                return stats
 
             # Check cooldown
             if not force and not await self.repo.should_sync("saved_albums"):

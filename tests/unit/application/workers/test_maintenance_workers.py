@@ -419,15 +419,13 @@ class TestCleanupWorker:
         self, worker: CleanupWorker, mock_job_queue: MagicMock
     ) -> None:
         """Test manually triggering cleanup."""
-        mock_job = MagicMock()
-        mock_job.id = "cleanup-job-123"
-        mock_job_queue.create_job.return_value = mock_job
+        mock_job_queue.enqueue = AsyncMock(return_value="cleanup-job-123")
 
         job_id = await worker.trigger_cleanup_now()
 
         assert job_id == "cleanup-job-123"
-        mock_job_queue.create_job.assert_called_once()
-        call_kwargs = mock_job_queue.create_job.call_args[1]
+        mock_job_queue.enqueue.assert_called_once()
+        call_kwargs = mock_job_queue.enqueue.call_args[1]
         assert call_kwargs["job_type"] == JobType.CLEANUP
 
     @pytest.mark.asyncio
@@ -541,8 +539,8 @@ class TestDuplicateDetectorWorker:
         # Strip "The "
         assert worker._normalize_text("The Beatles") == "beatles"
 
-        # Remove punctuation
-        assert worker._normalize_text("Rock & Roll") == "rock  roll"
+        # Remove punctuation and collapse whitespace
+        assert worker._normalize_text("Rock & Roll") == "rock roll"
 
         # Unicode normalization
         assert worker._normalize_text("Café") == "cafe"
@@ -633,20 +631,19 @@ class TestDuplicateDetectorWorker:
         score = worker._calculate_similarity(track_1, track_2)
 
         # Should be 0.6 (0% title + 40% artist + 20% duration)
-        assert score == 0.6
+        # Use pytest.approx for floating point comparison
+        assert score == pytest.approx(0.6)
 
     @pytest.mark.asyncio
     async def test_trigger_scan_now(
         self, worker: DuplicateDetectorWorker, mock_job_queue: MagicMock
     ) -> None:
         """Test manually triggering duplicate scan."""
-        mock_job = MagicMock()
-        mock_job.id = "scan-job-123"
-        mock_job_queue.create_job.return_value = mock_job
+        mock_job_queue.enqueue = AsyncMock(return_value="scan-job-123")
 
         job_id = await worker.trigger_scan_now()
 
         assert job_id == "scan-job-123"
-        mock_job_queue.create_job.assert_called_once()
-        call_kwargs = mock_job_queue.create_job.call_args[1]
+        mock_job_queue.enqueue.assert_called_once()
+        call_kwargs = mock_job_queue.enqueue.call_args[1]
         assert call_kwargs["job_type"] == JobType.DUPLICATE_SCAN

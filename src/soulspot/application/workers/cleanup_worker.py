@@ -296,9 +296,12 @@ class CleanupWorker:
         for dir_path in sorted(
             self._downloads_path.rglob("*"), key=lambda p: len(p.parts), reverse=True
         ):
-            if dir_path.is_dir() and not any(dir_path.iterdir()):
-                if dir_path != self._downloads_path:  # Never delete root
-                    empty_dirs.append(dir_path)
+            if (
+                dir_path.is_dir()
+                and not any(dir_path.iterdir())
+                and dir_path != self._downloads_path
+            ):
+                empty_dirs.append(dir_path)
 
         for dir_path in empty_dirs[:50]:  # Limit for safety
             if self._dry_run:

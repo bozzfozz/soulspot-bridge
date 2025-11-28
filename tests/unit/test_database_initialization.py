@@ -13,7 +13,7 @@ class TestSQLitePathValidation:
     def test_validate_directory_creation(self, tmp_path: Path) -> None:
         """Test that parent directories are created for SQLite databases."""
         from soulspot.config import Settings
-        from soulspot.main import _validate_sqlite_path
+        from soulspot.infrastructure.lifecycle import _validate_sqlite_path
 
         # Create a settings object with a database in a subdirectory
         db_path = tmp_path / "data" / "test.db"
@@ -33,7 +33,7 @@ class TestSQLitePathValidation:
     def test_validate_directory_permissions(self, tmp_path: Path) -> None:
         """Test that directory write permissions are validated."""
         from soulspot.config import Settings
-        from soulspot.main import _validate_sqlite_path
+        from soulspot.infrastructure.lifecycle import _validate_sqlite_path
 
         db_path = tmp_path / "writable" / "test.db"
         db_path.parent.mkdir(parents=True)
@@ -49,7 +49,7 @@ class TestSQLitePathValidation:
     def test_validate_current_directory(self) -> None:
         """Test that current directory validation works without mkdir."""
         from soulspot.config import Settings
-        from soulspot.main import _validate_sqlite_path
+        from soulspot.infrastructure.lifecycle import _validate_sqlite_path
 
         db_path = Path("test.db")
 
@@ -64,7 +64,7 @@ class TestSQLitePathValidation:
     def test_validate_non_sqlite_database(self) -> None:
         """Test that validation is skipped for non-SQLite databases."""
         from soulspot.config import Settings
-        from soulspot.main import _validate_sqlite_path
+        from soulspot.infrastructure.lifecycle import _validate_sqlite_path
 
         # Mock settings with PostgreSQL URL
         with patch.object(Settings, "_get_sqlite_db_path", return_value=None):
@@ -77,7 +77,7 @@ class TestSQLitePathValidation:
     def test_validate_permission_error(self, tmp_path: Path) -> None:
         """Test that permission errors are caught and reported clearly."""
         from soulspot.config import Settings
-        from soulspot.main import _validate_sqlite_path
+        from soulspot.infrastructure.lifecycle import _validate_sqlite_path
 
         # Create a read-only directory
         readonly_dir = tmp_path / "readonly"
@@ -101,7 +101,7 @@ class TestSQLitePathValidation:
     def test_validate_nested_directory_creation(self, tmp_path: Path) -> None:
         """Test that deeply nested directories are created correctly."""
         from soulspot.config import Settings
-        from soulspot.main import _validate_sqlite_path
+        from soulspot.infrastructure.lifecycle import _validate_sqlite_path
 
         # Create a deeply nested path
         db_path = tmp_path / "a" / "b" / "c" / "d" / "test.db"

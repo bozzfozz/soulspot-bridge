@@ -25,7 +25,8 @@ def test_playlist_sync_endpoint_exists(client: TestClient) -> None:
     response = client.post("/api/playlists/invalid-playlist-id/sync")
 
     # Should return error for invalid playlist, not 404 (endpoint exists)
-    assert response.status_code in [400, 401, 404], "Endpoint should exist"
+    # 503 is acceptable when token manager is not initialized (test environment)
+    assert response.status_code in [400, 401, 404, 503], "Endpoint should exist"
 
 
 def test_playlist_sync_all_endpoint_exists(client: TestClient) -> None:
@@ -34,7 +35,8 @@ def test_playlist_sync_all_endpoint_exists(client: TestClient) -> None:
 
     # Should return valid status, not 404
     assert response.status_code != 404, "Endpoint should exist"
-    assert response.status_code in [200, 202, 401, 403], "Endpoint should be accessible"
+    # 503 is acceptable when token manager is not initialized (test environment)
+    assert response.status_code in [200, 202, 401, 403, 503], "Endpoint should be accessible"
 
 
 def test_playlist_download_missing_endpoint_exists(client: TestClient) -> None:
