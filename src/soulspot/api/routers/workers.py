@@ -483,20 +483,20 @@ async def get_workers_status_html(request: Request) -> HTMLResponse:
 
     html = f'''
 <div class="worker-indicator-single" tabindex="0">
-    <a href="{spotify_status.settings_url}" 
-       class="worker-icon" 
+    <a href="{spotify_status.settings_url}"
+       class="worker-icon"
        data-status="{overall_status}"
        aria-label="Background Workers: {status_text.get(overall_status, overall_status)}"
        title="">
         <i class="fa-solid fa-compact-disc"></i>
     </a>
-    
+
     <div class="worker-tooltip" role="tooltip">
         <div class="tooltip-header">
             <span>Background Workers</span>
             <span class="tooltip-badge tooltip-badge-{overall_status}">{status_text.get(overall_status, overall_status)}</span>
         </div>
-        
+
         <div class="tooltip-section">
             <div class="tooltip-row">
                 <span><i class="{token_status.icon}"></i> {token_status.name}</span>
@@ -506,9 +506,9 @@ async def get_workers_status_html(request: Request) -> HTMLResponse:
                 Refresh alle {token_status.details.get("check_interval_seconds", 300) // 60} min
             </div>
         </div>
-        
+
         <div class="tooltip-divider"></div>
-        
+
         <div class="tooltip-section">
             <div class="tooltip-row">
                 <span><i class="{spotify_status.icon}" style="color: #1DB954;"></i> {spotify_status.name}</span>

@@ -169,82 +169,84 @@ class SpotifySyncWorker:
         Sie holt die aktuellen Settings aus der DB (damit Runtime-Änderungen wirken)
         und führt alle fälligen Syncs aus.
         """
-        # Get a fresh DB session for this cycle
-        async for session in self._get_db_session():
-            try:
-                # Import here to avoid circular imports
-                from soulspot.application.services.app_settings_service import (
-                    AppSettingsService,
+        # Get a fresh DB session for this cycle - use anext to get single session
+        session_gen = self._get_db_session()
+        try:
+            session = await anext(session_gen)
+        except StopAsyncIteration:
+            logger.error("Failed to get database session for sync cycle")
+            return
+
+        try:
+            # Import here to avoid circular imports
+            from soulspot.application.services.app_settings_service import (
+                AppSettingsService,
+            )
+
+            settings_service = AppSettingsService(session)
+
+            # Check master toggle first
+            auto_sync_enabled = await settings_service.get_bool(
+                "spotify.auto_sync_enabled", default=True
+            )
+
+            if not auto_sync_enabled:
+                logger.debug("Spotify auto-sync is disabled, skipping")
+                return
+
+            # Get access token - if not available, skip this cycle
+            access_token = await self.token_manager.get_token_for_background()
+            if not access_token:
+                logger.warning(
+                    "No valid Spotify token available, skipping sync cycle"
                 )
+                return
 
-                settings_service = AppSettingsService(session)
+            # Get interval settings
+            artists_interval = await settings_service.get_int(
+                "spotify.artists_sync_interval_minutes", default=5
+            )
+            playlists_interval = await settings_service.get_int(
+                "spotify.playlists_sync_interval_minutes", default=10
+            )
 
-                # Check master toggle first
-                auto_sync_enabled = await settings_service.get_bool(
-                    "spotify.auto_sync_enabled", default=True
-                )
+            # Check which syncs are enabled and due
+            now = datetime.utcnow()
 
-                if not auto_sync_enabled:
-                    logger.debug("Spotify auto-sync is disabled, skipping")
-                    return
+            # Artists sync
+            if await settings_service.get_bool(
+                "spotify.auto_sync_artists", default=True
+            ):
+                if self._is_sync_due("artists", artists_interval, now):
+                    await self._run_artists_sync(session, access_token, now)
 
-                # Get access token - if not available, skip this cycle
-                token = await self.token_manager.get_valid_token()
-                if not token:
-                    logger.warning(
-                        "No valid Spotify token available, skipping sync cycle"
-                    )
-                    return
+            # Playlists sync
+            if await settings_service.get_bool(
+                "spotify.auto_sync_playlists", default=True
+            ):
+                if self._is_sync_due("playlists", playlists_interval, now):
+                    await self._run_playlists_sync(session, access_token, now)
 
-                access_token = token.access_token
+            # Liked Songs sync (uses playlists interval)
+            if await settings_service.get_bool(
+                "spotify.auto_sync_liked_songs", default=True
+            ):
+                if self._is_sync_due("liked_songs", playlists_interval, now):
+                    await self._run_liked_songs_sync(session, access_token, now)
 
-                # Get interval settings
-                artists_interval = await settings_service.get_int(
-                    "spotify.artists_sync_interval_minutes", default=5
-                )
-                playlists_interval = await settings_service.get_int(
-                    "spotify.playlists_sync_interval_minutes", default=10
-                )
+            # Saved Albums sync (uses playlists interval)
+            if await settings_service.get_bool(
+                "spotify.auto_sync_saved_albums", default=True
+            ):
+                if self._is_sync_due("saved_albums", playlists_interval, now):
+                    await self._run_saved_albums_sync(session, access_token, now)
 
-                # Check which syncs are enabled and due
-                now = datetime.utcnow()
+            # Commit any changes
+            await session.commit()
 
-                # Artists sync
-                if await settings_service.get_bool(
-                    "spotify.auto_sync_artists", default=True
-                ):
-                    if self._is_sync_due("artists", artists_interval, now):
-                        await self._run_artists_sync(session, access_token, now)
-
-                # Playlists sync
-                if await settings_service.get_bool(
-                    "spotify.auto_sync_playlists", default=True
-                ):
-                    if self._is_sync_due("playlists", playlists_interval, now):
-                        await self._run_playlists_sync(session, access_token, now)
-
-                # Liked Songs sync (uses playlists interval)
-                if await settings_service.get_bool(
-                    "spotify.auto_sync_liked_songs", default=True
-                ):
-                    if self._is_sync_due("liked_songs", playlists_interval, now):
-                        await self._run_liked_songs_sync(session, access_token, now)
-
-                # Saved Albums sync (uses playlists interval)
-                if await settings_service.get_bool(
-                    "spotify.auto_sync_saved_albums", default=True
-                ):
-                    if self._is_sync_due("saved_albums", playlists_interval, now):
-                        await self._run_saved_albums_sync(session, access_token, now)
-
-                # Commit any changes
-                await session.commit()
-
-            except Exception as e:
-                logger.error(f"Error in sync cycle: {e}", exc_info=True)
-                await session.rollback()
-            finally:
-                break  # Only use one session per cycle
+        except Exception as e:
+            logger.error(f"Error in sync cycle: {e}", exc_info=True)
+            await session.rollback()
 
     def _is_sync_due(
         self, sync_type: str, interval_minutes: int, now: datetime
@@ -293,18 +295,14 @@ class SpotifySyncWorker:
             from soulspot.infrastructure.integrations.spotify_client import (
                 SpotifyClient,
             )
-            from soulspot.infrastructure.persistence.repositories import (
-                SpotifyBrowseRepository,
-            )
 
-            spotify_client = SpotifyClient(self.settings.spotify, self.token_manager)
-            repository = SpotifyBrowseRepository(session)
+            spotify_client = SpotifyClient(self.settings.spotify)
             image_service = SpotifyImageService(self.settings)
             settings_service = AppSettingsService(session)
 
             sync_service = SpotifySyncService(
                 spotify_client=spotify_client,
-                repository=repository,
+                session=session,
                 image_service=image_service,
                 settings_service=settings_service,
             )
@@ -345,18 +343,14 @@ class SpotifySyncWorker:
             from soulspot.infrastructure.integrations.spotify_client import (
                 SpotifyClient,
             )
-            from soulspot.infrastructure.persistence.repositories import (
-                SpotifyBrowseRepository,
-            )
 
-            spotify_client = SpotifyClient(self.settings.spotify, self.token_manager)
-            repository = SpotifyBrowseRepository(session)
+            spotify_client = SpotifyClient(self.settings.spotify)
             image_service = SpotifyImageService(self.settings)
             settings_service = AppSettingsService(session)
 
             sync_service = SpotifySyncService(
                 spotify_client=spotify_client,
-                repository=repository,
+                session=session,
                 image_service=image_service,
                 settings_service=settings_service,
             )
@@ -396,18 +390,14 @@ class SpotifySyncWorker:
             from soulspot.infrastructure.integrations.spotify_client import (
                 SpotifyClient,
             )
-            from soulspot.infrastructure.persistence.repositories import (
-                SpotifyBrowseRepository,
-            )
 
-            spotify_client = SpotifyClient(self.settings.spotify, self.token_manager)
-            repository = SpotifyBrowseRepository(session)
+            spotify_client = SpotifyClient(self.settings.spotify)
             image_service = SpotifyImageService(self.settings)
             settings_service = AppSettingsService(session)
 
             sync_service = SpotifySyncService(
                 spotify_client=spotify_client,
-                repository=repository,
+                session=session,
                 image_service=image_service,
                 settings_service=settings_service,
             )
@@ -446,18 +436,14 @@ class SpotifySyncWorker:
             from soulspot.infrastructure.integrations.spotify_client import (
                 SpotifyClient,
             )
-            from soulspot.infrastructure.persistence.repositories import (
-                SpotifyBrowseRepository,
-            )
 
-            spotify_client = SpotifyClient(self.settings.spotify, self.token_manager)
-            repository = SpotifyBrowseRepository(session)
+            spotify_client = SpotifyClient(self.settings.spotify)
             image_service = SpotifyImageService(self.settings)
             settings_service = AppSettingsService(session)
 
             sync_service = SpotifySyncService(
                 spotify_client=spotify_client,
-                repository=repository,
+                session=session,
                 image_service=image_service,
                 settings_service=settings_service,
             )
@@ -509,50 +495,53 @@ class SpotifySyncWorker:
         """
         results: dict[str, Any] = {}
 
-        async for session in self._get_db_session():
-            try:
-                # Get access token
-                token = await self.token_manager.get_valid_token()
-                if not token:
-                    return {"error": "No valid Spotify token available"}
+        # Get a fresh DB session - use anext to get single session
+        session_gen = self._get_db_session()
+        try:
+            session = await anext(session_gen)
+        except StopAsyncIteration:
+            return {"error": "Failed to get database session"}
 
-                access_token = token.access_token
-                now = datetime.utcnow()
+        try:
+            # Get access token
+            access_token = await self.token_manager.get_token_for_background()
+            if not access_token:
+                return {"error": "No valid Spotify token available"}
 
-                if sync_type is None or sync_type == "artists":
-                    try:
-                        await self._run_artists_sync(session, access_token, now)
-                        results["artists"] = "success"
-                    except Exception as e:
-                        results["artists"] = f"error: {e}"
+            now = datetime.utcnow()
 
-                if sync_type is None or sync_type == "playlists":
-                    try:
-                        await self._run_playlists_sync(session, access_token, now)
-                        results["playlists"] = "success"
-                    except Exception as e:
-                        results["playlists"] = f"error: {e}"
+            if sync_type is None or sync_type == "artists":
+                try:
+                    await self._run_artists_sync(session, access_token, now)
+                    results["artists"] = "success"
+                except Exception as e:
+                    results["artists"] = f"error: {e}"
 
-                if sync_type is None or sync_type == "liked":
-                    try:
-                        await self._run_liked_songs_sync(session, access_token, now)
-                        results["liked_songs"] = "success"
-                    except Exception as e:
-                        results["liked_songs"] = f"error: {e}"
+            if sync_type is None or sync_type == "playlists":
+                try:
+                    await self._run_playlists_sync(session, access_token, now)
+                    results["playlists"] = "success"
+                except Exception as e:
+                    results["playlists"] = f"error: {e}"
 
-                if sync_type is None or sync_type == "albums":
-                    try:
-                        await self._run_saved_albums_sync(session, access_token, now)
-                        results["saved_albums"] = "success"
-                    except Exception as e:
-                        results["saved_albums"] = f"error: {e}"
+            if sync_type is None or sync_type == "liked":
+                try:
+                    await self._run_liked_songs_sync(session, access_token, now)
+                    results["liked_songs"] = "success"
+                except Exception as e:
+                    results["liked_songs"] = f"error: {e}"
 
-                await session.commit()
+            if sync_type is None or sync_type == "albums":
+                try:
+                    await self._run_saved_albums_sync(session, access_token, now)
+                    results["saved_albums"] = "success"
+                except Exception as e:
+                    results["saved_albums"] = f"error: {e}"
 
-            except Exception as e:
-                await session.rollback()
-                results["error"] = str(e)
-            finally:
-                break
+            await session.commit()
+
+        except Exception as e:
+            await session.rollback()
+            results["error"] = str(e)
 
         return results

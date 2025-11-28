@@ -63,7 +63,7 @@ class PlaylistSyncWorker:
         # Hey future me - token_manager wird via set_token_manager() gesetzt nach Construction!
         # So vermeiden wir zirkuläre Dependencies und Worker können erstellt werden
         # bevor app.state.db_token_manager bereit ist.
-        self._token_manager: "DatabaseTokenManager | None" = None
+        self._token_manager: DatabaseTokenManager | None = None
 
     def set_token_manager(self, token_manager: "DatabaseTokenManager") -> None:
         """Set the token manager for getting Spotify access tokens.
@@ -110,9 +110,7 @@ class PlaylistSyncWorker:
         # Get access token from TokenManager (preferred) or fall back to payload
         access_token = None
         if self._token_manager:
-            token = await self._token_manager.get_valid_token()
-            if token:
-                access_token = token.access_token
+            access_token = await self._token_manager.get_token_for_background()
 
         # Fall back to payload for backwards compatibility
         if not access_token:

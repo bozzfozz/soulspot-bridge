@@ -628,7 +628,7 @@ class SpotifySyncService:
                 spotify_uri = f"spotify:playlist:{playlist_data['id']}"
                 if spotify_uri in to_add or spotify_uri in unchanged:
                     await self._upsert_playlist(
-                        playlist_data, 
+                        playlist_data,
                         download_images=should_download_images
                     )
 
@@ -637,11 +637,11 @@ class SpotifySyncService:
                 should_remove = True
                 if self._settings_service:
                     should_remove = await self._settings_service.should_remove_unfollowed_playlists()
-                
+
                 if should_remove:
                     removed_count = await self.repo.delete_playlists_by_uris(to_remove)
                     logger.info(f"Removed {removed_count} deleted Spotify playlists from DB")
-                    
+
                     # Cleanup orphaned images
                     if self._image_service:
                         for uri in to_remove:
@@ -710,7 +710,7 @@ class SpotifySyncService:
         return all_playlists
 
     async def _upsert_playlist(
-        self, 
+        self,
         playlist_data: dict[str, Any],
         download_images: bool = False,
     ) -> None:
@@ -738,7 +738,7 @@ class SpotifySyncService:
             existing = await self.repo.get_playlist_by_uri(spotify_uri)
             existing_url = existing.cover_url if existing else None
             existing_path = existing.cover_path if existing else None
-            
+
             if await self._image_service.should_redownload(
                 existing_url, cover_url, existing_path
             ):
@@ -969,8 +969,7 @@ class SpotifySyncService:
             # Process saved albums
             for item in saved_albums:
                 album_data = item["album"]
-                album_id = album_data["id"]
-                
+
                 # Ensure artist exists (create minimal entry if not followed)
                 artists = album_data.get("artists", [])
                 if artists:
@@ -982,7 +981,7 @@ class SpotifySyncService:
 
                 # Upsert album with is_saved=True
                 await self._upsert_saved_album(
-                    album_data, 
+                    album_data,
                     artist_id,
                     download_images=should_download_images,
                 )
@@ -1064,12 +1063,12 @@ class SpotifySyncService:
             artist_data: Minimal artist data from album (id, name)
         """
         spotify_id = artist_data["id"]
-        
+
         # Check if artist exists
         existing = await self.repo.get_artist_by_id(spotify_id)
         if existing:
             return  # Artist exists, nothing to do
-        
+
         # Create minimal artist entry
         name = artist_data.get("name", "Unknown")
         await self.repo.upsert_artist(
@@ -1115,7 +1114,7 @@ class SpotifySyncService:
             existing = await self.repo.get_album_by_id(spotify_id)
             existing_url = existing.image_url if existing else None
             existing_path = existing.image_path if existing else None
-            
+
             if await self._image_service.should_redownload(
                 existing_url, image_url, existing_path
             ):

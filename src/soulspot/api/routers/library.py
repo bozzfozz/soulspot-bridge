@@ -720,11 +720,11 @@ async def list_duplicate_candidates(
                 id=model.id,
                 track_1_id=model.track_id_1,
                 track_1_title=track_1.title if track_1 else "Unknown",
-                track_1_artist=track_1.artist_name if track_1 else "Unknown",
+                track_1_artist=track_1.artist.name if track_1 and track_1.artist else "Unknown",
                 track_1_file_path=track_1.file_path if track_1 else None,
                 track_2_id=model.track_id_2,
                 track_2_title=track_2.title if track_2 else "Unknown",
-                track_2_artist=track_2.artist_name if track_2 else "Unknown",
+                track_2_artist=track_2.artist.name if track_2 and track_2.artist else "Unknown",
                 track_2_file_path=track_2.file_path if track_2 else None,
                 similarity_score=model.similarity_score,
                 match_type=model.match_type,
@@ -887,6 +887,30 @@ class BatchRenameResponse(BaseModel):
     results: list[BatchRenameResult]
 
 
+# Hey future me - Helper function to convert TrackModel to Track entity
+# This centralizes the conversion logic and avoids code duplication.
+def _track_model_to_entity(track_model: Any) -> Any:
+    """Convert a TrackModel ORM object to a Track domain entity.
+
+    Args:
+        track_model: The TrackModel ORM object
+
+    Returns:
+        Track domain entity
+    """
+    from soulspot.domain.entities import Track
+    from soulspot.domain.value_objects import AlbumId, ArtistId, TrackId
+
+    return Track(
+        id=TrackId.from_string(track_model.id),
+        title=track_model.title,
+        artist_id=ArtistId.from_string(track_model.artist_id),
+        album_id=AlbumId.from_string(track_model.album_id) if track_model.album_id else None,
+        track_number=track_model.track_number,
+        disc_number=track_model.disc_number,
+    )
+
+
 @router.post("/batch-rename/preview", response_model=BatchRenamePreviewResponse)
 async def preview_batch_rename(
     request: BatchRenamePreviewRequest,
@@ -913,8 +937,6 @@ async def preview_batch_rename(
         RenamingService,
     )
     from soulspot.infrastructure.persistence.models import (
-        AlbumModel,
-        ArtistModel,
         TrackModel,
     )
     from soulspot.infrastructure.persistence.repositories import (
@@ -928,7 +950,7 @@ async def preview_batch_rename(
     renaming_service.set_app_settings_service(app_settings_service)
 
     # Check if renaming is enabled
-    rename_enabled = await app_settings_service.get_rename_tracks()
+    rename_enabled = await app_settings_service.is_rename_tracks_enabled()
     if not rename_enabled:
         return BatchRenamePreviewResponse(
             total_files=0,
@@ -954,26 +976,30 @@ async def preview_batch_rename(
     files_to_rename = 0
 
     for track_model in tracks:
-        # Convert to domain entity
-        track = track_model.to_entity()
-        if not track.file_path:
+        # Use the model directly instead of converting to entity
+        if not track_model.file_path:
             continue
 
         # Get artist
-        artist = await artist_repo.get_by_id(track.artist_id)
+        from soulspot.domain.value_objects import AlbumId as DomainAlbumId
+        from soulspot.domain.value_objects import ArtistId as DomainArtistId
+
+        artist = await artist_repo.get_by_id(DomainArtistId.from_string(track_model.artist_id))
         if not artist:
             continue
 
         # Get album (optional)
         album = None
-        if track.album_id:
-            album = await album_repo.get_by_id(track.album_id)
+        if track_model.album_id:
+            album = await album_repo.get_by_id(DomainAlbumId.from_string(track_model.album_id))
 
         # Get current path
-        current_path = str(track.file_path)
+        current_path = str(track_model.file_path)
         extension = current_path.rsplit(".", 1)[-1] if "." in current_path else "mp3"
 
         # Generate new filename using async method (uses DB templates)
+        track = _track_model_to_entity(track_model)
+
         try:
             new_relative_path = await renaming_service.generate_filename_async(
                 track, artist, album, f".{extension}"
@@ -988,7 +1014,7 @@ async def preview_batch_rename(
 
         preview_items.append(
             BatchRenamePreviewItem(
-                track_id=str(track.id),
+                track_id=str(track_model.id),
                 current_path=current_path,
                 new_path=new_path,
                 will_change=will_change,
@@ -1051,7 +1077,7 @@ async def execute_batch_rename(
     renaming_service.set_app_settings_service(app_settings_service)
 
     # Check if renaming is enabled
-    rename_enabled = await app_settings_service.get_rename_tracks()
+    rename_enabled = await app_settings_service.is_rename_tracks_enabled()
     if not rename_enabled:
         return BatchRenameResponse(
             dry_run=request.dry_run,
@@ -1079,15 +1105,14 @@ async def execute_batch_rename(
     failed = 0
 
     for track_model in tracks:
-        track = track_model.to_entity()
-        if not track.file_path:
+        if not track_model.file_path:
             continue
 
-        current_path = Path(str(track.file_path))
+        current_path = Path(str(track_model.file_path))
         if not current_path.exists() and not request.dry_run:
             results.append(
                 BatchRenameResult(
-                    track_id=str(track.id),
+                    track_id=str(track_model.id),
                     old_path=str(current_path),
                     new_path="",
                     success=False,
@@ -1098,11 +1123,14 @@ async def execute_batch_rename(
             continue
 
         # Get artist
-        artist = await artist_repo.get_by_id(track.artist_id)
+        from soulspot.domain.value_objects import AlbumId as DomainAlbumId
+        from soulspot.domain.value_objects import ArtistId as DomainArtistId
+
+        artist = await artist_repo.get_by_id(DomainArtistId.from_string(track_model.artist_id))
         if not artist:
             results.append(
                 BatchRenameResult(
-                    track_id=str(track.id),
+                    track_id=str(track_model.id),
                     old_path=str(current_path),
                     new_path="",
                     success=False,
@@ -1114,8 +1142,11 @@ async def execute_batch_rename(
 
         # Get album (optional)
         album = None
-        if track.album_id:
-            album = await album_repo.get_by_id(track.album_id)
+        if track_model.album_id:
+            album = await album_repo.get_by_id(DomainAlbumId.from_string(track_model.album_id))
+
+        # Create track entity for renaming service
+        track = _track_model_to_entity(track_model)
 
         # Generate new filename
         try:
@@ -1127,7 +1158,7 @@ async def execute_batch_rename(
         except Exception as e:
             results.append(
                 BatchRenameResult(
-                    track_id=str(track.id),
+                    track_id=str(track_model.id),
                     old_path=str(current_path),
                     new_path="",
                     success=False,
@@ -1141,7 +1172,7 @@ async def execute_batch_rename(
         if current_path == new_path:
             results.append(
                 BatchRenameResult(
-                    track_id=str(track.id),
+                    track_id=str(track_model.id),
                     old_path=str(current_path),
                     new_path=str(new_path),
                     success=True,
@@ -1166,7 +1197,7 @@ async def execute_batch_rename(
 
                 results.append(
                     BatchRenameResult(
-                        track_id=str(track.id),
+                        track_id=str(track_model.id),
                         old_path=str(current_path),
                         new_path=str(new_path),
                         success=True,
@@ -1178,7 +1209,7 @@ async def execute_batch_rename(
                 await db.rollback()
                 results.append(
                     BatchRenameResult(
-                        track_id=str(track.id),
+                        track_id=str(track_model.id),
                         old_path=str(current_path),
                         new_path=str(new_path),
                         success=False,
@@ -1190,7 +1221,7 @@ async def execute_batch_rename(
             # Dry run - just report what would happen
             results.append(
                 BatchRenameResult(
-                    track_id=str(track.id),
+                    track_id=str(track_model.id),
                     old_path=str(current_path),
                     new_path=str(new_path),
                     success=True,

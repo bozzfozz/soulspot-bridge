@@ -31,7 +31,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession
+    pass
 
 from soulspot.application.services.app_settings_service import AppSettingsService
 from soulspot.application.workers.job_queue import JobQueue, JobType
@@ -92,8 +92,8 @@ class DuplicateDetectorWorker:
         self._running = False
         self._task: asyncio.Task[None] | None = None
 
-        # Stats
-        self._stats = {
+        # Stats - values can be int, str, or None
+        self._stats: dict[str, int | str | None] = {
             "scans_completed": 0,
             "duplicates_found": 0,
             "tracks_scanned": 0,
@@ -147,7 +147,8 @@ class DuplicateDetectorWorker:
             try:
                 if await self._settings.is_duplicate_detection_enabled():
                     await self._run_scan()
-                    self._stats["scans_completed"] += 1
+                    scans = self._stats.get("scans_completed")
+                    self._stats["scans_completed"] = (int(scans) if scans else 0) + 1
                     self._stats["last_scan_at"] = datetime.now(UTC).isoformat()
                 else:
                     logger.debug("Duplicate detection is disabled, skipping scan")
@@ -158,12 +159,14 @@ class DuplicateDetectorWorker:
 
             # Get interval from settings (default 168h = 1 week)
             try:
-                interval_hours = await self._settings.get_duplicate_scan_interval()
+                interval_seconds = (
+                    await self._settings.get_duplicate_detection_interval_seconds()
+                )
             except Exception:
-                interval_hours = 168
+                interval_seconds = 168 * 3600  # 168 hours in seconds
 
             try:
-                await asyncio.sleep(interval_hours * 3600)
+                await asyncio.sleep(interval_seconds)
             except asyncio.CancelledError:
                 break
 
@@ -207,7 +210,7 @@ class DuplicateDetectorWorker:
 
             # Store duplicate candidates
             candidates_added = 0
-            for hash_key, group in duplicate_groups.items():
+            for _hash_key, group in duplicate_groups.items():
                 # Create pairwise candidates
                 for i in range(len(group)):
                     for j in range(i + 1, len(group)):
@@ -227,7 +230,8 @@ class DuplicateDetectorWorker:
                         candidates_added += 1
 
             await session.commit()
-            self._stats["duplicates_found"] += candidates_added
+            dups = self._stats.get("duplicates_found")
+            self._stats["duplicates_found"] = (int(dups) if dups else 0) + candidates_added
 
             logger.info(f"Stored {candidates_added} duplicate candidates")
 
@@ -242,10 +246,11 @@ class DuplicateDetectorWorker:
         """
         # Import here to avoid circular deps
         from sqlalchemy import select
-        from soulspot.domain.models import Track
+
+        from soulspot.infrastructure.persistence.models import TrackModel
 
         result = await session.execute(
-            select(Track.id, Track.title, Track.artist_name, Track.duration_ms)
+            select(TrackModel.id, TrackModel.title, TrackModel.artist_id, TrackModel.duration_ms)
         )
         rows = result.all()
 
@@ -253,7 +258,9 @@ class DuplicateDetectorWorker:
             {
                 "id": str(row.id),
                 "title": row.title or "",
-                "artist_name": row.artist_name or "",
+                # Note: artist_id instead of artist_name - for duplicate detection
+                # we use artist_id as a proxy since actual name requires a join
+                "artist_name": str(row.artist_id) if row.artist_id else "",
                 "duration_ms": row.duration_ms or 0,
             }
             for row in rows
@@ -271,8 +278,11 @@ class DuplicateDetectorWorker:
         title = self._normalize_title(track["title"])
 
         # Combine and hash
+        # Note: MD5 is used here only for grouping duplicates, not for security
         combined = f"{artist}|{title}"
-        return hashlib.md5(combined.encode("utf-8")).hexdigest()
+        return hashlib.md5(  # nosec B324 - MD5 used for hash grouping, not security
+            combined.encode("utf-8"), usedforsecurity=False
+        ).hexdigest()
 
     def _normalize_text(self, text: str) -> str:
         """Normalize text for comparison.
@@ -385,6 +395,7 @@ class DuplicateDetectorWorker:
             match_type: Detection method (metadata-hash, fingerprint, etc)
         """
         from sqlalchemy import insert
+
         from soulspot.infrastructure.persistence.models import DuplicateCandidateModel
 
         # Ensure consistent ordering (smaller ID first)
@@ -392,7 +403,7 @@ class DuplicateDetectorWorker:
             track_id_1, track_id_2 = track_id_2, track_id_1
 
         # Check if this pair already exists
-        from sqlalchemy import select, and_
+        from sqlalchemy import and_, select
 
         existing = await session.execute(
             select(DuplicateCandidateModel).where(
@@ -422,13 +433,13 @@ class DuplicateDetectorWorker:
         Returns:
             Job ID of the scan job
         """
-        job = await self._job_queue.create_job(
+        job_id = await self._job_queue.enqueue(
             job_type=JobType.DUPLICATE_SCAN,
             payload={"trigger": "manual", "timestamp": datetime.now(UTC).isoformat()},
         )
-        logger.info(f"Manual duplicate scan triggered, job_id={job.id}")
+        logger.info(f"Manual duplicate scan triggered, job_id={job_id}")
 
         # Run scan in background
         asyncio.create_task(self._run_scan())
 
-        return str(job.id)
+        return job_id

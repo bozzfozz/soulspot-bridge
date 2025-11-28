@@ -27,10 +27,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession
+    pass
 
 from soulspot.application.services.app_settings_service import AppSettingsService
-from soulspot.application.workers.job_queue import JobQueue, JobStatus, JobType
+from soulspot.application.workers.job_queue import JobQueue, JobType
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +86,8 @@ class CleanupWorker:
         self._running = False
         self._task: asyncio.Task[None] | None = None
 
-        # Stats
-        self._stats = {
+        # Stats - values can be int, str, or None
+        self._stats: dict[str, int | str | None] = {
             "runs_completed": 0,
             "files_deleted": 0,
             "bytes_freed": 0,
@@ -145,9 +145,10 @@ class CleanupWorker:
         while self._running:
             try:
                 # Check if cleanup is enabled
-                if await self._settings.is_cleanup_enabled():
+                if await self._settings.is_cleanup_automation_enabled():
                     await self._run_cleanup()
-                    self._stats["runs_completed"] += 1
+                    runs = self._stats.get("runs_completed")
+                    self._stats["runs_completed"] = (int(runs) if runs else 0) + 1
                     self._stats["last_run_at"] = datetime.now(UTC).isoformat()
                 else:
                     logger.debug("Cleanup is disabled, skipping run")
@@ -158,12 +159,12 @@ class CleanupWorker:
 
             # Get interval from settings (default 24h)
             try:
-                interval_hours = await self._settings.get_cleanup_interval()
+                interval_seconds = await self._settings.get_cleanup_interval_seconds()
             except Exception:
-                interval_hours = 24
+                interval_seconds = 24 * 3600  # 24 hours in seconds
 
             try:
-                await asyncio.sleep(interval_hours * 3600)
+                await asyncio.sleep(interval_seconds)
             except asyncio.CancelledError:
                 break
 
@@ -177,7 +178,10 @@ class CleanupWorker:
         """
         logger.info("Starting cleanup run" + (" (DRY RUN)" if self._dry_run else ""))
 
-        retention_days = await self._settings.get_cleanup_retention_days()
+        # Get retention days from settings (default 7 days)
+        retention_days = await self._settings.get_int(
+            "automation.cleanup_retention_days", default=7
+        )
         cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
 
         files_to_delete: list[tuple[Path, int]] = []  # (path, size)
@@ -224,9 +228,11 @@ class CleanupWorker:
         # 5. Clean empty directories
         await self._clean_empty_directories()
 
-        # Update stats
-        self._stats["files_deleted"] += deleted_count
-        self._stats["bytes_freed"] += freed_bytes
+        # Update stats (handle None case for type safety)
+        files_del = self._stats.get("files_deleted")
+        bytes_fr = self._stats.get("bytes_freed")
+        self._stats["files_deleted"] = (int(files_del) if files_del else 0) + deleted_count
+        self._stats["bytes_freed"] = (int(bytes_fr) if bytes_fr else 0) + freed_bytes
 
         logger.info(
             f"Cleanup run complete: deleted {deleted_count} files, "
@@ -310,13 +316,13 @@ class CleanupWorker:
         Returns:
             Job ID of the cleanup job
         """
-        job = await self._job_queue.create_job(
+        job_id = await self._job_queue.enqueue(
             job_type=JobType.CLEANUP,
             payload={"trigger": "manual", "timestamp": datetime.now(UTC).isoformat()},
         )
-        logger.info(f"Manual cleanup triggered, job_id={job.id}")
+        logger.info(f"Manual cleanup triggered, job_id={job_id}")
 
         # Run cleanup in background
         asyncio.create_task(self._run_cleanup())
 
-        return str(job.id)
+        return job_id

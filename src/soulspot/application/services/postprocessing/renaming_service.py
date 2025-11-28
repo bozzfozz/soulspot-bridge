@@ -52,7 +52,7 @@ class RenamingService:
         """
         self._settings = settings
         self._template = settings.postprocessing.file_naming_template
-        self._app_settings_service: "AppSettingsService | None" = None
+        self._app_settings_service: AppSettingsService | None = None
 
         # Cache for dynamic settings (refreshed on each call)
         self._cached_artist_folder: str | None = None
@@ -209,10 +209,8 @@ class RenamingService:
         # Load latest settings from DB
         await self.load_naming_settings()
 
-        # Determine if multi-disc album
-        is_multi_disc = album and album.total_discs and album.total_discs > 1 if hasattr(album, 'total_discs') else False
-        if track.disc_number and track.disc_number > 1:
-            is_multi_disc = True
+        # Determine if multi-disc album (check track disc_number > 1)
+        is_multi_disc = bool(track.disc_number and track.disc_number > 1)
 
         # Prepare template variables
         variables = self._build_template_variables(track, artist, album)

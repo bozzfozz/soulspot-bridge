@@ -14,10 +14,9 @@ Die Worker sind alle async und haben ähnliche Muster:
 Tests nutzen AsyncMock für DB/externe Services.
 """
 
-import asyncio
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
