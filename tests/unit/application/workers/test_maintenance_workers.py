@@ -648,10 +648,9 @@ class TestDuplicateDetectorWorker:
         mock_job_queue.enqueue = AsyncMock(return_value="scan-job-123")
 
         # Mock _run_scan to prevent background task from accessing mocked session
-        with pytest.MonkeyPatch.context() as mp:
-            mp.setattr(worker, "_run_scan", AsyncMock())
+        worker._run_scan = AsyncMock()  # type: ignore[method-assign]
 
-            job_id = await worker.trigger_scan_now()
+        job_id = await worker.trigger_scan_now()
 
         assert job_id == "scan-job-123"
         mock_job_queue.enqueue.assert_called_once()

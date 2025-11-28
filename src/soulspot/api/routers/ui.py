@@ -1107,6 +1107,7 @@ async def library_broken_files_page(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "broken_files.html",
+        context={},
     )
 
 
@@ -1134,6 +1135,7 @@ async def library_incomplete_albums_page(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "incomplete_albums.html",
+        context={},
     )
 
 
@@ -1467,4 +1469,5 @@ async def followed_artists_page(request: Request) -> Any:
     return templates.TemplateResponse(
         request,
         "followed_artists.html",
+        context={},
     )
