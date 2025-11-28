@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from soulspot.api.dependencies import get_db
+from soulspot.api.dependencies import get_db_session
 from soulspot.application.services.app_settings_service import AppSettingsService
 from soulspot.config import get_settings
 
@@ -371,7 +371,7 @@ class SpotifySyncSettingsResponse(BaseModel):
 
 @router.get("/spotify-sync")
 async def get_spotify_sync_settings(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> SpotifySyncSettingsResponse:
     """Get Spotify sync settings.
 
@@ -420,7 +420,7 @@ async def get_spotify_sync_settings(
 @router.put("/spotify-sync")
 async def update_spotify_sync_settings(
     settings_update: SpotifySyncSettings,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> SpotifySyncSettings:
     """Update Spotify sync settings.
 
@@ -504,7 +504,7 @@ async def update_spotify_sync_settings(
 @router.post("/spotify-sync/toggle/{setting_name}")
 async def toggle_spotify_sync_setting(
     setting_name: str,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Toggle a boolean Spotify sync setting.
 
@@ -606,7 +606,7 @@ class SyncTriggerResponse(BaseModel):
 @router.post("/spotify-sync/trigger/{sync_type}")
 async def trigger_manual_sync(
     sync_type: str,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> SyncTriggerResponse:
     """Trigger a manual Spotify sync.
 
@@ -816,7 +816,7 @@ class AutomationSettingsResponse(BaseModel):
 @router.get("/automation")
 async def get_automation_settings(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> AutomationSettingsResponse:
     """Get automation settings.
 
@@ -845,7 +845,7 @@ async def get_automation_settings(
 @router.put("/automation")
 async def update_automation_settings(
     settings_update: AutomationSettings,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> AutomationSettings:
     """Update automation settings.
 
@@ -931,7 +931,7 @@ async def update_automation_settings(
 @router.patch("/automation")
 async def patch_automation_setting(
     setting_update: dict[str, Any],
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, Any]:
     """Update a single automation setting.
 
@@ -1086,7 +1086,7 @@ class NamingPreviewResponse(BaseModel):
 
 @router.get("/naming")
 async def get_naming_settings(
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> NamingSettings:
     """Get library naming settings.
 
@@ -1105,7 +1105,7 @@ async def get_naming_settings(
 @router.put("/naming")
 async def update_naming_settings(
     settings_update: NamingSettings,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> NamingSettings:
     """Update library naming settings.
 
@@ -1207,7 +1207,7 @@ async def update_naming_settings(
 @router.post("/naming/validate")
 async def validate_naming_template(
     request: NamingValidationRequest,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db_session),
 ) -> NamingValidationResponse:
     """Validate a naming template.
 
