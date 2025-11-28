@@ -288,8 +288,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # =================================================================
         # Hey future me - dieser Worker ist GEFÄHRLICH weil er Dateien LÖSCHT!
         # Deswegen ist er per Default disabled. User muss explizit enablen.
-        from pathlib import Path
-
         from soulspot.application.services.app_settings_service import (
             AppSettingsService,
         )
@@ -299,8 +297,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         cleanup_worker = CleanupWorker(
             job_queue=job_queue,
             settings_service=app_settings_service,
-            downloads_path=Path(settings.storage.downloads_dir),
-            music_path=Path(settings.storage.music_dir),
+            downloads_path=settings.storage.download_path,
+            music_path=settings.storage.music_path,
             dry_run=False,  # Set to True for testing
         )
         await cleanup_worker.start()
