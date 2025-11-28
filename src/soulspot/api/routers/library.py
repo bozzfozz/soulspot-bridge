@@ -1,5 +1,6 @@
 """Library management API endpoints."""
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -25,6 +26,8 @@ from soulspot.application.use_cases.scan_library import (
 )
 from soulspot.application.workers.job_queue import JobQueue, JobStatus, JobType
 from soulspot.config import Settings, get_settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/library", tags=["library"])
 
@@ -1005,8 +1008,10 @@ async def preview_batch_rename(
                 track, artist, album, f".{extension}"
             )
             new_path = str(settings.storage.music_path / new_relative_path)
-        except Exception:
-            # Skip files with errors
+        except (ValueError, OSError, KeyError) as e:
+            # Hey future me - log and skip files where renaming service fails (e.g., bad template,
+            # missing metadata, or invalid characters). Continue processing other tracks.
+            logger.debug("Skipping track %s in batch rename preview: %s", track_model.id, e)
             continue
 
         # Check if path would change

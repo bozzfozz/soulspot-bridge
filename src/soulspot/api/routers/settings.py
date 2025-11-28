@@ -1,5 +1,6 @@
 """Settings management API endpoints."""
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -9,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from soulspot.api.dependencies import get_db_session
 from soulspot.application.services.app_settings_service import AppSettingsService
 from soulspot.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -407,9 +410,10 @@ async def get_spotify_sync_settings(
             playlists_count=image_count.get("playlists", 0),
             total_count=image_count.get("total", 0),
         )
-    except Exception:
-        # Image stats are optional, don't fail if service unavailable
-        pass
+    except (OSError, ValueError) as e:
+        # Hey future me - image stats are optional, don't fail the entire response if
+        # SpotifyImageService can't access the disk or config is invalid.
+        logger.debug("Could not fetch Spotify image stats: %s", e)
 
     return SpotifySyncSettingsResponse(
         settings=SpotifySyncSettings(**summary),

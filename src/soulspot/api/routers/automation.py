@@ -1212,9 +1212,9 @@ async def sync_followed_artists(
             ]
 
             return templates.TemplateResponse(
+                request,
                 "partials/followed_artists_list.html",
-                {
-                    "request": request,
+                context={
                     "artists": artists_data,
                     "total_fetched": stats["total_fetched"],
                     "created": stats["created"],

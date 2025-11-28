@@ -119,9 +119,7 @@ class TestDownloadMonitorWorker:
         assert "stats" in status
 
     @pytest.mark.asyncio
-    async def test_get_status_when_running(
-        self, worker: DownloadMonitorWorker
-    ) -> None:
+    async def test_get_status_when_running(self, worker: DownloadMonitorWorker) -> None:
         """Test get_status when worker is running."""
         await worker.start()
 
@@ -464,18 +462,23 @@ class TestDuplicateDetectorWorker:
 
     @pytest.fixture
     def mock_session_factory(self) -> MagicMock:
-        """Create mock session factory."""
+        """Create mock session factory.
+
+        Hey future me - this needs to be a callable that returns an async context manager.
+        The worker uses it like: async with self._session_factory() as session:
+        So we need: factory() -> context_manager, context_manager.__aenter__() -> session
+        """
         session = AsyncMock()
         session.commit = AsyncMock()
         session.execute = AsyncMock()
 
-        # Create async context manager
-        async def factory():
-            return session
+        # Create async context manager mock
+        context_manager = MagicMock()
+        context_manager.__aenter__ = AsyncMock(return_value=session)
+        context_manager.__aexit__ = AsyncMock(return_value=None)
 
-        factory_mock = MagicMock(side_effect=factory)
-        factory_mock.return_value.__aenter__ = AsyncMock(return_value=session)
-        factory_mock.return_value.__aexit__ = AsyncMock()
+        # Factory callable returns the context manager
+        factory_mock = MagicMock(return_value=context_manager)
         return factory_mock
 
     @pytest.fixture
@@ -548,9 +551,7 @@ class TestDuplicateDetectorWorker:
     def test_normalize_title(self, worker: DuplicateDetectorWorker) -> None:
         """Test title normalization with extra rules."""
         # Strip remaster suffix
-        assert "remaster" not in worker._normalize_title(
-            "Song (2023 Remaster)"
-        ).lower()
+        assert "remaster" not in worker._normalize_title("Song (2023 Remaster)").lower()
 
         # Normalize feat patterns
         normalized = worker._normalize_title("Song ft. Artist")
@@ -638,10 +639,19 @@ class TestDuplicateDetectorWorker:
     async def test_trigger_scan_now(
         self, worker: DuplicateDetectorWorker, mock_job_queue: MagicMock
     ) -> None:
-        """Test manually triggering duplicate scan."""
+        """Test manually triggering duplicate scan.
+
+        Hey future me - trigger_scan_now() calls asyncio.create_task(_run_scan())
+        which would spawn a background task that accesses the DB. We mock _run_scan
+        to avoid that and prevent RuntimeWarning about unawaited coroutines.
+        """
         mock_job_queue.enqueue = AsyncMock(return_value="scan-job-123")
 
-        job_id = await worker.trigger_scan_now()
+        # Mock _run_scan to prevent background task from accessing mocked session
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(worker, "_run_scan", AsyncMock())
+
+            job_id = await worker.trigger_scan_now()
 
         assert job_id == "scan-job-123"
         mock_job_queue.enqueue.assert_called_once()
