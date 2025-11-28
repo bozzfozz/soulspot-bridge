@@ -286,6 +286,73 @@ class CircuitBreakerSpotifyClient(ISpotifyClient):
         )
         return cast(dict[str, Any], result)
 
+    async def get_artist(self, artist_id: str, access_token: str) -> dict[str, Any]:
+        """Get detailed artist information including popularity and followers."""
+        result = await self._circuit_breaker.call(
+            self._client.get_artist,
+            artist_id=artist_id,
+            access_token=access_token,
+        )
+        return cast(dict[str, Any], result)
+
+    async def get_several_artists(
+        self, artist_ids: list[str], access_token: str
+    ) -> list[dict[str, Any]]:
+        """Get details for multiple artists in a single request (up to 50)."""
+        result = await self._circuit_breaker.call(
+            self._client.get_several_artists,
+            artist_ids=artist_ids,
+            access_token=access_token,
+        )
+        return cast(list[dict[str, Any]], result)
+
+    async def get_artist_albums(
+        self, artist_id: str, access_token: str, limit: int = 50
+    ) -> list[dict[str, Any]]:
+        """Get albums for an artist."""
+        result = await self._circuit_breaker.call(
+            self._client.get_artist_albums,
+            artist_id=artist_id,
+            access_token=access_token,
+            limit=limit,
+        )
+        return cast(list[dict[str, Any]], result)
+
+    async def get_artist_top_tracks(
+        self, artist_id: str, access_token: str, market: str = "US"
+    ) -> list[dict[str, Any]]:
+        """Get artist's top 10 tracks by popularity."""
+        result = await self._circuit_breaker.call(
+            self._client.get_artist_top_tracks,
+            artist_id=artist_id,
+            access_token=access_token,
+            market=market,
+        )
+        return cast(list[dict[str, Any]], result)
+
+    async def get_related_artists(
+        self, artist_id: str, access_token: str
+    ) -> list[dict[str, Any]]:
+        """Get up to 20 artists similar to the given artist."""
+        result = await self._circuit_breaker.call(
+            self._client.get_related_artists,
+            artist_id=artist_id,
+            access_token=access_token,
+        )
+        return cast(list[dict[str, Any]], result)
+
+    async def search_artist(
+        self, query: str, access_token: str, limit: int = 20
+    ) -> dict[str, Any]:
+        """Search for artists on Spotify."""
+        result = await self._circuit_breaker.call(
+            self._client.search_artist,
+            query=query,
+            access_token=access_token,
+            limit=limit,
+        )
+        return cast(dict[str, Any], result)
+
     async def close(self) -> None:
         """Close the underlying client."""
         if hasattr(self._client, "close"):

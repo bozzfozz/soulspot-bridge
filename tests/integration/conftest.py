@@ -41,8 +41,6 @@ async def db(
     test_db_path.touch(exist_ok=True)
 
     # Create tables using SQLAlchemy models (sync)
-    from sqlalchemy import text
-
     from soulspot.infrastructure.persistence.models import Base
 
     sync_url = f"sqlite:///{test_db_path}"
@@ -51,29 +49,8 @@ async def db(
     # Create all tables
     Base.metadata.create_all(sync_engine)
 
-    # Seed widget registry and default page (from migration)
-    with sync_engine.connect() as conn:
-        # Insert default widgets (use INSERT OR IGNORE for test reruns)
-        conn.execute(
-            text("""
-                INSERT OR IGNORE INTO widgets (type, name, template_path, default_config) VALUES
-                ('active_jobs', 'Active Jobs', 'partials/widgets/active_jobs.html', '{"refresh_interval": 5}'),
-                ('spotify_search', 'Spotify Search', 'partials/widgets/spotify_search.html', '{"max_results": 10}'),
-                ('missing_tracks', 'Missing Tracks', 'partials/widgets/missing_tracks.html', '{"show_all": false}'),
-                ('quick_actions', 'Quick Actions', 'partials/widgets/quick_actions.html', '{"actions": ["scan", "import", "fix"]}'),
-                ('metadata_manager', 'Metadata Manager', 'partials/widgets/metadata_manager.html', '{"filter": "all"}')
-            """)
-        )
-
-        # Insert default page (use INSERT OR IGNORE for test reruns)
-        conn.execute(
-            text("""
-                INSERT OR IGNORE INTO pages (name, slug, is_default, created_at, updated_at) VALUES
-                ('My Dashboard', 'default', 1, datetime('now'), datetime('now'))
-            """)
-        )
-
-        conn.commit()
+    # Note: Widget system was removed in migration ee19001hhj49
+    # No need to seed widget or page data anymore
 
     sync_engine.dispose()
 
