@@ -1,10 +1,11 @@
 # 🎵 SoulSpot – Vollständige Entwicklungs-Roadmap
 
-> **Version:** 1.1  
+> **Version:** 1.2  
 > **Erstellt:** 2025-11-26  
 > **Autor:** SoulSpot Development Team  
 > **Letzte Aktualisierung:** 2025-11-28  
-> **Dokumenttyp:** Master-Roadmap (Von Null bis Produktion)
+> **Dokumenttyp:** Master-Roadmap (Von Null bis Produktion)  
+> **Verifiziert:** ✅ Alle Metriken gegen Quellcode geprüft
 
 ---
 
@@ -64,7 +65,9 @@ Das Projekt hat die Phasen 1-6 weitgehend abgeschlossen und befindet sich in akt
 | **sse** | `sse.py` | Server-Sent Events für Echtzeit-Updates |
 | **ui** | `ui.py` | Web UI Routes |
 
-#### Application Services (19 Services implementiert)
+#### Application Services (24 Services implementiert)
+
+##### Core Services (19 Dateien)
 
 | Service | Beschreibung | Status |
 |---------|--------------|--------|
@@ -86,7 +89,16 @@ Das Projekt hat die Phasen 1-6 weitgehend abgeschlossen und befindet sich in akt
 | **AlbumCompleteness** | Album Vollständigkeits-Check | ✅ |
 | **WidgetTemplateRegistry** | Widget Template System | ✅ |
 | **AutoImport** | Automatischer Import | ✅ |
-| **Postprocessing Pipeline** | Artwork, Lyrics, Tagging, Renaming | ✅ |
+
+##### Postprocessing Pipeline (5 Services)
+
+| Service | Beschreibung | Status |
+|---------|--------------|--------|
+| **ArtworkService** | Cover Art Download & Embedding | ✅ |
+| **LyricsService** | Lyrics Fetching (LRClib, Genius) | ✅ |
+| **ID3TaggingService** | ID3v2.4 Tag Writing | ✅ |
+| **RenamingService** | Template-basierte Umbenennung | ✅ |
+| **PostprocessingPipeline** | Orchestrierung aller Services | ✅ |
 
 #### External Integrations (5 Clients implementiert)
 
@@ -120,6 +132,7 @@ Das Projekt hat die Phasen 1-6 weitgehend abgeschlossen und befindet sich in akt
 | `0b88b6152c1d` | Dashboard Widget Schema |
 | `40cac646364c` | Session Persistence |
 | `46d1c2c2f85b` | Priority Field für Downloads |
+| `a0fbb3aff2a8` | Merge Session Persistence and Genres |
 | `aa15670cdf15` | Library Management Schema |
 | `bb16770eeg26` | Automation & Watchlist Schema |
 | `c7da905f261a` | Image URL für Artists |
@@ -136,15 +149,18 @@ Das Projekt hat die Phasen 1-6 weitgehend abgeschlossen und befindet sich in akt
 - [ ] Rate Limiting
 - [ ] Security Headers
 
-### 📊 Code-Metriken (Aktuell)
+### 📊 Code-Metriken (Verifiziert)
 
-| Metrik | Wert |
-|--------|------|
-| **Python Dateien** | ~150+ |
-| **Lines of Code** | ~30.000+ |
-| **API Endpoints** | 70+ |
-| **Unit Tests** | 400+ |
-| **Test Coverage** | >80% |
+| Metrik | Wert | Verifiziert |
+|--------|------|-------------|
+| **Python Dateien** | 102 | ✅ `find src -name "*.py" \| wc -l` |
+| **Lines of Code** | ~29.000 | ✅ `find src -name "*.py" -exec cat {} + \| wc -l` |
+| **API Endpoints** | 110+ | ✅ `grep -E "@router\.(get\|post\|put\|patch\|delete)"` |
+| **Test-Dateien** | 72 | ✅ `find tests -name "*.py" \| wc -l` |
+| **Test-Funktionen** | 76+ | ✅ `grep -r "^def test_\|^async def test_"` |
+| **API Router** | 17 | ✅ `ls src/soulspot/api/routers/*.py` |
+| **Services** | 24 | ✅ Core (19) + Postprocessing (5) |
+| **Migrations** | 14 | ✅ `ls alembic/versions/*.py` |
 
 ---
 
@@ -4596,5 +4612,5 @@ headers = {
 
 *Erstellt: 2025-11-26*  
 *Letzte Aktualisierung: 2025-11-28*  
-*Version: 1.1*  
-*Status: Aktualisiert mit neuestem Quellcode-Stand*
+*Version: 1.2*  
+*Status: Verifiziert - Alle Metriken gegen Quellcode geprüft*
