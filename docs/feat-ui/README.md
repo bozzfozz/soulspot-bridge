@@ -55,10 +55,22 @@ docs/feat-ui/
 
 ## 🎨 Design Highlights
 
-- **Style**: Modern, Dark Theme, Glassmorphism
-- **Color**: SoulSpot Red (`#fe4155`)
+- **Style**: Modern, Dark Theme (default), Light Theme (MediaManager-based), Glassmorphism
+- **Color**: SoulSpot Red (`#fe4155`) for Dark Mode, MediaManager Gray (`#333333`) for Light Mode
 - **Layout**: Fixed Sidebar + Responsive Grid
 - **Tech**: HTML5, CSS3 (Variables), Vanilla JS, HTMX
+- **Theming**: Full Dark/Light mode support via CSS custom properties
+
+### Theme Support
+
+| Mode | Primary | Background | Text | Source |
+|------|---------|------------|------|--------|
+| **Dark** | `#fe4155` (SoulSpot Red) | `#111827` | `#f9fafb` | SoulSpot Original |
+| **Light** | `#333333` (Neutral Dark) | `#ffffff` | `#1a1a1a` | MediaManager |
+
+See **[DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)** for complete color palettes (Dark vs Light side-by-side).
+
+See **[COMPONENT_LIBRARY.md](./COMPONENT_LIBRARY.md)** for Light Mode CSS for all ~20 components.
 
 ## ❓ FAQ
 
@@ -71,7 +83,14 @@ A: In `docs/feat-ui/prototype/static/new-ui/css/`.
 **Q: How do I add a new page?**
 A: Copy `base.html` from the prototype templates and extend it. See [COMPONENT_LIBRARY.md](./COMPONENT_LIBRARY.md) for available components.
 
+**Q: How do I enable Light Mode?**
+A: Add `data-theme="light"` to your `<html>` or root element. The CSS variables will automatically switch. See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md#light-mode-full-css-variable-set) for the full variable set.
+
+**Q: Where do the Light Mode colors come from?**
+A: Light Mode uses the [MediaManager](https://github.com/maxdorninger/MediaManager) design system (OKLCH color space). All colors are documented in [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md#neutral-colors-light-mode--mediamanager-reference).
+
 ---
 
 **Status**: ✅ Frontend Prototype Complete (Ready for Integration)
-**Last Updated**: 2025-11-27
+**Theme Support**: ✅ Dark Mode (default) + ✅ Light Mode (MediaManager-based)
+**Last Updated**: 2025-11-28

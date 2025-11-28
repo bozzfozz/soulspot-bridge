@@ -18,6 +18,28 @@ This document provides a comprehensive reference for all UI components in the So
 - JavaScript behavior (if applicable)
 - Accessibility considerations
 - Examples
+- **Light Mode Colors** (MediaManager Reference)
+
+---
+
+## Light Mode Color Reference (MediaManager)
+
+> All components support Light Mode theming using colors from the [MediaManager](https://github.com/maxdorninger/MediaManager) design system. See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for full color palette.
+
+### Quick Reference: Light Mode Colors
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `--color-bg` | `#ffffff` | Main background |
+| `--color-surface` | `#ffffff` | Cards, panels |
+| `--color-surface-alt` | `#f5f5f5` | Secondary surfaces, hover |
+| `--color-border` | `#e5e5e5` | Borders, dividers |
+| `--color-text` | `#1a1a1a` | Primary text |
+| `--color-text-muted` | `#888888` | Muted/secondary text |
+| `--color-primary` | `#333333` | Primary actions |
+| `--color-primary-foreground` | `#fafafa` | Text on primary |
+| `--color-destructive` | `#d32f2f` | Error/delete actions |
+| `--color-ring` | `#b3b3b3` | Focus ring |
 
 ---
 
@@ -265,6 +287,54 @@ This document provides a comprehensive reference for all UI components in the So
 }
 ```
 
+**Light Mode Colors (Sidebar)**:
+```css
+/* Light Mode - Sidebar (MediaManager) */
+:root[data-theme="light"] .sidebar {
+  background: #fafafa;                    /* --sidebar-background */
+  border-right: 1px solid #e5e5e5;        /* --sidebar-border */
+}
+
+:root[data-theme="light"] .sidebar-logo {
+  color: #1a1a1a;                         /* --sidebar-foreground */
+}
+
+:root[data-theme="light"] .sidebar-item {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .sidebar-item:hover {
+  background: #f5f5f5;                    /* --sidebar-accent */
+  color: #1a1a1a;                         /* --sidebar-foreground */
+}
+
+:root[data-theme="light"] .sidebar-item.active {
+  background: #333333;                    /* --sidebar-primary */
+  color: #fafafa;                         /* --sidebar-primary-foreground */
+}
+
+:root[data-theme="light"] .sidebar-section-title {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .sidebar-badge {
+  background: #333333;                    /* --sidebar-primary */
+  color: #fafafa;                         /* --sidebar-primary-foreground */
+}
+
+:root[data-theme="light"] .sidebar-footer {
+  border-top: 1px solid #e5e5e5;          /* --sidebar-border */
+}
+
+:root[data-theme="light"] .sidebar-user {
+  background: #f5f5f5;                    /* --sidebar-accent */
+}
+
+:root[data-theme="light"] .sidebar-user-name {
+  color: #1a1a1a;                         /* --sidebar-foreground */
+}
+```
+
 **JavaScript Behavior**:
 ```javascript
 // Toggle sidebar
@@ -449,6 +519,70 @@ if (savedState === 'true') {
 }
 ```
 
+**Light Mode Colors (TopBar)**:
+```css
+/* Light Mode - TopBar (MediaManager) */
+:root[data-theme="light"] .topbar {
+  background: #ffffff;                    /* --color-surface */
+  border-bottom: 1px solid #e5e5e5;       /* --color-border */
+}
+
+:root[data-theme="light"] .topbar-breadcrumbs a {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .topbar-breadcrumbs span {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .topbar-search {
+  background: #f5f5f5;                    /* --color-surface-alt */
+  border: 1px solid #e5e5e5;              /* --color-border */
+}
+
+:root[data-theme="light"] .topbar-search-input {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .topbar-search-input::placeholder {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .topbar-search-shortcut {
+  background: #ffffff;                    /* --color-surface */
+  border: 1px solid #e5e5e5;              /* --color-border */
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .topbar-icon-btn {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .topbar-icon-btn:hover {
+  background: #f5f5f5;                    /* --color-surface-hover */
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .topbar-badge {
+  background: #333333;                    /* --color-primary */
+  color: #fafafa;                         /* --color-primary-foreground */
+}
+
+:root[data-theme="light"] .topbar-user-dropdown {
+  background: #ffffff;                    /* --color-popover */
+  border: 1px solid #e5e5e5;              /* --color-border */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .topbar-user-dropdown a {
+  color: #1a1a1a;                         /* --color-popover-foreground */
+}
+
+:root[data-theme="light"] .topbar-user-dropdown a:hover {
+  background: #f5f5f5;                    /* --color-accent */
+}
+```
+
 ---
 
 ## Data Display Components
@@ -558,6 +692,62 @@ if (savedState === 'true') {
     </div>
   </div>
 </div>
+```
+
+**Light Mode Colors (Card)**:
+```css
+/* Light Mode - Card (MediaManager) */
+:root[data-theme="light"] .card {
+  background: #ffffff;                    /* --color-card */
+  border: 1px solid #e5e5e5;              /* --color-border */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="light"] .card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .card-title {
+  color: #1a1a1a;                         /* --color-card-foreground */
+}
+
+:root[data-theme="light"] .card-subtitle {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .card-metadata {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .card-meta-label {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .card-meta-value {
+  color: #333333;                         /* --color-text-secondary */
+}
+
+:root[data-theme="light"] .card-glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="light"] .card-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+:root[data-theme="light"] .card-stat-value {
+  color: #1a1a1a;                         /* --color-card-foreground */
+}
+
+:root[data-theme="light"] .card-stat-label {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .card-actions {
+  border-top: 1px solid #e5e5e5;          /* --color-border */
+}
 ```
 
 ---
@@ -764,6 +954,51 @@ if (savedState === 'true') {
 }
 ```
 
+**Light Mode Colors (LibraryView)**:
+```css
+/* Light Mode - LibraryView (MediaManager) */
+:root[data-theme="light"] .library-title h1 {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .library-count {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .view-toggle {
+  background: #f5f5f5;                    /* --color-surface-alt */
+}
+
+:root[data-theme="light"] .view-toggle-btn {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .view-toggle-btn:hover {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .view-toggle-btn.active {
+  background: #333333;                    /* --color-primary */
+  color: #fafafa;                         /* --color-primary-foreground */
+}
+
+:root[data-theme="light"] .library-filters {
+  background: #ffffff;                    /* --color-surface */
+  border-right: 1px solid #e5e5e5;        /* --color-border */
+}
+
+:root[data-theme="light"] .form-select {
+  background: #ffffff;                    /* --color-surface */
+  border: 1px solid #e5e5e5;              /* --color-input */
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .form-select:focus {
+  border-color: #b3b3b3;                  /* --color-ring */
+  outline: 2px solid rgba(179, 179, 179, 0.2);
+}
+```
+
 **JavaScript Behavior**:
 ```javascript
 // View mode toggle
@@ -913,6 +1148,649 @@ function updateQueueItem(id, progress, status) {
   const statusBadge = item.querySelector('.badge');
   statusBadge.className = `badge badge-${status}`;
   statusBadge.textContent = status;
+}
+```
+
+**Light Mode Colors (QueueManager)**:
+```css
+/* Light Mode - QueueManager (MediaManager) */
+:root[data-theme="light"] .queue-manager {
+  background: #ffffff;                    /* --color-surface */
+}
+
+:root[data-theme="light"] .queue-header {
+  border-bottom: 1px solid #e5e5e5;       /* --color-border */
+}
+
+:root[data-theme="light"] .queue-stat-value {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .queue-stat-label {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .queue-item {
+  background: #ffffff;                    /* --color-card */
+  border: 1px solid #e5e5e5;              /* --color-border */
+}
+
+:root[data-theme="light"] .queue-item:hover {
+  background: #fafafa;                    /* --color-bg-alt */
+}
+
+:root[data-theme="light"] .queue-item-title {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .queue-item-artist {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .progress-bar {
+  background: #e5e5e5;                    /* --color-input */
+}
+
+:root[data-theme="light"] .progress-bar-fill {
+  background: #333333;                    /* --color-primary */
+}
+
+:root[data-theme="light"] .progress-text {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .btn-icon {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .btn-icon:hover {
+  background: #f5f5f5;                    /* --color-surface-hover */
+  color: #1a1a1a;                         /* --color-text */
+}
+```
+
+---
+
+## Light Mode: All Remaining Components
+
+### Button (Light Mode)
+```css
+/* Light Mode - Button Variants (MediaManager) */
+:root[data-theme="light"] .btn-primary {
+  background: #333333;                    /* --color-primary */
+  color: #fafafa;                         /* --color-primary-foreground */
+}
+
+:root[data-theme="light"] .btn-primary:hover {
+  background: #1a1a1a;                    /* --color-primary-hover (darker) */
+}
+
+:root[data-theme="light"] .btn-secondary {
+  background: #f5f5f5;                    /* --color-secondary */
+  color: #333333;                         /* --color-secondary-foreground */
+}
+
+:root[data-theme="light"] .btn-secondary:hover {
+  background: #ebebeb;                    /* --color-secondary-hover */
+}
+
+:root[data-theme="light"] .btn-outline {
+  background: transparent;
+  border: 1px solid #e5e5e5;              /* --color-border */
+  color: #333333;                         /* --color-text-secondary */
+}
+
+:root[data-theme="light"] .btn-outline:hover {
+  background: #f5f5f5;                    /* --color-accent */
+  border-color: #d4d4d4;                  /* --color-border-dark */
+}
+
+:root[data-theme="light"] .btn-ghost {
+  background: transparent;
+  color: #333333;                         /* --color-text-secondary */
+}
+
+:root[data-theme="light"] .btn-ghost:hover {
+  background: #f5f5f5;                    /* --color-accent */
+}
+
+:root[data-theme="light"] .btn-destructive {
+  background: #d32f2f;                    /* --color-destructive */
+  color: #ffffff;                         /* --color-destructive-foreground */
+}
+
+:root[data-theme="light"] .btn-destructive:hover {
+  background: #b71c1c;                    /* darker red */
+}
+
+:root[data-theme="light"] .btn:disabled {
+  background: #f5f5f5;                    /* --color-muted */
+  color: #b3b3b3;                         /* --color-text-disabled */
+  cursor: not-allowed;
+}
+```
+
+### Input & Form Fields (Light Mode)
+```css
+/* Light Mode - Input/Forms (MediaManager) */
+:root[data-theme="light"] .form-input,
+:root[data-theme="light"] .form-textarea {
+  background: #ffffff;                    /* --color-bg */
+  border: 1px solid #e5e5e5;              /* --color-input */
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .form-input::placeholder,
+:root[data-theme="light"] .form-textarea::placeholder {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .form-input:focus,
+:root[data-theme="light"] .form-textarea:focus {
+  border-color: #b3b3b3;                  /* --color-ring */
+  outline: 2px solid rgba(179, 179, 179, 0.3);
+}
+
+:root[data-theme="light"] .form-input:disabled {
+  background: #f5f5f5;                    /* --color-muted */
+  color: #b3b3b3;                         /* --color-text-disabled */
+}
+
+:root[data-theme="light"] .form-label {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .form-hint {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .form-error {
+  color: #d32f2f;                         /* --color-destructive */
+}
+
+:root[data-theme="light"] .form-input.error {
+  border-color: #d32f2f;                  /* --color-destructive */
+}
+```
+
+### Checkbox & Radio (Light Mode)
+```css
+/* Light Mode - Checkbox/Radio (MediaManager) */
+:root[data-theme="light"] .form-checkbox input,
+:root[data-theme="light"] .form-radio input {
+  border: 1px solid #e5e5e5;              /* --color-input */
+  background: #ffffff;                    /* --color-bg */
+}
+
+:root[data-theme="light"] .form-checkbox input:checked,
+:root[data-theme="light"] .form-radio input:checked {
+  background: #333333;                    /* --color-primary */
+  border-color: #333333;                  /* --color-primary */
+}
+
+:root[data-theme="light"] .form-checkbox input:focus,
+:root[data-theme="light"] .form-radio input:focus {
+  outline: 2px solid rgba(179, 179, 179, 0.3);
+}
+
+:root[data-theme="light"] .form-checkbox span,
+:root[data-theme="light"] .form-radio span {
+  color: #1a1a1a;                         /* --color-text */
+}
+```
+
+### Toggle/Switch (Light Mode)
+```css
+/* Light Mode - Toggle/Switch (MediaManager) */
+:root[data-theme="light"] .toggle {
+  background: #e5e5e5;                    /* --color-input (off state) */
+}
+
+:root[data-theme="light"] .toggle.active {
+  background: #333333;                    /* --color-primary (on state) */
+}
+
+:root[data-theme="light"] .toggle-thumb {
+  background: #ffffff;                    /* white thumb */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+```
+
+### Table (Light Mode)
+```css
+/* Light Mode - Table (MediaManager) */
+:root[data-theme="light"] .table {
+  background: #ffffff;                    /* --color-surface */
+  border: 1px solid #e5e5e5;              /* --color-border */
+}
+
+:root[data-theme="light"] .table th {
+  background: #f5f5f5;                    /* --color-muted */
+  color: #1a1a1a;                         /* --color-text */
+  border-bottom: 1px solid #e5e5e5;       /* --color-border */
+}
+
+:root[data-theme="light"] .table td {
+  color: #1a1a1a;                         /* --color-text */
+  border-bottom: 1px solid #e5e5e5;       /* --color-border */
+}
+
+:root[data-theme="light"] .table tr:hover {
+  background: #fafafa;                    /* --color-bg-alt */
+}
+
+:root[data-theme="light"] .table tr:nth-child(even) {
+  background: #fafafa;                    /* alternating rows */
+}
+
+:root[data-theme="light"] .table-muted {
+  color: #888888;                         /* --color-text-muted */
+}
+```
+
+### List (Light Mode)
+```css
+/* Light Mode - List (MediaManager) */
+:root[data-theme="light"] .list-item {
+  background: #ffffff;                    /* --color-surface */
+  border-bottom: 1px solid #e5e5e5;       /* --color-border */
+}
+
+:root[data-theme="light"] .list-item:hover {
+  background: #fafafa;                    /* --color-bg-alt */
+}
+
+:root[data-theme="light"] .list-item-title {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .list-item-subtitle {
+  color: #888888;                         /* --color-text-muted */
+}
+```
+
+### Badge/Tag (Light Mode)
+```css
+/* Light Mode - Badge (MediaManager) */
+:root[data-theme="light"] .badge {
+  background: #f5f5f5;                    /* --color-muted */
+  color: #333333;                         /* --color-muted-foreground */
+}
+
+:root[data-theme="light"] .badge-primary {
+  background: #333333;                    /* --color-primary */
+  color: #fafafa;                         /* --color-primary-foreground */
+}
+
+:root[data-theme="light"] .badge-success {
+  background: #d1fae5;                    /* light green bg */
+  color: #059669;                         /* --color-success-dark */
+}
+
+:root[data-theme="light"] .badge-warning {
+  background: #fef3c7;                    /* light amber bg */
+  color: #d97706;                         /* --color-warning-dark */
+}
+
+:root[data-theme="light"] .badge-danger,
+:root[data-theme="light"] .badge-failed {
+  background: #fee2e2;                    /* light red bg */
+  color: #dc2626;                         /* --color-danger-dark */
+}
+
+:root[data-theme="light"] .badge-info {
+  background: #dbeafe;                    /* light blue bg */
+  color: #2563eb;                         /* --color-info-dark */
+}
+
+:root[data-theme="light"] .badge-outline {
+  background: transparent;
+  border: 1px solid #e5e5e5;              /* --color-border */
+  color: #333333;                         /* --color-text-secondary */
+}
+```
+
+### Alert/Toast (Light Mode)
+```css
+/* Light Mode - Alert (MediaManager) */
+:root[data-theme="light"] .alert {
+  background: #ffffff;                    /* --color-surface */
+  border: 1px solid #e5e5e5;              /* --color-border */
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .alert-success {
+  background: #d1fae5;                    /* light green */
+  border-color: #10b981;                  /* --color-success */
+  color: #059669;                         /* --color-success-dark */
+}
+
+:root[data-theme="light"] .alert-warning {
+  background: #fef3c7;                    /* light amber */
+  border-color: #f59e0b;                  /* --color-warning */
+  color: #d97706;                         /* --color-warning-dark */
+}
+
+:root[data-theme="light"] .alert-danger,
+:root[data-theme="light"] .alert-error {
+  background: #fee2e2;                    /* light red */
+  border-color: #ef4444;                  /* --color-danger */
+  color: #dc2626;                         /* --color-danger-dark */
+}
+
+:root[data-theme="light"] .alert-info {
+  background: #dbeafe;                    /* light blue */
+  border-color: #3b82f6;                  /* --color-info */
+  color: #2563eb;                         /* --color-info-dark */
+}
+
+:root[data-theme="light"] .toast {
+  background: #ffffff;                    /* --color-popover */
+  border: 1px solid #e5e5e5;              /* --color-border */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+```
+
+### Modal/Dialog (Light Mode)
+```css
+/* Light Mode - Modal (MediaManager) */
+:root[data-theme="light"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="light"] .modal {
+  background: #ffffff;                    /* --color-surface */
+  border: 1px solid #e5e5e5;              /* --color-border */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+:root[data-theme="light"] .modal-header {
+  border-bottom: 1px solid #e5e5e5;       /* --color-border */
+}
+
+:root[data-theme="light"] .modal-title {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .modal-close {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .modal-close:hover {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .modal-body {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .modal-footer {
+  border-top: 1px solid #e5e5e5;          /* --color-border */
+}
+```
+
+### Popover/Dropdown (Light Mode)
+```css
+/* Light Mode - Popover/Dropdown (MediaManager) */
+:root[data-theme="light"] .popover,
+:root[data-theme="light"] .dropdown {
+  background: #ffffff;                    /* --color-popover */
+  border: 1px solid #e5e5e5;              /* --color-border */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+:root[data-theme="light"] .popover-content,
+:root[data-theme="light"] .dropdown-item {
+  color: #1a1a1a;                         /* --color-popover-foreground */
+}
+
+:root[data-theme="light"] .dropdown-item:hover {
+  background: #f5f5f5;                    /* --color-accent */
+}
+
+:root[data-theme="light"] .dropdown-divider {
+  border-top: 1px solid #e5e5e5;          /* --color-border */
+}
+```
+
+### Progress Bar (Light Mode)
+```css
+/* Light Mode - Progress Bar (MediaManager) */
+:root[data-theme="light"] .progress {
+  background: #e5e5e5;                    /* --color-input (track) */
+}
+
+:root[data-theme="light"] .progress-bar {
+  background: #333333;                    /* --color-primary (fill) */
+}
+
+:root[data-theme="light"] .progress-text {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .progress-success .progress-bar {
+  background: #10b981;                    /* --color-success */
+}
+
+:root[data-theme="light"] .progress-warning .progress-bar {
+  background: #f59e0b;                    /* --color-warning */
+}
+
+:root[data-theme="light"] .progress-danger .progress-bar {
+  background: #ef4444;                    /* --color-danger */
+}
+```
+
+### Skeleton/Loader (Light Mode)
+```css
+/* Light Mode - Skeleton (MediaManager) */
+:root[data-theme="light"] .skeleton {
+  background: linear-gradient(
+    90deg,
+    #f5f5f5 25%,
+    #ebebeb 50%,
+    #f5f5f5 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+:root[data-theme="light"] .spinner {
+  border: 2px solid #e5e5e5;              /* --color-border */
+  border-top-color: #333333;              /* --color-primary */
+}
+```
+
+### Pagination (Light Mode)
+```css
+/* Light Mode - Pagination (MediaManager) */
+:root[data-theme="light"] .pagination {
+  background: #ffffff;                    /* --color-surface */
+}
+
+:root[data-theme="light"] .pagination-item {
+  color: #333333;                         /* --color-text-secondary */
+  border: 1px solid #e5e5e5;              /* --color-border */
+}
+
+:root[data-theme="light"] .pagination-item:hover {
+  background: #f5f5f5;                    /* --color-accent */
+}
+
+:root[data-theme="light"] .pagination-item.active {
+  background: #333333;                    /* --color-primary */
+  color: #fafafa;                         /* --color-primary-foreground */
+  border-color: #333333;
+}
+
+:root[data-theme="light"] .pagination-item:disabled {
+  color: #b3b3b3;                         /* --color-text-disabled */
+  cursor: not-allowed;
+}
+```
+
+### Breadcrumbs (Light Mode)
+```css
+/* Light Mode - Breadcrumbs (MediaManager) */
+:root[data-theme="light"] .breadcrumbs a {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .breadcrumbs a:hover {
+  color: #333333;                         /* --color-text-secondary */
+}
+
+:root[data-theme="light"] .breadcrumbs span {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .breadcrumbs-separator {
+  color: #b3b3b3;                         /* --color-text-disabled */
+}
+```
+
+### Tabs (Light Mode)
+```css
+/* Light Mode - Tabs (MediaManager) */
+:root[data-theme="light"] .tabs {
+  border-bottom: 1px solid #e5e5e5;       /* --color-border */
+}
+
+:root[data-theme="light"] .tab-item {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .tab-item:hover {
+  color: #333333;                         /* --color-text-secondary */
+}
+
+:root[data-theme="light"] .tab-item.active {
+  color: #1a1a1a;                         /* --color-text */
+  border-bottom: 2px solid #333333;       /* --color-primary */
+}
+```
+
+### Filter Panel (Light Mode)
+```css
+/* Light Mode - Filter Panel (MediaManager) */
+:root[data-theme="light"] .filter-panel {
+  background: #ffffff;                    /* --color-surface */
+  border: 1px solid #e5e5e5;              /* --color-border */
+}
+
+:root[data-theme="light"] .filter-section-title {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .filter-item {
+  color: #333333;                         /* --color-text-secondary */
+}
+
+:root[data-theme="light"] .filter-item:hover {
+  background: #f5f5f5;                    /* --color-accent */
+}
+
+:root[data-theme="light"] .filter-item.active {
+  background: #333333;                    /* --color-primary */
+  color: #fafafa;                         /* --color-primary-foreground */
+}
+
+:root[data-theme="light"] .filter-clear {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .filter-clear:hover {
+  color: #d32f2f;                         /* --color-destructive */
+}
+```
+
+### Search Bar (Light Mode)
+```css
+/* Light Mode - Search Bar (MediaManager) */
+:root[data-theme="light"] .search-bar {
+  background: #f5f5f5;                    /* --color-surface-alt */
+  border: 1px solid #e5e5e5;              /* --color-border */
+}
+
+:root[data-theme="light"] .search-bar:focus-within {
+  border-color: #b3b3b3;                  /* --color-ring */
+  background: #ffffff;                    /* --color-bg */
+}
+
+:root[data-theme="light"] .search-bar input {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .search-bar input::placeholder {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .search-bar-icon {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .search-bar-clear {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .search-bar-clear:hover {
+  color: #1a1a1a;                         /* --color-text */
+}
+```
+
+### Album Art (Light Mode)
+```css
+/* Light Mode - Album Art (MediaManager) */
+:root[data-theme="light"] .album-art {
+  background: #f5f5f5;                    /* --color-surface-alt (placeholder) */
+  border: 1px solid #e5e5e5;              /* --color-border */
+}
+
+:root[data-theme="light"] .album-art-placeholder {
+  background: #f5f5f5;                    /* --color-muted */
+  color: #b3b3b3;                         /* --color-text-disabled */
+}
+
+:root[data-theme="light"] .album-art-overlay {
+  background: rgba(0, 0, 0, 0.4);
+}
+```
+
+### Activity Feed (Light Mode)
+```css
+/* Light Mode - Activity Feed (MediaManager) */
+:root[data-theme="light"] .activity-feed {
+  background: #ffffff;                    /* --color-surface */
+}
+
+:root[data-theme="light"] .activity-item {
+  border-bottom: 1px solid #e5e5e5;       /* --color-border */
+}
+
+:root[data-theme="light"] .activity-item:hover {
+  background: #fafafa;                    /* --color-bg-alt */
+}
+
+:root[data-theme="light"] .activity-icon {
+  background: #f5f5f5;                    /* --color-muted */
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .activity-title {
+  color: #1a1a1a;                         /* --color-text */
+}
+
+:root[data-theme="light"] .activity-description {
+  color: #888888;                         /* --color-text-muted */
+}
+
+:root[data-theme="light"] .activity-time {
+  color: #b3b3b3;                         /* --color-text-disabled */
 }
 ```
 
