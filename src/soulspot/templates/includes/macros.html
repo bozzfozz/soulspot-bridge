@@ -39,8 +39,8 @@
         <div class="stat-card-value">{{ value }}</div>
         {% if change_text %}
         <div class="stat-card-change {{ change_type }}">
-            {% if change_type == 'positive' %}<i class="fa-solid fa-arrow-up"></i>{% endif %}
-            {% if change_type == 'negative' %}<i class="fa-solid fa-arrow-down"></i>{% endif %}
+            {% if change_type == 'positive' %}<i class="bi bi-arrow-up"></i>{% endif %}
+            {% if change_type == 'negative' %}<i class="bi bi-arrow-down"></i>{% endif %}
             <span>{{ change_text }}</span>
         </div>
         {% endif %}

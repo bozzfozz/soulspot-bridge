@@ -32,17 +32,17 @@
                   hx-swap="innerHTML"
                   hx-indicator="#download-{{ loop.index }}">
             <span id="download-{{ loop.index }}" class="htmx-indicator">
-              <i class="fa-solid fa-circle-notch fa-spin"></i>
+              <i class="bi bi-arrow-repeat bi-spin"></i>
             </span>
             <span class="htmx-indicator-off">
-              <i class="fa-solid fa-download"></i> Download
+              <i class="bi bi-download"></i> Download
             </span>
           </button>
         </div>
         
         {% if track.duration_ms %}
           <div style="display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-1);">
-            <i class="fa-regular fa-clock" style="font-size: var(--font-size-xs); color: var(--text-muted);"></i>
+            <i class="bi bi-clock" style="font-size: var(--font-size-xs); color: var(--text-muted);"></i>
             <span style="font-size: var(--font-size-xs); color: var(--text-muted);">
               {{ (track.duration_ms / 60000)|round(0, 'floor') }}:{{ '%02d'|format((track.duration_ms / 1000)|int % 60) }}
             </span>
@@ -53,13 +53,13 @@
   </div>
 {% elif query %}
   <div style="text-align: center; padding: var(--space-8); color: var(--text-muted);">
-    <i class="fa-regular fa-face-meh" style="font-size: 48px; color: var(--text-muted); margin-bottom: var(--space-4); display: block;"></i>
+    <i class="bi bi-emoji-neutral" style="font-size: 48px; color: var(--text-muted); margin-bottom: var(--space-4); display: block;"></i>
     <p style="font-size: var(--font-size-sm); margin-bottom: var(--space-1);">No results found for "{{ query }}"</p>
     <p style="font-size: var(--font-size-xs); opacity: 0.7;">Try a different search term</p>
   </div>
 {% else %}
   <div style="text-align: center; padding: var(--space-8); color: var(--text-muted); font-size: var(--font-size-sm);">
-    <i class="fa-solid fa-magnifying-glass" style="font-size: 32px; margin-bottom: var(--space-3); display: block; opacity: 0.5;"></i>
+    <i class="bi bi-search" style="font-size: 32px; margin-bottom: var(--space-3); display: block; opacity: 0.5;"></i>
     Start typing to search...
   </div>
 {% endif %}

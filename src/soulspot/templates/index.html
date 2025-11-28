@@ -19,7 +19,7 @@
             </div>
             <div style="display: none;" class="hero-icon">
                 <div style="width: 64px; height: 64px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
-                    <i class="fa-solid fa-music" style="font-size: 1.5rem; color: white;"></i>
+                    <i class="bi bi-music-note" style="font-size: 1.5rem; color: white;"></i>
                 </div>
             </div>
         </div>
@@ -34,7 +34,7 @@
         <div class="card" style="padding: var(--space-5);">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
                 <div style="width: 40px; height: 40px; background: rgba(var(--accent-primary-rgb), 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-list" style="color: var(--accent-primary);"></i>
+                    <i class="bi bi-list-ul" style="color: var(--accent-primary);"></i>
                 </div>
                 <span class="badge badge-default">Total</span>
             </div>
@@ -46,7 +46,7 @@
         <div class="card" style="padding: var(--space-5);">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
                 <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-music" style="color: #10b981;"></i>
+                    <i class="bi bi-music-note" style="color: #10b981;"></i>
                 </div>
                 <span class="badge badge-default">Library</span>
             </div>
@@ -58,7 +58,7 @@
         <div class="card" style="padding: var(--space-5);">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
                 <div style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-download" style="color: #3b82f6;"></i>
+                    <i class="bi bi-download" style="color: #3b82f6;"></i>
                 </div>
                 <span class="badge badge-default">Completed</span>
             </div>
@@ -70,7 +70,7 @@
         <div class="card" style="padding: var(--space-5);">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4);">
                 <div style="width: 40px; height: 40px; background: rgba(245, 158, 11, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-clock" style="color: #f59e0b;"></i>
+                    <i class="bi bi-clock" style="color: #f59e0b;"></i>
                 </div>
                 <span class="badge badge-default">Active</span>
             </div>
@@ -84,12 +84,12 @@
         <!-- Quick Actions -->
         <div class="card" style="padding: var(--space-6);">
             <h3 style="font-size: var(--font-size-xl); margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-2);">
-                <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Quick Actions
+                <i class="bi bi-lightning" style="color: #f59e0b;"></i> Quick Actions
             </h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
                 <a href="/playlists/import" class="card" style="padding: var(--space-4); text-align: center; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: var(--space-3); transition: var(--transition-base);">
                     <div style="width: 48px; height: 48px; background: var(--accent-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
-                        <i class="fa-solid fa-plus" style="color: white;"></i>
+                        <i class="bi bi-plus-lg" style="color: white;"></i>
                     </div>
                     <div>
                         <h4 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Import Playlist</h4>
@@ -99,7 +99,7 @@
 
                 <a href="/downloads" class="card" style="padding: var(--space-4); text-align: center; text-decoration: none; display: flex; flex-direction: column; align-items: center; gap: var(--space-3); transition: var(--transition-base);">
                     <div style="width: 48px; height: 48px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
-                        <i class="fa-solid fa-list-check" style="color: white;"></i>
+                        <i class="bi bi-list-check" style="color: white;"></i>
                     </div>
                     <div>
                         <h4 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Manage Queue</h4>
@@ -154,7 +154,7 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
                 statusDiv.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
                         <div style="width: 64px; height: 64px; background: rgba(16, 185, 129, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4);">
-                            <i class="fa-brands fa-spotify" style="font-size: 2rem; color: #1DB954;"></i>
+                            <i class="bi bi-spotify" style="font-size: 2rem; color: #1DB954;"></i>
                         </div>
                         <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-2);">Connected to Spotify</h3>
                         <p style="color: var(--text-muted); margin-bottom: var(--space-6);">Ready to sync your library</p>
@@ -167,7 +167,7 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
                 statusDiv.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
                         <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4);">
-                            <i class="fa-brands fa-spotify" style="font-size: 2rem; color: var(--text-muted);"></i>
+                            <i class="bi bi-spotify" style="font-size: 2rem; color: var(--text-muted);"></i>
                         </div>
                         <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-2);">Not Connected</h3>
                         <p style="color: var(--text-muted); margin-bottom: var(--space-6);">Connect Spotify to start</p>
@@ -189,7 +189,7 @@ document.body.addEventListener('htmx:responseError', function(evt) {
         statusDiv.innerHTML = `
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center;">
                 <div style="width: 64px; height: 64px; background: var(--bg-tertiary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: var(--space-4);">
-                    <i class="fa-brands fa-spotify" style="font-size: 2rem; color: var(--text-muted);"></i>
+                    <i class="bi bi-spotify" style="font-size: 2rem; color: var(--text-muted);"></i>
                 </div>
                 <h3 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); margin-bottom: var(--space-2);">Connection Issue</h3>
                 <p style="color: var(--text-muted); margin-bottom: var(--space-6);">Please reconnect Spotify</p>

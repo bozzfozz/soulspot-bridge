@@ -15,7 +15,7 @@
         <div class="card" style="position: sticky; top: var(--space-6);">
             <div style="padding: var(--space-4); border-bottom: 1px solid var(--border-primary); display: flex; justify-content: space-between; align-items: center;">
                 <h3 style="font-weight: var(--font-weight-semibold); display: flex; align-items: center; gap: var(--space-2);">
-                    <i class="fa-solid fa-filter" style="color: var(--accent-primary);"></i>
+                    <i class="bi bi-funnel" style="color: var(--accent-primary);"></i>
                     Filters
                 </h3>
                 <button class="btn btn-ghost btn-sm" onclick="SearchManager.clearFilters()">Clear All</button>
@@ -26,10 +26,10 @@
                 <div class="filter-group" style="margin-bottom: var(--space-5);">
                     <button class="filter-header" onclick="toggleFilter('quality')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) 0; background: none; border: none; color: var(--text-primary); cursor: pointer;">
                         <span style="display: flex; align-items: center; gap: var(--space-2);">
-                            <i class="fa-solid fa-check-circle" style="color: #22c55e;"></i>
+                            <i class="bi bi-check-circle" style="color: #22c55e;"></i>
                             Quality
                         </span>
-                        <i class="fa-solid fa-chevron-down filter-icon" id="quality-icon" style="transition: transform 0.2s;"></i>
+                        <i class="bi bi-chevron-down filter-icon" id="quality-icon" style="transition: transform 0.2s;"></i>
                     </button>
                     <div id="quality-filter" class="filter-content" style="padding-left: var(--space-6); margin-top: var(--space-2);">
                         <label class="filter-option">
@@ -55,10 +55,10 @@
                 <div class="filter-group" style="margin-bottom: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border-primary);">
                     <button class="filter-header" onclick="toggleFilter('artist')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) 0; background: none; border: none; color: var(--text-primary); cursor: pointer;">
                         <span style="display: flex; align-items: center; gap: var(--space-2);">
-                            <i class="fa-solid fa-user" style="color: var(--accent-secondary);"></i>
+                            <i class="bi bi-person" style="color: var(--accent-secondary);"></i>
                             Artist
                         </span>
-                        <i class="fa-solid fa-chevron-down filter-icon" id="artist-icon" style="transition: transform 0.2s; transform: rotate(-90deg);"></i>
+                        <i class="bi bi-chevron-down filter-icon" id="artist-icon" style="transition: transform 0.2s; transform: rotate(-90deg);"></i>
                     </button>
                     <div id="artist-filter" class="filter-content collapsed" style="padding-left: var(--space-6); margin-top: var(--space-2);">
                         <input type="text" id="artist-filter-input" placeholder="Filter by artist..." 
@@ -70,10 +70,10 @@
                 <div class="filter-group" style="margin-bottom: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--border-primary);">
                     <button class="filter-header" onclick="toggleFilter('album')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) 0; background: none; border: none; color: var(--text-primary); cursor: pointer;">
                         <span style="display: flex; align-items: center; gap: var(--space-2);">
-                            <i class="fa-solid fa-compact-disc" style="color: #3b82f6;"></i>
+                            <i class="bi bi-disc" style="color: #3b82f6;"></i>
                             Album
                         </span>
-                        <i class="fa-solid fa-chevron-down filter-icon" id="album-icon" style="transition: transform 0.2s; transform: rotate(-90deg);"></i>
+                        <i class="bi bi-chevron-down filter-icon" id="album-icon" style="transition: transform 0.2s; transform: rotate(-90deg);"></i>
                     </button>
                     <div id="album-filter" class="filter-content collapsed" style="padding-left: var(--space-6); margin-top: var(--space-2);">
                         <input type="text" id="album-filter-input" placeholder="Filter by album..." 
@@ -85,10 +85,10 @@
                 <div class="filter-group" style="padding-top: var(--space-4); border-top: 1px solid var(--border-primary);">
                     <button class="filter-header" onclick="toggleFilter('duration')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) 0; background: none; border: none; color: var(--text-primary); cursor: pointer;">
                         <span style="display: flex; align-items: center; gap: var(--space-2);">
-                            <i class="fa-solid fa-clock" style="color: #eab308;"></i>
+                            <i class="bi bi-clock" style="color: #eab308;"></i>
                             Duration
                         </span>
-                        <i class="fa-solid fa-chevron-down filter-icon" id="duration-icon" style="transition: transform 0.2s; transform: rotate(-90deg);"></i>
+                        <i class="bi bi-chevron-down filter-icon" id="duration-icon" style="transition: transform 0.2s; transform: rotate(-90deg);"></i>
                     </button>
                     <div id="duration-filter" class="filter-content collapsed" style="padding-left: var(--space-6); margin-top: var(--space-2);">
                         <label class="filter-option">
@@ -112,7 +112,7 @@
         <div class="card" style="margin-top: var(--space-4);">
             <div style="padding: var(--space-4); border-bottom: 1px solid var(--border-primary); display: flex; justify-content: space-between; align-items: center;">
                 <h4 style="font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); display: flex; align-items: center; gap: var(--space-2);">
-                    <i class="fa-solid fa-history" style="color: var(--text-muted);"></i>
+                    <i class="bi bi-clock-history" style="color: var(--text-muted);"></i>
                     Recent Searches
                 </h4>
                 <button class="btn btn-ghost btn-sm" onclick="SearchManager.clearHistory()" style="font-size: var(--font-size-xs);">Clear</button>
@@ -129,7 +129,7 @@
         <div style="margin-bottom: var(--space-6);">
             <div style="display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-2);">
                 <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-search" style="color: white; font-size: 1.25rem;"></i>
+                    <i class="bi bi-search" style="color: white; font-size: 1.25rem;"></i>
                 </div>
                 <div>
                     <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Search Music</h1>
@@ -142,7 +142,7 @@
         <div class="card" style="margin-bottom: var(--space-6);">
             <form onsubmit="SearchManager.performSearch(event)" style="padding: var(--space-5);">
                 <div style="position: relative; margin-bottom: var(--space-4);">
-                    <i class="fa-solid fa-search" style="position: absolute; left: var(--space-4); top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                    <i class="bi bi-search" style="position: absolute; left: var(--space-4); top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
                     <input type="text" id="search-input" placeholder="Search for artists, albums, or tracks..."
                            class="form-input" style="width: 100%; padding-left: 2.75rem; font-size: var(--font-size-lg);"
                            autocomplete="off" oninput="SearchManager.handleSearchInput(event)">
@@ -150,12 +150,12 @@
                     <div id="autocomplete-results" class="autocomplete-dropdown" style="display: none;"></div>
                 </div>
                 <p style="font-size: var(--font-size-xs); color: var(--text-muted); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
-                    <i class="fa-solid fa-info-circle"></i>
+                    <i class="bi bi-info-circle"></i>
                     Press Enter to search, or select a suggestion
                 </p>
                 <div class="flex gap-3">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fa-solid fa-search"></i>
+                        <i class="bi bi-search"></i>
                         Search
                     </button>
                     <button type="button" class="btn btn-outline" onclick="SearchManager.clearSearch()">
@@ -177,7 +177,7 @@
                 </div>
                 <div class="flex gap-2">
                     <button class="btn btn-primary" onclick="SearchManager.bulkDownload()">
-                        <i class="fa-solid fa-download"></i>
+                        <i class="bi bi-download"></i>
                         Download Selected
                     </button>
                     <button class="btn btn-outline" onclick="SearchManager.clearSelection()">
@@ -191,7 +191,7 @@
         <div id="search-results">
             <!-- Empty State -->
             <div class="card" style="text-align: center; padding: 4rem var(--space-6);">
-                <i class="fa-solid fa-search" style="font-size: 5rem; color: var(--text-muted); margin-bottom: var(--space-6); display: block;"></i>
+                <i class="bi bi-search" style="font-size: 5rem; color: var(--text-muted); margin-bottom: var(--space-6); display: block;"></i>
                 <h3 style="font-size: var(--font-size-xl); margin-bottom: var(--space-2);">Start Your Search</h3>
                 <p style="color: var(--text-muted); max-width: 400px; margin: 0 auto;">
                     Search for your favorite artists, albums, or tracks to find high-quality downloads from Soulseek

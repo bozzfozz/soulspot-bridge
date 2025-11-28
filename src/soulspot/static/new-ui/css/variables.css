@@ -152,9 +152,78 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
 
-  /* ===== TRANSITIONS ===== */
+/* ===== LIGHT MODE THEME ===== */
+/* Hey future me - Light Mode based on MediaManager design system!
+   Activated via data-theme="light" on <html> element.
+   Theme switching handled by applyTheme() in settings.html and
+   theme-init script in base.html. WCAG AA compliant contrast ratios. */
 
+:root[data-theme="light"] {
+  /* Background Colors - Light Theme */
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-quaternary: #ebebeb;
+
+  /* Accent Colors - Keep SoulSpot Red for brand consistency */
+  --accent-primary: #fe4155;
+  --accent-hover: #d63547;
+  --accent-active: #b92d3c;
+  --accent-subtle: rgba(254, 65, 85, 0.1);
+
+  /* Text Colors */
+  --text-primary: #1a1a1a;
+  --text-secondary: #333333;
+  --text-muted: #888888;
+  --text-disabled: #b3b3b3;
+
+  /* Border Colors */
+  --border-primary: #e5e5e5;
+  --border-secondary: #d4d4d4;
+  --border-accent: var(--accent-primary);
+
+  /* Semantic Colors - Slightly adjusted for light backgrounds */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #2563eb;
+
+  /* Semantic Backgrounds */
+  --bg-success: rgba(5, 150, 105, 0.1);
+  --bg-warning: rgba(217, 119, 6, 0.1);
+  --bg-error: rgba(220, 38, 38, 0.1);
+  --bg-info: rgba(37, 99, 235, 0.1);
+
+  /* Shadows - Lighter for light theme */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+
+  /* Scrollbar - Light */
+  --scrollbar-track: #f5f5f5;
+  --scrollbar-thumb: #d4d4d4;
+  --scrollbar-thumb-hover: #b3b3b3;
+}
+
+/* Light mode scrollbar override */
+:root[data-theme="light"] ::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, #f5f5f5);
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #d4d4d4);
+}
+
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #b3b3b3);
+}
+
+/* ===== TRANSITIONS ===== */
+
+:root {
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
   --transition-slow: 350ms ease;

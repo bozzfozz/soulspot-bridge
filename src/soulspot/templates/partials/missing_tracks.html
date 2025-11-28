@@ -15,14 +15,14 @@
         <button class="btn btn-outline btn-sm"
                 onclick="document.getElementById('missing-tracks-section').innerHTML = ''"
                 aria-label="Close missing tracks view">
-            <i class="fa-solid fa-xmark"></i>
+            <i class="bi bi-x-lg"></i>
         </button>
     </div>
     
     <div style="padding: var(--space-6);">
         {% if missing_tracks %}
         <div class="alert alert-info" style="margin-bottom: var(--space-4);">
-            <i class="fa-solid fa-circle-info"></i>
+            <i class="bi bi-info-circle"></i>
             <div>
                 <div style="font-weight: var(--font-weight-semibold); margin-bottom: var(--space-1);">
                     {{ missing_tracks|length }} track{{ 's' if missing_tracks|length != 1 else '' }} not found in library
@@ -38,7 +38,7 @@
             <button class="btn btn-primary"
                     onclick="downloadAllMissing()"
                     aria-label="Download all missing tracks">
-                <i class="fa-solid fa-download"></i> Download All Missing
+                <i class="bi bi-download"></i> Download All Missing
             </button>
         </div>
 
@@ -80,10 +80,10 @@
                                     hx-indicator="#download-indicator-{{ track.id }}"
                                     aria-label="Download track {{ track.title }}">
                                 <span id="download-indicator-{{ track.id }}" class="htmx-indicator">
-                                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                                    <i class="bi bi-arrow-repeat bi-spin"></i>
                                 </span>
                                 <span class="htmx-indicator-off">
-                                    <i class="fa-solid fa-download"></i> Download
+                                    <i class="bi bi-download"></i> Download
                                 </span>
                             </button>
                         </td>
@@ -94,7 +94,7 @@
         </div>
         {% else %}
         <div style="padding: var(--space-12); text-align: center;">
-            <i class="fa-solid fa-circle-check" style="font-size: 48px; color: var(--status-success); margin-bottom: var(--space-4); display: block;"></i>
+            <i class="bi bi-check-circle" style="font-size: 48px; color: var(--status-success); margin-bottom: var(--space-4); display: block;"></i>
             <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-medium); margin-bottom: var(--space-2);">All tracks downloaded!</h3>
             <p style="color: var(--text-muted);">All tracks from this playlist are available in your library.</p>
         </div>

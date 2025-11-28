@@ -10,17 +10,17 @@
 <!-- Breadcrumb -->
 <nav style="margin-bottom: var(--space-4);">
     <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
-        <li><a href="/spotify/artists" style="color: #1DB954;"><i class="fa-brands fa-spotify"></i> Spotify</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li><a href="/spotify/artists" style="color: #1DB954;"><i class="bi bi-spotify"></i> Spotify</a></li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
         <li><a href="/spotify/artists" style="color: #1DB954;">Artists</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
         <li style="color: var(--text-muted);">{{ artist.name if artist else 'Unknown' }}</li>
     </ol>
 </nav>
 
 {% if error %}
 <div class="alert alert-error" style="margin-bottom: var(--space-6);">
-    <i class="fa-solid fa-exclamation-triangle"></i>
+    <i class="bi bi-exclamation-triangle"></i>
     <span>{{ error }}</span>
 </div>
 {% endif %}
@@ -36,7 +36,7 @@
     </div>
     {% endif %}
     <div class="artist-header-info">
-        <span class="artist-header-label"><i class="fa-brands fa-spotify" style="color: #1DB954;"></i> Spotify Artist</span>
+        <span class="artist-header-label"><i class="bi bi-spotify" style="color: #1DB954;"></i> Spotify Artist</span>
         <h1 class="artist-header-name">{{ artist.name }}</h1>
         <div class="artist-header-meta">
             {% if artist.genres %}
@@ -48,18 +48,18 @@
             {% endif %}
             {% if artist.follower_count %}
             <span class="meta-item">
-                <i class="fa-solid fa-users"></i>
+                <i class="bi bi-people"></i>
                 {{ "{:,}".format(artist.follower_count) }} followers
             </span>
             {% endif %}
             <span class="meta-item">
-                <i class="fa-solid fa-compact-disc"></i>
+                <i class="bi bi-disc"></i>
                 {{ album_count }} release{{ 's' if album_count != 1 else '' }}
             </span>
         </div>
         {% if sync_stats and sync_stats.synced %}
         <span style="font-size: var(--font-size-sm); color: var(--text-muted); margin-top: var(--space-2); display: block;">
-            <i class="fa-solid fa-check" style="color: #1DB954;"></i>
+            <i class="bi bi-check" style="color: #1DB954;"></i>
             Albums synced
         </span>
         {% endif %}
@@ -89,7 +89,7 @@
             <img src="{{ album.image_url }}" alt="{{ album.name }}" class="album-cover">
             {% else %}
             <div class="album-cover-placeholder">
-                <i class="fa-solid fa-compact-disc"></i>
+                <i class="bi bi-disc"></i>
             </div>
             {% endif %}
             <div class="album-info">
@@ -106,7 +106,7 @@
     {% else %}
     <div class="empty-state">
         <div class="empty-icon">
-            <i class="fa-solid fa-compact-disc"></i>
+            <i class="bi bi-disc"></i>
         </div>
         <h3>No albums found</h3>
         <p>This artist has no albums on Spotify yet, or albums are still syncing.</p>
@@ -116,12 +116,12 @@
 {% else %}
 <div class="empty-state">
     <div class="empty-icon">
-        <i class="fa-solid fa-user-slash"></i>
+        <i class="bi bi-person-slash"></i>
     </div>
     <h3>Artist not found</h3>
     <p>The requested artist could not be found.</p>
     <a href="/spotify/artists" class="btn btn-primary">
-        <i class="fa-solid fa-arrow-left"></i>
+        <i class="bi bi-arrow-left"></i>
         Back to Artists
     </a>
 </div>

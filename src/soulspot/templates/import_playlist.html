@@ -12,7 +12,7 @@
     <!-- Page Header -->
     <div style="text-align: center; margin-bottom: var(--space-8);">
         <div style="width: 80px; height: 80px; margin: 0 auto var(--space-6); background: linear-gradient(135deg, var(--accent-primary), #a855f7); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-xl);">
-            <i class="fa-solid fa-plus" style="color: white; font-size: 2rem;"></i>
+            <i class="bi bi-plus-lg" style="color: white; font-size: 2rem;"></i>
         </div>
         <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-3);">Import Spotify Playlist</h1>
         <p style="color: var(--text-muted); font-size: var(--font-size-lg);">Import a Spotify playlist to start downloading tracks</p>
@@ -68,11 +68,11 @@
 
             <div style="display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); padding-top: var(--space-4); border-top: 1px solid var(--border-primary);">
                 <a href="/auth" class="btn btn-outline">
-                    <i class="fa-solid fa-key"></i>
+                    <i class="bi bi-key"></i>
                     Re-authenticate Spotify
                 </a>
                 <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fa-solid fa-plus"></i>
+                    <i class="bi bi-plus-lg"></i>
                     Import Playlist
                 </button>
             </div>
@@ -134,7 +134,7 @@ function getNotConnectedHTML() {
     return `
         <div class="status-card" style="background: rgba(var(--accent-primary-rgb), 0.1); border: 1px solid rgba(var(--accent-primary-rgb), 0.2);">
             <div class="status-icon" style="background: var(--accent-primary);">
-                <i class="fa-solid fa-circle-info" style="color: white;"></i>
+                <i class="bi bi-info-circle" style="color: white;"></i>
             </div>
             <div style="flex: 1;">
                 <p style="font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Spotify nicht verbunden</p>
@@ -155,7 +155,7 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
                 statusDiv.innerHTML = `
                     <div class="status-card" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2);">
                         <div class="status-icon" style="background: #22c55e;">
-                            <i class="fa-solid fa-check" style="color: white;"></i>
+                            <i class="bi bi-check" style="color: white;"></i>
                         </div>
                         <div style="flex: 1;">
                             <p style="font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Spotify Connected</p>
@@ -168,7 +168,7 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
                 statusDiv.innerHTML = `
                     <div class="status-card" style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.2);">
                         <div class="status-icon" style="background: #eab308;">
-                            <i class="fa-solid fa-triangle-exclamation" style="color: white;"></i>
+                            <i class="bi bi-exclamation-triangle" style="color: white;"></i>
                         </div>
                         <div style="flex: 1;">
                             <p style="font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Spotify Token Expired</p>
@@ -206,7 +206,7 @@ document.body.addEventListener('htmx:responseError', function(evt) {
             document.getElementById('import-result').innerHTML = `
                 <div class="status-card" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);">
                     <div class="status-icon" style="background: #ef4444;">
-                        <i class="fa-solid fa-circle-xmark" style="color: white;"></i>
+                        <i class="bi bi-x-circle" style="color: white;"></i>
                     </div>
                     <div style="flex: 1;">
                         <p style="font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Authentifizierung erforderlich</p>

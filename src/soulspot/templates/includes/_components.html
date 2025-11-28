@@ -11,10 +11,10 @@
 {# Alert/Notification Component #}
 {% macro alert(type='info', title='', message='', icon=true, dismissible=false) %}
 {% set type_map = {'danger': 'error', 'success': 'success', 'warning': 'warning', 'info': 'info'} %}
-{% set icon_map = {'success': 'fa-circle-check', 'warning': 'fa-triangle-exclamation', 'error': 'fa-circle-xmark', 'danger': 'fa-circle-xmark', 'info': 'fa-circle-info'} %}
+{% set icon_map = {'success': 'bi-check-circle', 'warning': 'bi-exclamation-triangle', 'error': 'bi-x-circle', 'danger': 'bi-x-circle', 'info': 'bi-info-circle'} %}
 <div class="alert alert-{{ type_map.get(type, type) }}" role="alert" style="display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-lg); position: relative;">
     {% if icon %}
-    <i class="fa-solid {{ icon_map.get(type, 'fa-circle-info') }}" style="margin-top: 2px;"></i>
+    <i class="bi {{ icon_map.get(type, 'bi-info-circle') }}" style="margin-top: 2px;"></i>
     {% endif %}
     <div style="flex: 1;">
         {% if title %}
@@ -26,7 +26,7 @@
     <button style="position: absolute; top: var(--space-3); right: var(--space-3); background: none; border: none; cursor: pointer; color: inherit; opacity: 0.6;" 
             onclick="this.parentElement.remove()"
             aria-label="Dismiss alert">
-        <i class="fa-solid fa-xmark"></i>
+        <i class="bi bi-x"></i>
     </button>
     {% endif %}
 </div>
@@ -67,7 +67,7 @@
         {% for item in items %}
         <li style="display: flex; align-items: center;">
             {% if not loop.first %}
-            <i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.625rem; margin: 0 var(--space-2);"></i>
+            <i class="bi bi-chevron-right" style="color: var(--text-muted); font-size: 0.625rem; margin: 0 var(--space-2);"></i>
             {% endif %}
             {% if item.href and not loop.last %}
             <a href="{{ item.href }}" style="color: var(--accent-primary);">{{ item.text }}</a>
@@ -97,17 +97,17 @@
 {# Status Indicator #}
 {% macro status_indicator(status) %}
 {% set status_config = {
-    'success': {'color': 'success', 'icon': 'fa-circle-check', 'label': 'Success'},
-    'pending': {'color': 'warning', 'icon': 'fa-clock', 'label': 'Pending'},
-    'queued': {'color': 'info', 'icon': 'fa-list', 'label': 'Queued'},
-    'downloading': {'color': 'primary', 'icon': 'fa-download', 'label': 'Downloading'},
-    'completed': {'color': 'success', 'icon': 'fa-circle-check', 'label': 'Completed'},
-    'failed': {'color': 'error', 'icon': 'fa-circle-xmark', 'label': 'Failed'},
-    'cancelled': {'color': 'default', 'icon': 'fa-ban', 'label': 'Cancelled'}
+    'success': {'color': 'success', 'icon': 'bi-check-circle', 'label': 'Success'},
+    'pending': {'color': 'warning', 'icon': 'bi-clock', 'label': 'Pending'},
+    'queued': {'color': 'info', 'icon': 'bi-list-ul', 'label': 'Queued'},
+    'downloading': {'color': 'primary', 'icon': 'bi-download', 'label': 'Downloading'},
+    'completed': {'color': 'success', 'icon': 'bi-check-circle', 'label': 'Completed'},
+    'failed': {'color': 'error', 'icon': 'bi-x-circle', 'label': 'Failed'},
+    'cancelled': {'color': 'default', 'icon': 'bi-slash-circle', 'label': 'Cancelled'}
 } %}
-{% set config = status_config.get(status, {'color': 'default', 'icon': 'fa-circle', 'label': status|capitalize}) %}
+{% set config = status_config.get(status, {'color': 'default', 'icon': 'bi-circle', 'label': status|capitalize}) %}
 <span class="badge badge-{{ config.color }}">
-    <i class="fa-solid {{ config.icon }}"></i> {{ config.label }}
+    <i class="bi {{ config.icon }}"></i> {{ config.label }}
 </span>
 {% endmacro %}
 
@@ -130,7 +130,7 @@
 <nav style="display: flex; justify-content: center; align-items: center; gap: var(--space-2); margin-top: var(--space-6);" aria-label="Pagination">
     {% if current_page > 1 %}
     <a href="{{ base_url }}?page={{ current_page - 1 }}" class="btn btn-outline btn-sm" aria-label="Previous page">
-        <i class="fa-solid fa-chevron-left"></i> Previous
+        <i class="bi bi-chevron-left"></i> Previous
     </a>
     {% endif %}
     
@@ -148,7 +148,7 @@
     
     {% if current_page < total_pages %}
     <a href="{{ base_url }}?page={{ current_page + 1 }}" class="btn btn-outline btn-sm" aria-label="Next page">
-        Next <i class="fa-solid fa-chevron-right"></i>
+        Next <i class="bi bi-chevron-right"></i>
     </a>
     {% endif %}
 </nav>

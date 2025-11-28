@@ -23,7 +23,7 @@
             <button onclick="closeMetadataModal()" 
                     class="btn btn-outline btn-sm"
                     aria-label="Close modal">
-                <i class="fa-solid fa-xmark"></i>
+                <i class="bi bi-x-lg"></i>
             </button>
         </div>
 
@@ -168,7 +168,7 @@
                     Cancel
                 </button>
                 <button type="submit" class="btn btn-primary">
-                    <i class="fa-solid fa-check"></i> Save Changes
+                    <i class="bi bi-check"></i> Save Changes
                 </button>
             </div>
         </form>
@@ -201,7 +201,7 @@ function saveMetadata(event) {
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Saving...';
+    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat bi-spin"></i> Saving...';
     
     fetch(`/api/tracks/${trackId}/metadata`, {
         method: 'PATCH',

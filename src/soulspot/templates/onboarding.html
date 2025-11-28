@@ -45,7 +45,7 @@
                     hx-trigger="click"
                     disabled
                 >
-                    <i class="fa-solid fa-arrow-right"></i>
+                    <i class="bi bi-arrow-right"></i>
                     Weiter
                 </button>
                 <button 
@@ -63,7 +63,7 @@
         <div style="margin-top: var(--space-8);">
             <div class="card" style="padding: var(--space-4); background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2);">
                 <div style="display: flex; align-items: flex-start; gap: var(--space-3);">
-                    <i class="fa-solid fa-circle-info" style="color: #3b82f6; margin-top: 2px;"></i>
+                    <i class="bi bi-info-circle" style="color: #3b82f6; margin-top: 2px;"></i>
                     <p style="font-size: var(--font-size-sm); color: var(--text-secondary); text-align: left;">
                         Die Spotify-Verbindung ist erforderlich, um Playlists zu synchronisieren und Songs herunterzuladen.
                         Du kannst diesen Schritt auch später in den Einstellungen durchführen.
@@ -109,12 +109,12 @@ function getConnectSpotifyOnboardingHTML() {
     return `
         <div class="status-card" style="background: rgba(var(--accent-primary-rgb), 0.1); border: 1px solid rgba(var(--accent-primary-rgb), 0.2);">
             <div class="status-icon" style="background: #1DB954;">
-                <i class="fa-brands fa-spotify" style="color: white;"></i>
+                <i class="bi bi-spotify" style="color: white;"></i>
             </div>
             <p style="font-weight: var(--font-weight-bold); font-size: var(--font-size-lg); margin-bottom: var(--space-2);">Verbinde dein Spotify-Konto</p>
             <p style="font-size: var(--font-size-sm); color: var(--text-muted); margin-bottom: var(--space-4);">Klicke auf "Verbinden", um mit der Einrichtung fortzufahren.</p>
             <a href="/auth" class="btn btn-primary btn-lg" style="background: #1DB954; border-color: #1DB954;">
-                <i class="fa-brands fa-spotify"></i>
+                <i class="bi bi-spotify"></i>
                 Mit Spotify verbinden
             </a>
         </div>
@@ -156,14 +156,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     statusDiv.innerHTML = `
                         <div class="status-card" style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2);">
                             <div class="status-icon" style="background: #22c55e;">
-                                <i class="fa-solid fa-check" style="color: white;"></i>
+                                <i class="bi bi-check" style="color: white;"></i>
                             </div>
                             <p style="font-weight: var(--font-weight-bold); font-size: var(--font-size-lg); margin-bottom: var(--space-2);">Spotify ist bereits verbunden!</p>
                             <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Du kannst direkt loslegen.</p>
                         </div>
                     `;
                     
-                    continueBtn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Zum Dashboard';
+                    continueBtn.innerHTML = '<i class="bi bi-arrow-right"></i> Zum Dashboard';
                     continueBtn.onclick = () => window.location.href = '/';
                     continueBtn.removeAttribute('hx-get');
                 } else {

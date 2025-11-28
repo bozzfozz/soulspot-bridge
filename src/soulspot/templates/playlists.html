@@ -16,11 +16,11 @@
     </div>
     <div class="flex gap-3">
         <button class="btn btn-outline" hx-post="/api/playlists/sync-all" hx-swap="none">
-            <i class="fa-solid fa-sync"></i>
+            <i class="bi bi-arrow-clockwise"></i>
             Sync All
         </button>
         <a href="/playlists/import" class="btn btn-primary">
-            <i class="fa-solid fa-plus"></i>
+            <i class="bi bi-plus-lg"></i>
             Import Playlist
         </a>
     </div>
@@ -30,7 +30,7 @@
 <div class="grid grid-cols-4 mb-8">
     <div class="stat-card">
         <div class="stat-card-icon">
-            <i class="fa-solid fa-list"></i>
+            <i class="bi bi-list-ul"></i>
         </div>
         <div class="stat-card-content">
             <div class="stat-card-label">Total Playlists</div>
@@ -40,7 +40,7 @@
 
     <div class="stat-card">
         <div class="stat-card-icon">
-            <i class="fa-solid fa-music"></i>
+            <i class="bi bi-music-note"></i>
         </div>
         <div class="stat-card-content">
             <div class="stat-card-label">Total Tracks</div>
@@ -50,7 +50,7 @@
 
     <div class="stat-card">
         <div class="stat-card-icon">
-            <i class="fa-solid fa-check-circle"></i>
+            <i class="bi bi-check-circle"></i>
         </div>
         <div class="stat-card-content">
             <div class="stat-card-label">Downloaded</div>
@@ -60,7 +60,7 @@
 
     <div class="stat-card">
         <div class="stat-card-icon">
-            <i class="fa-solid fa-clock"></i>
+            <i class="bi bi-clock"></i>
         </div>
         <div class="stat-card-content">
             <div class="stat-card-label">Pending</div>
@@ -81,10 +81,10 @@
                 <div class="media-card-actions">
                     <button class="btn-icon btn-primary"
                         onclick="event.preventDefault(); playPlaylist('{{ playlist.id }}')">
-                        <i class="fa-solid fa-play"></i>
+                        <i class="bi bi-play-fill"></i>
                     </button>
                     <button class="btn-icon" onclick="event.preventDefault(); downloadPlaylist('{{ playlist.id }}')">
-                        <i class="fa-solid fa-download"></i>
+                        <i class="bi bi-download"></i>
                     </button>
                 </div>
             </div>
@@ -114,13 +114,13 @@
 <div class="flex items-center justify-center gap-2" style="margin-top: 2rem;">
     {% if page > 1 %}
     <a href="?page={{ page - 1 }}" class="btn btn-outline btn-sm">
-        <i class="fa-solid fa-chevron-left"></i>
+        <i class="bi bi-chevron-left"></i>
     </a>
     {% endif %}
     <span class="text-muted">Page {{ page }} of {{ total_pages }}</span>
     {% if page < total_pages %}
     <a href="?page={{ page + 1 }}" class="btn btn-outline btn-sm">
-        <i class="fa-solid fa-chevron-right"></i>
+        <i class="bi bi-chevron-right"></i>
     </a>
     {% endif %}
 </div>
@@ -129,13 +129,13 @@
 {% else %}
 <!-- Empty State -->
 <div class="card" style="text-align: center; padding: 4rem;">
-    <i class="fa-solid fa-list" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem;"></i>
+    <i class="bi bi-list-ul" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem;"></i>
     <h2>No Playlists Yet</h2>
     <p class="text-muted" style="margin-top: 0.5rem; margin-bottom: 2rem;">
         Import your first playlist from Spotify to get started.
     </p>
     <a href="/playlists/import" class="btn btn-primary">
-        <i class="fa-solid fa-plus"></i>
+        <i class="bi bi-plus-lg"></i>
         Import from Spotify
     </a>
 </div>

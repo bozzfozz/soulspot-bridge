@@ -16,7 +16,7 @@
              style="width: 64px; height: 64px; border-radius: var(--radius-md); object-fit: cover; flex-shrink: 0;">
         {% else %}
         <div style="width: 64px; height: 64px; border-radius: var(--radius-md); background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-            <i class="fa-solid fa-music" style="font-size: 24px; color: var(--text-muted);"></i>
+            <i class="bi bi-music-note" style="font-size: 24px; color: var(--text-muted);"></i>
         </div>
         {% endif %}
         
@@ -56,13 +56,13 @@
                     hx-swap="none"
                     hx-on::after-request="SoulSpot.toast('Track added to download queue', 'success')"
                     aria-label="Download {{ track.title }}">
-                <i class="fa-solid fa-download"></i> Download
+                <i class="bi bi-download"></i> Download
             </button>
             {% if show_details %}
             <button class="btn btn-outline btn-sm"
                     onclick="showTrackDetails('{{ track.id }}')"
                     aria-label="View details for {{ track.title }}">
-                <i class="fa-solid fa-circle-info"></i> Details
+                <i class="bi bi-info-circle"></i> Details
             </button>
             {% endif %}
         </div>

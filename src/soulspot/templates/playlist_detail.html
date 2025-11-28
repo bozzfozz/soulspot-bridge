@@ -45,12 +45,12 @@
                         hx-target="#sync-status"
                         hx-swap="innerHTML"
                         hx-indicator="#sync-spinner">
-                    <i class="fa-solid fa-sync"></i>
+                    <i class="bi bi-arrow-clockwise"></i>
                     Sync Now
                 </button>
                 <button id="bulk-download-btn" class="btn btn-outline btn-lg" style="display: none;"
                         onclick="bulkDownloadSelected()">
-                    <i class="fa-solid fa-download"></i>
+                    <i class="bi bi-download"></i>
                     Download Selected (<span id="selected-count">0</span>)
                 </button>
             </div>
@@ -61,14 +61,14 @@
 <!-- Sync Status -->
 <div id="sync-status" style="margin-bottom: var(--space-6);"></div>
 <span id="sync-spinner" class="htmx-indicator" style="display: none;">
-    <i class="fa-solid fa-spinner fa-spin"></i> Syncing...
+    <i class="bi bi-arrow-repeat bi-spin"></i> Syncing...
 </span>
 
 <!-- Stats Grid -->
 <div class="stats-grid" style="margin-bottom: var(--space-8);">
     <div class="stat-card">
         <div class="stat-icon" style="background: rgba(var(--accent-primary-rgb), 0.1); color: var(--accent-primary);">
-            <i class="fa-solid fa-music"></i>
+            <i class="bi bi-music-note"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value">{{ playlist.track_count|default(0) }}</div>
@@ -77,7 +77,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
-            <i class="fa-solid fa-check"></i>
+            <i class="bi bi-check"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value" style="color: #22c55e;">{{ playlist.tracks|selectattr('file_path')|list|length if playlist.tracks else 0 }}</div>
@@ -86,7 +86,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: rgba(234, 179, 8, 0.1); color: #eab308;">
-            <i class="fa-solid fa-clock"></i>
+            <i class="bi bi-clock"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value" style="color: #eab308;">{{ playlist.tracks|rejectattr('file_path')|list|length if playlist.tracks else 0 }}</div>
@@ -101,14 +101,14 @@
         <h2 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold);">Tracks</h2>
         <div class="flex gap-2">
             <button class="btn btn-outline btn-sm" onclick="toggleSelectAll()">
-                <i class="fa-solid fa-check-double"></i>
+                <i class="bi bi-check-all"></i>
                 Select All
             </button>
             <button class="btn btn-outline btn-sm"
                     hx-get="/ui/playlists/{{ playlist.id }}/missing-tracks"
                     hx-target="#missing-tracks-section"
                     hx-swap="innerHTML">
-                <i class="fa-solid fa-list-check"></i>
+                <i class="bi bi-list-check"></i>
                 Missing Tracks
             </button>
         </div>
@@ -164,17 +164,17 @@
                     <td style="padding: var(--space-3);">
                         {% if track.is_broken %}
                         <span class="badge badge-error">
-                            <i class="fa-solid fa-exclamation-triangle"></i>
+                            <i class="bi bi-exclamation-triangle"></i>
                             Broken
                         </span>
                         {% elif track.file_path %}
                         <span class="badge badge-success">
-                            <i class="fa-solid fa-check"></i>
+                            <i class="bi bi-check"></i>
                             Downloaded
                         </span>
                         {% else %}
                         <span class="badge badge-warning">
-                            <i class="fa-solid fa-clock"></i>
+                            <i class="bi bi-clock"></i>
                             Missing
                         </span>
                         {% endif %}
@@ -183,12 +183,12 @@
                         <div class="flex gap-2" style="justify-content: flex-end;">
                             {% if not track.file_path or track.is_broken %}
                             <button class="btn-icon" hx-post="/api/tracks/{{ track.id }}/download" hx-swap="none" title="Download">
-                                <i class="fa-solid fa-download"></i>
+                                <i class="bi bi-download"></i>
                             </button>
                             {% endif %}
                             {% if track.spotify_uri %}
                             <a href="{{ track.spotify_uri }}" target="_blank" class="btn-icon" title="Open in Spotify" style="color: #1DB954;">
-                                <i class="fa-brands fa-spotify"></i>
+                                <i class="bi bi-spotify"></i>
                             </a>
                             {% endif %}
                         </div>
@@ -200,13 +200,13 @@
     </div>
     {% else %}
     <div style="text-align: center; padding: 4rem;">
-        <i class="fa-solid fa-music" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem; display: block;"></i>
+        <i class="bi bi-music-note" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem; display: block;"></i>
         <h3 style="margin-bottom: var(--space-2);">No Tracks in Playlist</h3>
         <p style="color: var(--text-muted); margin-bottom: var(--space-6);">
             This playlist is empty. Sync with Spotify to add tracks.
         </p>
         <button class="btn btn-primary" hx-post="/api/playlists/{{ playlist.id }}/sync" hx-swap="none">
-            <i class="fa-solid fa-sync"></i>
+            <i class="bi bi-arrow-clockwise"></i>
             Sync Now
         </button>
     </div>

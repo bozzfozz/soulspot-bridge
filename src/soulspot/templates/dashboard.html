@@ -17,20 +17,20 @@
     subtitle="Welcome back! Here's what's happening with your music library.",
     action_text="Import Playlist",
     action_url="/playlists/import",
-    action_icon="fa-solid fa-plus",
+    action_icon="bi bi-plus-lg",
     action_class="btn-primary"
 ) }}
 
 <!-- Stats Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    {{ macros.stat_card("Total Playlists", stats.playlists|default(0), "fa-solid fa-list", "12% from last month", "positive") }}
-    {{ macros.stat_card("Total Tracks", stats.tracks|default(0), "fa-solid fa-music", "8% from last month", "positive") }}
-    {{ macros.stat_card("Downloaded", stats.downloads|default(0), "fa-solid fa-download", "24% from last month", "positive") }}
+    {{ macros.stat_card("Total Playlists", stats.playlists|default(0), "bi bi-list-ul", "12% from last month", "positive") }}
+    {{ macros.stat_card("Total Tracks", stats.tracks|default(0), "bi bi-music-note", "8% from last month", "positive") }}
+    {{ macros.stat_card("Downloaded", stats.downloads|default(0), "bi bi-download", "24% from last month", "positive") }}
 
     <!-- Queue (Custom for badge) -->
     <div class="stat-card">
         <div class="stat-card-icon">
-            <i class="fa-solid fa-clock"></i>
+            <i class="bi bi-clock"></i>
         </div>
         <div class="stat-card-content">
             <div class="stat-card-label">In Queue</div>
@@ -50,7 +50,7 @@
         <h2>Recent Playlists</h2>
         <a href="/playlists" class="btn btn-outline btn-sm">
             View All
-            <i class="fa-solid fa-arrow-right"></i>
+            <i class="bi bi-arrow-right"></i>
         </a>
     </div>
 
@@ -64,10 +64,10 @@
                 <div class="media-card-overlay">
                     <div class="media-card-actions">
                         <button class="btn-icon btn-primary">
-                            <i class="fa-solid fa-play"></i>
+                            <i class="bi bi-play-fill"></i>
                         </button>
                         <button class="btn-icon">
-                            <i class="fa-solid fa-ellipsis"></i>
+                            <i class="bi bi-three-dots"></i>
                         </button>
                     </div>
                 </div>
@@ -84,12 +84,12 @@
         {% else %}
         <div class="card" style="grid-column: 1 / -1;">
             <div style="text-align: center; padding: 3rem;">
-                <i class="fa-solid fa-list" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <i class="bi bi-list-ul" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
                 <h3>No Playlists Yet</h3>
                 <p class="text-muted" style="margin-top: 0.5rem;">Import your first playlist from Spotify to get
                     started.</p>
                 <a href="/playlists/import" class="btn btn-primary" style="margin-top: 1.5rem;">
-                    <i class="fa-solid fa-plus"></i>
+                    <i class="bi bi-plus-lg"></i>
                     Import Playlist
                 </a>
             </div>
@@ -104,7 +104,7 @@
         <h2>Recent Activity</h2>
         <a href="/downloads" class="btn btn-outline btn-sm">
             View All
-            <i class="fa-solid fa-arrow-right"></i>
+            <i class="bi bi-arrow-right"></i>
         </a>
     </div>
 
@@ -126,17 +126,17 @@
                 <div>
                     {% if activity.status == 'completed' %}
                     <span class="badge badge-success">
-                        <i class="fa-solid fa-check"></i>
+                        <i class="bi bi-check"></i>
                         Completed
                     </span>
                     {% elif activity.status == 'downloading' %}
                     <span class="badge badge-info">
-                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <i class="bi bi-arrow-repeat bi-spin"></i>
                         Downloading
                     </span>
                     {% elif activity.status == 'failed' %}
                     <span class="badge badge-error">
-                        <i class="fa-solid fa-times"></i>
+                        <i class="bi bi-x"></i>
                         Failed
                     </span>
                     {% endif %}
@@ -149,7 +149,7 @@
         </div>
         {% else %}
         <div style="text-align: center; padding: 3rem;">
-            <i class="fa-solid fa-clock-rotate-left"
+            <i class="bi bi-clock-history"
                 style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
             <h3>No Recent Activity</h3>
             <p class="text-muted" style="margin-top: 0.5rem;">Your download activity will appear here.</p>
@@ -163,14 +163,14 @@
     <div class="flex items-center gap-4">
         <div
             style="width: 64px; height: 64px; background: var(--bg-success); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center;">
-            <i class="fa-brands fa-spotify" style="font-size: 2rem; color: var(--color-success);"></i>
+            <i class="bi bi-spotify" style="font-size: 2rem; color: var(--color-success);"></i>
         </div>
         <div style="flex: 1;">
             <h3>Spotify Connected</h3>
             <p class="text-muted" style="margin-top: 0.25rem;">Your Spotify account is connected and ready to sync.</p>
         </div>
         <a href="/playlists/import" class="btn btn-primary">
-            <i class="fa-solid fa-sync"></i>
+            <i class="bi bi-arrow-repeat"></i>
             Sync Now
         </a>
     </div>

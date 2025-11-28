@@ -11,9 +11,9 @@
 <nav style="margin-bottom: var(--space-4);">
     <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
         <li><a href="/ui/library" style="color: var(--accent-primary);">Library</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
         <li><a href="/ui/library/artists" style="color: var(--accent-primary);">Artists</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>{{ artist.name }}</li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>{{ artist.name }}</li>
     </ol>
 </nav>
 
@@ -27,8 +27,8 @@
     <div>
         <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-2);">{{ artist.name }}</h1>
         <div style="display: flex; gap: var(--space-4); color: var(--text-muted); font-size: var(--font-size-sm);">
-            <span><i class="fa-solid fa-compact-disc" style="margin-right: var(--space-2);"></i>{{ artist.albums|length }} album{{ 's' if artist.albums|length != 1 else '' }}</span>
-            <span><i class="fa-solid fa-music" style="margin-right: var(--space-2);"></i>{{ artist.track_count }} track{{ 's' if artist.track_count != 1 else '' }}</span>
+            <span><i class="bi bi-disc" style="margin-right: var(--space-2);"></i>{{ artist.albums|length }} album{{ 's' if artist.albums|length != 1 else '' }}</span>
+            <span><i class="bi bi-music-note" style="margin-right: var(--space-2);"></i>{{ artist.track_count }} track{{ 's' if artist.track_count != 1 else '' }}</span>
         </div>
     </div>
 </div>
@@ -41,7 +41,7 @@
         {% for album in artist.albums %}
         <a href="/ui/library/albums/{{ album.id }}" class="album-card">
             <div class="album-cover">
-                <i class="fa-solid fa-compact-disc"></i>
+                <i class="bi bi-disc"></i>
             </div>
             <h3 class="album-title" title="{{ album.title }}">{{ album.title }}</h3>
             <div class="album-meta">
@@ -53,7 +53,7 @@
     </div>
     {% else %}
     <div class="empty-state-small">
-        <i class="fa-solid fa-compact-disc"></i>
+        <i class="bi bi-disc"></i>
         <p>No albums found for this artist.</p>
     </div>
     {% endif %}
@@ -114,7 +114,7 @@
     </div>
     {% else %}
     <div class="empty-state-small" style="padding: var(--space-8);">
-        <i class="fa-solid fa-music"></i>
+        <i class="bi bi-music-note"></i>
         <p>No tracks found for this artist.</p>
     </div>
     {% endif %}

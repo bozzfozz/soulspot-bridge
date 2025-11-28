@@ -11,9 +11,9 @@
 <nav style="margin-bottom: var(--space-4);">
     <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
         <li style="color: var(--text-muted);">
-            <i class="fa-brands fa-spotify" style="color: #1DB954;"></i> Spotify
+            <i class="bi bi-spotify" style="color: #1DB954;"></i> Spotify
         </li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>Followed Artists</li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>Followed Artists</li>
     </ol>
 </nav>
 
@@ -21,7 +21,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
     <div style="display: flex; align-items: center; gap: var(--space-4);">
         <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #1DB954, #1ed760); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-heart" style="color: white; font-size: 1.25rem;"></i>
+            <i class="bi bi-heart" style="color: white; font-size: 1.25rem;"></i>
         </div>
         <div>
             <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Followed Artists</h1>
@@ -37,12 +37,12 @@
     <div style="display: flex; gap: var(--space-3); align-items: center;">
         {% if sync_stats and sync_stats.synced %}
         <span style="font-size: var(--font-size-sm); color: var(--text-muted);">
-            <i class="fa-solid fa-check" style="color: #1DB954;"></i>
+            <i class="bi bi-check" style="color: #1DB954;"></i>
             Synced: +{{ sync_stats.added }} / -{{ sync_stats.removed }}
         </span>
         {% elif sync_stats and sync_stats.skipped_cooldown %}
         <span style="font-size: var(--font-size-sm); color: var(--text-muted);">
-            <i class="fa-solid fa-clock"></i> From cache
+            <i class="bi bi-clock"></i> From cache
         </span>
         {% endif %}
         <input type="text" 
@@ -56,7 +56,7 @@
 {% if error %}
 <!-- Error Alert -->
 <div class="alert alert-error" style="margin-bottom: var(--space-6);">
-    <i class="fa-solid fa-exclamation-triangle"></i>
+    <i class="bi bi-exclamation-triangle"></i>
     <span>{{ error }}</span>
 </div>
 {% endif %}
@@ -95,12 +95,12 @@
     {# Hey future me - No "Connect Spotify" button here! User requested connect buttons only on dashboard/onboarding #}
     <div class="empty-state">
         <div class="empty-icon" style="background: linear-gradient(135deg, #1DB954, #1ed760);">
-            <i class="fa-brands fa-spotify" style="color: white;"></i>
+            <i class="bi bi-spotify" style="color: white;"></i>
         </div>
         <h3>Keine gefolgten Künstler</h3>
         <p>Du folgst noch keinen Künstlern auf Spotify, oder Spotify ist noch nicht verbunden.</p>
         <a href="/" class="btn btn-primary" style="background: #1DB954;">
-            <i class="fa-solid fa-home"></i>
+            <i class="bi bi-house"></i>
             Zum Dashboard
         </a>
     </div>

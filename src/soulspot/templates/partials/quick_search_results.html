@@ -15,13 +15,13 @@ The "View all results" link goes to /search with the query pre-filled for full S
            role="option">
             <div class="quick-search-item-icon">
                 {% if item.type == 'track' %}
-                <i class="fa-solid fa-music"></i>
+                <i class="bi bi-music-note"></i>
                 {% elif item.type == 'artist' %}
-                <i class="fa-solid fa-user"></i>
+                <i class="bi bi-person"></i>
                 {% elif item.type == 'album' %}
-                <i class="fa-solid fa-compact-disc"></i>
+                <i class="bi bi-disc"></i>
                 {% elif item.type == 'playlist' %}
-                <i class="fa-solid fa-list"></i>
+                <i class="bi bi-list-ul"></i>
                 {% endif %}
             </div>
             <div class="quick-search-item-content">
@@ -37,14 +37,14 @@ The "View all results" link goes to /search with the query pre-filled for full S
     {% if results|length > 5 %}
     <div class="quick-search-footer">
         <a href="/search?q={{ query | urlencode }}" class="quick-search-more">
-            <i class="fa-solid fa-arrow-right"></i>
+            <i class="bi bi-arrow-right"></i>
             View all {{ results|length }} results
         </a>
     </div>
     {% endif %}
     {% else %}
     <div class="quick-search-empty">
-        <i class="fa-solid fa-search"></i>
+        <i class="bi bi-search"></i>
         <span>No results for "{{ query }}"</span>
         <a href="/search?q={{ query | urlencode }}" class="quick-search-link">
             Search on Spotify →

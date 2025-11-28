@@ -13,7 +13,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
     <div style="display: flex; align-items: center; gap: var(--space-4);">
         <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-triangle-exclamation" style="color: white; font-size: 1.25rem;"></i>
+            <i class="bi bi-exclamation-triangle" style="color: white; font-size: 1.25rem;"></i>
         </div>
         <div>
             <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Broken Files</h1>
@@ -22,11 +22,11 @@
     </div>
     <div style="display: flex; gap: var(--space-3);">
         <button class="btn btn-primary" id="redownload-all-btn" onclick="redownloadAll()" disabled>
-            <i class="fa-solid fa-rotate"></i>
+            <i class="bi bi-arrow-repeat"></i>
             Re-download All
         </button>
         <a href="/library" class="btn btn-ghost">
-            <i class="fa-solid fa-arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
             Back to Library
         </a>
     </div>
@@ -51,7 +51,7 @@
 <!-- Broken Files List -->
 <div id="broken-files-container" class="card" style="padding: 0; overflow: hidden;">
     <div class="loading-state">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--text-muted);"></i>
+        <i class="bi bi-arrow-repeat bi-spin" style="font-size: 2rem; color: var(--text-muted);"></i>
         <p>Loading broken files...</p>
     </div>
 </div>
@@ -60,7 +60,7 @@
 <template id="empty-state">
     <div class="empty-state">
         <div class="empty-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
-            <i class="fa-solid fa-check-circle"></i>
+            <i class="bi bi-check-circle"></i>
         </div>
         <h3>No Broken Files</h3>
         <p>Your library is healthy! All files are playable.</p>
@@ -212,7 +212,7 @@ async function loadBrokenFiles() {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
-                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <i class="bi bi-exclamation-circle"></i>
                 </div>
                 <h3>Error Loading Files</h3>
                 <p>${escapeHtml(error.message)}</p>
@@ -258,7 +258,7 @@ function renderBrokenFiles(files) {
                 </div>
                 <div class="file-artist">${escapeHtml(file.artist || 'Unknown Artist')}</div>
                 <div class="file-error">
-                    <i class="fa-solid fa-circle-xmark"></i>
+                    <i class="bi bi-x-circle"></i>
                     ${escapeHtml(file.error_reason || 'Unknown error')}
                 </div>
                 <div class="file-size">${formatBytes(file.file_size || 0)}</div>
@@ -272,7 +272,7 @@ function renderBrokenFiles(files) {
 async function redownloadAll() {
     const btn = document.getElementById('redownload-all-btn');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Queuing...';
+    btn.innerHTML = '<i class="bi bi-arrow-repeat bi-spin"></i> Queuing...';
     
     try {
         const response = await fetch('/api/library/re-download-broken', {
@@ -293,7 +293,7 @@ async function redownloadAll() {
         showToast('Network error', 'error');
     } finally {
         btn.disabled = brokenFiles.length === 0;
-        btn.innerHTML = '<i class="fa-solid fa-rotate"></i> Re-download All';
+        btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Re-download All';
     }
 }
 

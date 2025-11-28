@@ -17,16 +17,16 @@
             <nav style="margin-bottom: var(--space-3);">
                 <ol style="display: flex; align-items: center; gap: var(--space-2); list-style: none; font-size: var(--font-size-sm);">
                     <li><a href="/" style="color: var(--accent-primary);">Home</a></li>
-                    <li><i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.625rem;"></i></li>
+                    <li><i class="bi bi-chevron-right" style="color: var(--text-muted); font-size: 0.625rem;"></i></li>
                     <li style="color: var(--text-muted);">Automation</li>
-                    <li><i class="fa-solid fa-chevron-right" style="color: var(--text-muted); font-size: 0.625rem;"></i></li>
+                    <li><i class="bi bi-chevron-right" style="color: var(--text-muted); font-size: 0.625rem;"></i></li>
                     <li style="color: var(--text-muted);">Followed Artists</li>
                 </ol>
             </nav>
             
             <div style="display: flex; align-items: center; gap: var(--space-3);">
                 <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #10b981, #059669); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-lg);">
-                    <i class="fa-solid fa-user" style="color: white; font-size: 1.25rem;"></i>
+                    <i class="bi bi-person" style="color: white; font-size: 1.25rem;"></i>
                 </div>
                 <div>
                     <h1 style="font-size: var(--font-size-3xl);">Followed Artists</h1>
@@ -42,14 +42,14 @@
                     hx-target="#artists-list"
                     hx-swap="innerHTML"
                     hx-indicator="#sync-spinner">
-                <i class="fa-solid fa-rotate"></i>
+                <i class="bi bi-arrow-repeat"></i>
                 Sync from Spotify
             </button>
             <button id="create-watchlists-btn"
                     class="btn btn-outline"
                     onclick="createWatchlistsForSelected()"
                     disabled>
-                <i class="fa-solid fa-plus"></i>
+                <i class="bi bi-plus-lg"></i>
                 Create Watchlists
             </button>
         </div>
@@ -67,28 +67,28 @@
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4);">
             <div class="card" style="padding: var(--space-4); text-align: center;">
                 <div style="width: 40px; height: 40px; margin: 0 auto var(--space-2); background: rgba(var(--accent-primary-rgb), 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-users" style="color: var(--accent-primary);"></i>
+                    <i class="bi bi-people" style="color: var(--accent-primary);"></i>
                 </div>
                 <p id="stat-total" style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold);">0</p>
                 <p style="font-size: var(--font-size-xs); color: var(--text-muted);">Total Fetched</p>
             </div>
             <div class="card" style="padding: var(--space-4); text-align: center;">
                 <div style="width: 40px; height: 40px; margin: 0 auto var(--space-2); background: rgba(34, 197, 94, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-plus" style="color: #22c55e;"></i>
+                    <i class="bi bi-plus-lg" style="color: #22c55e;"></i>
                 </div>
                 <p id="stat-created" style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: #22c55e;">0</p>
                 <p style="font-size: var(--font-size-xs); color: var(--text-muted);">Created</p>
             </div>
             <div class="card" style="padding: var(--space-4); text-align: center;">
                 <div style="width: 40px; height: 40px; margin: 0 auto var(--space-2); background: rgba(59, 130, 246, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-rotate" style="color: #3b82f6;"></i>
+                    <i class="bi bi-arrow-repeat" style="color: #3b82f6;"></i>
                 </div>
                 <p id="stat-updated" style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: #3b82f6;">0</p>
                 <p style="font-size: var(--font-size-xs); color: var(--text-muted);">Updated</p>
             </div>
             <div class="card" style="padding: var(--space-4); text-align: center;">
                 <div style="width: 40px; height: 40px; margin: 0 auto var(--space-2); background: rgba(168, 85, 247, 0.15); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-check" style="color: #a855f7;"></i>
+                    <i class="bi bi-check" style="color: #a855f7;"></i>
                 </div>
                 <p id="stat-selected" style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: #a855f7;">0</p>
                 <p style="font-size: var(--font-size-xs); color: var(--text-muted);">Selected</p>
@@ -102,14 +102,14 @@
         <div class="card" style="padding: var(--space-16); text-align: center;">
             <div style="max-width: 400px; margin: 0 auto;">
                 <div style="width: 96px; height: 96px; margin: 0 auto var(--space-6); background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-user" style="font-size: 3rem; color: #10b981;"></i>
+                    <i class="bi bi-person" style="font-size: 3rem; color: #10b981;"></i>
                 </div>
                 <h3 style="font-size: var(--font-size-2xl); margin-bottom: var(--space-3);">No artists synced yet</h3>
                 <p style="color: var(--text-muted); margin-bottom: var(--space-6);">
                     Click "Sync from Spotify" to fetch all artists you follow on Spotify and create watchlists for automatic downloads.
                 </p>
                 <button onclick="document.getElementById('sync-btn').click()" class="btn btn-primary btn-lg">
-                    <i class="fa-solid fa-rotate"></i>
+                    <i class="bi bi-arrow-repeat"></i>
                     Sync from Spotify
                 </button>
             </div>

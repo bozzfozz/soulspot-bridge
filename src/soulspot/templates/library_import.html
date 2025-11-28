@@ -6,7 +6,7 @@
 <div class="page-header">
     <div class="header-content">
         <h1>
-            <i class="fa-solid fa-folder-open"></i>
+            <i class="bi bi-folder2-open"></i>
             Library Import
         </h1>
         <p class="subtitle">Scan and import your local music collection</p>
@@ -17,7 +17,7 @@
 <div class="stats-grid" id="summary-stats">
     <div class="stat-card">
         <div class="stat-icon">
-            <i class="fa-solid fa-user"></i>
+            <i class="bi bi-person"></i>
         </div>
         <div class="stat-content">
             <span class="stat-value" id="total-artists">{{ summary.total_artists | default(0) }}</span>
@@ -26,7 +26,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon">
-            <i class="fa-solid fa-compact-disc"></i>
+            <i class="bi bi-disc"></i>
         </div>
         <div class="stat-content">
             <span class="stat-value" id="total-albums">{{ summary.total_albums | default(0) }}</span>
@@ -35,7 +35,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon">
-            <i class="fa-solid fa-music"></i>
+            <i class="bi bi-music-note"></i>
         </div>
         <div class="stat-content">
             <span class="stat-value" id="total-tracks">{{ summary.total_tracks | default(0) }}</span>
@@ -44,7 +44,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon">
-            <i class="fa-solid fa-file-audio"></i>
+            <i class="bi bi-file-earmark-music"></i>
         </div>
         <div class="stat-content">
             <span class="stat-value" id="local-files">{{ summary.local_files | default(0) }}</span>
@@ -56,11 +56,11 @@
 <!-- Scan Controls -->
 <div class="card" style="margin-top: 1.5rem;">
     <div class="card-header">
-        <h3><i class="fa-solid fa-play"></i> Start Scan</h3>
+        <h3><i class="bi bi-play-fill"></i> Start Scan</h3>
     </div>
     <div class="card-body">
         <p class="text-muted" style="margin-bottom: 1rem;">
-            <i class="fa-solid fa-folder"></i>
+            <i class="bi bi-folder"></i>
             Music Path: <code>{{ summary.music_path | default('/music') }}</code>
         </p>
 
@@ -75,7 +75,7 @@
                 hx-swap="innerHTML"
                 hx-indicator="#scan-loading"
             >
-                <i class="fa-solid fa-bolt"></i>
+                <i class="bi bi-lightning"></i>
                 Incremental Scan
             </button>
 
@@ -89,7 +89,7 @@
                 hx-swap="innerHTML"
                 hx-indicator="#scan-loading"
             >
-                <i class="fa-solid fa-sync"></i>
+                <i class="bi bi-arrow-clockwise"></i>
                 Full Scan
             </button>
         </div>
@@ -112,7 +112,7 @@
     {% if active_job %}
     <div class="card">
         <div class="card-header">
-            <h3><i class="fa-solid fa-tasks"></i> Scan in Progress</h3>
+            <h3><i class="bi bi-list-task"></i> Scan in Progress</h3>
         </div>
         <div class="card-body"
              hx-get="/api/library/import/status/{{ active_job.job_id }}"
@@ -127,10 +127,10 @@
             
             {% if active_job.stats %}
             <div class="scan-stats" style="margin-top: 1rem;">
-                <span><i class="fa-solid fa-file"></i> Scanned: {{ active_job.stats.scanned | default(0) }}</span>
-                <span><i class="fa-solid fa-check text-success"></i> Imported: {{ active_job.stats.imported | default(0) }}</span>
-                <span><i class="fa-solid fa-forward"></i> Skipped: {{ active_job.stats.skipped | default(0) }}</span>
-                <span><i class="fa-solid fa-exclamation-triangle text-warning"></i> Errors: {{ active_job.stats.errors | default(0) }}</span>
+                <span><i class="bi bi-file-earmark"></i> Scanned: {{ active_job.stats.scanned | default(0) }}</span>
+                <span><i class="bi bi-check text-success"></i> Imported: {{ active_job.stats.imported | default(0) }}</span>
+                <span><i class="bi bi-skip-forward"></i> Skipped: {{ active_job.stats.skipped | default(0) }}</span>
+                <span><i class="bi bi-exclamation-triangle text-warning"></i> Errors: {{ active_job.stats.errors | default(0) }}</span>
             </div>
             {% endif %}
         </div>
@@ -141,7 +141,7 @@
 <!-- Recent Jobs -->
 <div class="card" style="margin-top: 1.5rem;">
     <div class="card-header">
-        <h3><i class="fa-solid fa-history"></i> Recent Scans</h3>
+        <h3><i class="bi bi-clock-history"></i> Recent Scans</h3>
     </div>
     <div class="card-body"
          hx-get="/library/import/jobs-list"
@@ -281,7 +281,7 @@ document.body.addEventListener('htmx:afterRequest', function(evt) {
                 statusDiv.innerHTML = `
                     <div class="card">
                         <div class="card-header">
-                            <h3><i class="fa-solid fa-tasks"></i> Scan Started</h3>
+                            <h3><i class="bi bi-list-task"></i> Scan Started</h3>
                         </div>
                         <div class="card-body"
                              hx-get="/api/library/import/status/${response.job_id}"

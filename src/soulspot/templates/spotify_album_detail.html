@@ -10,11 +10,11 @@
 <!-- Breadcrumb -->
 <nav style="margin-bottom: var(--space-4);">
     <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm); flex-wrap: wrap;">
-        <li><a href="/spotify/artists" style="color: #1DB954;"><i class="fa-brands fa-spotify"></i> Spotify</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li><a href="/spotify/artists" style="color: #1DB954;"><i class="bi bi-spotify"></i> Spotify</a></li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
         {% if artist %}
         <li><a href="/spotify/artists/{{ artist.spotify_id }}" style="color: #1DB954;">{{ artist.name }}</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
         {% endif %}
         <li style="color: var(--text-muted);">{{ album.name if album else 'Unknown' }}</li>
     </ol>
@@ -22,7 +22,7 @@
 
 {% if error %}
 <div class="alert alert-error" style="margin-bottom: var(--space-6);">
-    <i class="fa-solid fa-exclamation-triangle"></i>
+    <i class="bi bi-exclamation-triangle"></i>
     <span>{{ error }}</span>
 </div>
 {% endif %}
@@ -34,7 +34,7 @@
     <img src="{{ album.image_url }}" alt="{{ album.name }}" class="album-header-cover">
     {% else %}
     <div class="album-header-cover-placeholder">
-        <i class="fa-solid fa-compact-disc"></i>
+        <i class="bi bi-disc"></i>
     </div>
     {% endif %}
     <div class="album-header-info">
@@ -57,7 +57,7 @@
         </div>
         {% if sync_stats and sync_stats.synced %}
         <span style="font-size: var(--font-size-sm); color: var(--text-muted); margin-top: var(--space-2); display: block;">
-            <i class="fa-solid fa-check" style="color: #1DB954;"></i>
+            <i class="bi bi-check" style="color: #1DB954;"></i>
             Tracks synced
         </span>
         {% endif %}
@@ -70,14 +70,14 @@
             hx-post="/api/downloads/bulk"
             hx-vals='{"tracks": {{ tracks|map(attribute="spotify_id")|list|tojson }}, "artist": "{{ artist.name if artist else "" }}", "album": "{{ album.name }}"}'
             hx-swap="none">
-        <i class="fa-solid fa-download"></i>
+        <i class="bi bi-download"></i>
         Download All
     </button>
     <button class="btn btn-outline" id="download-missing-btn"
             hx-post="/api/downloads/bulk"
             hx-vals='{"tracks": {{ tracks|selectattr("is_downloaded", "equalto", false)|map(attribute="spotify_id")|list|tojson }}, "artist": "{{ artist.name if artist else "" }}", "album": "{{ album.name }}"}'
             hx-swap="none">
-        <i class="fa-solid fa-cloud-download"></i>
+        <i class="bi bi-cloud-download"></i>
         Download Missing ({{ tracks|selectattr("is_downloaded", "equalto", false)|list|length }})
     </button>
 </div>
@@ -87,7 +87,7 @@
     <div class="track-list-header">
         <span class="track-col-number">#</span>
         <span class="track-col-title">Title</span>
-        <span class="track-col-duration"><i class="fa-regular fa-clock"></i></span>
+        <span class="track-col-duration"><i class="bi bi-clock"></i></span>
         <span class="track-col-status">Status</span>
         <span class="track-col-actions"></span>
     </div>
@@ -104,11 +104,11 @@
         <span class="track-col-status">
             {% if track.is_downloaded %}
             <span class="status-badge status-downloaded">
-                <i class="fa-solid fa-check"></i> Downloaded
+                <i class="bi bi-check"></i> Downloaded
             </span>
             {% else %}
             <span class="status-badge status-missing">
-                <i class="fa-solid fa-cloud"></i> Spotify
+                <i class="bi bi-cloud"></i> Spotify
             </span>
             {% endif %}
         </span>
@@ -118,16 +118,16 @@
                     hx-post="/api/downloads"
                     hx-vals='{"spotify_id": "{{ track.spotify_id }}", "title": "{{ track.name }}", "artist": "{{ artist.name if artist else "" }}", "album": "{{ album.name }}"}'
                     hx-swap="none">
-                <i class="fa-solid fa-download"></i>
+                <i class="bi bi-download"></i>
             </button>
             {% else %}
             <button class="btn btn-sm btn-icon btn-success" title="In Library" disabled>
-                <i class="fa-solid fa-check"></i>
+                <i class="bi bi-check"></i>
             </button>
             {% endif %}
             {% if track.preview_url %}
             <button class="btn btn-sm btn-icon preview-btn" title="Preview" data-preview-url="{{ track.preview_url }}">
-                <i class="fa-solid fa-play"></i>
+                <i class="bi bi-play"></i>
             </button>
             {% endif %}
         </span>
@@ -138,12 +138,12 @@
 {% else %}
 <div class="empty-state">
     <div class="empty-icon">
-        <i class="fa-solid fa-compact-disc"></i>
+        <i class="bi bi-disc"></i>
     </div>
     <h3>Album not found</h3>
     <p>The requested album could not be found.</p>
     <a href="/spotify/artists" class="btn btn-primary">
-        <i class="fa-solid fa-arrow-left"></i>
+        <i class="bi bi-arrow-left"></i>
         Back to Artists
     </a>
 </div>

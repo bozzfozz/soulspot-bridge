@@ -14,7 +14,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
     <div style="display: flex; align-items: center; gap: var(--space-4);">
         <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-clone" style="color: white; font-size: 1.25rem;"></i>
+            <i class="bi bi-files" style="color: white; font-size: 1.25rem;"></i>
         </div>
         <div>
             <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Duplicate Review</h1>
@@ -26,11 +26,11 @@
                 hx-post="/api/library/duplicates/scan"
                 hx-target="#scan-status"
                 hx-swap="innerHTML">
-            <i class="fa-solid fa-magnifying-glass"></i>
+            <i class="bi bi-search"></i>
             Scan for Duplicates
         </button>
         <a href="/library" class="btn btn-ghost">
-            <i class="fa-solid fa-arrow-left"></i>
+            <i class="bi bi-arrow-left"></i>
             Back to Library
         </a>
     </div>
@@ -58,16 +58,16 @@
 <!-- Filter Tabs -->
 <div class="filter-tabs" style="margin-bottom: var(--space-6);">
     <button class="filter-tab active" data-status="pending" onclick="filterDuplicates('pending')">
-        <i class="fa-solid fa-clock"></i> Pending
+        <i class="bi bi-clock"></i> Pending
     </button>
     <button class="filter-tab" data-status="resolved" onclick="filterDuplicates('resolved')">
-        <i class="fa-solid fa-check"></i> Resolved
+        <i class="bi bi-check"></i> Resolved
     </button>
     <button class="filter-tab" data-status="dismissed" onclick="filterDuplicates('dismissed')">
-        <i class="fa-solid fa-eye-slash"></i> Dismissed
+        <i class="bi bi-eye-slash"></i> Dismissed
     </button>
     <button class="filter-tab" data-status="all" onclick="filterDuplicates('all')">
-        <i class="fa-solid fa-list"></i> All
+        <i class="bi bi-list-ul"></i> All
     </button>
 </div>
 
@@ -75,7 +75,7 @@
 <div id="duplicates-container" hx-get="/api/library/duplicates?status=pending&limit=50" hx-trigger="load" hx-swap="innerHTML">
     <!-- Loading state -->
     <div class="loading-state">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--text-muted);"></i>
+        <i class="bi bi-arrow-repeat bi-spin" style="font-size: 2rem; color: var(--text-muted);"></i>
         <p>Loading duplicates...</p>
     </div>
 </div>
@@ -84,7 +84,7 @@
 <template id="empty-state-template">
     <div class="empty-state">
         <div class="empty-icon">
-            <i class="fa-solid fa-check-double"></i>
+            <i class="bi bi-check2-all"></i>
         </div>
         <h3>No duplicates found</h3>
         <p>Your library is clean! Run a scan to check for new duplicates.</p>
@@ -459,7 +459,7 @@ function renderDuplicates(duplicates) {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon">
-                    <i class="fa-solid fa-check-double"></i>
+                    <i class="bi bi-check2-all"></i>
                 </div>
                 <h3>No duplicates found</h3>
                 <p>Your library is clean! Run a scan to check for new duplicates.</p>
@@ -481,36 +481,36 @@ function renderDuplicates(duplicates) {
             <div class="duplicate-comparison">
                 <div class="track-side" onclick="selectTrack(this, 'first')">
                     <div class="track-title">${escapeHtml(dup.track_1_info?.title || 'Unknown')}</div>
-                    <div class="track-meta"><i class="fa-solid fa-user"></i>${escapeHtml(dup.track_1_info?.artist || 'Unknown')}</div>
-                    <div class="track-meta"><i class="fa-solid fa-compact-disc"></i>${escapeHtml(dup.track_1_info?.album || 'Unknown')}</div>
-                    <div class="track-meta"><i class="fa-solid fa-clock"></i>${formatDuration(dup.track_1_info?.duration_ms)}</div>
-                    ${dup.track_1_info?.bitrate ? `<div class="track-meta"><i class="fa-solid fa-signal"></i>${dup.track_1_info.bitrate} kbps</div>` : ''}
-                    ${dup.track_1_info?.format ? `<div class="track-meta"><i class="fa-solid fa-file-audio"></i>${dup.track_1_info.format}</div>` : ''}
+                    <div class="track-meta"><i class="bi bi-person"></i>${escapeHtml(dup.track_1_info?.artist || 'Unknown')}</div>
+                    <div class="track-meta"><i class="bi bi-disc"></i>${escapeHtml(dup.track_1_info?.album || 'Unknown')}</div>
+                    <div class="track-meta"><i class="bi bi-clock"></i>${formatDuration(dup.track_1_info?.duration_ms)}</div>
+                    ${dup.track_1_info?.bitrate ? `<div class="track-meta"><i class="bi bi-soundwave"></i>${dup.track_1_info.bitrate} kbps</div>` : ''}
+                    ${dup.track_1_info?.format ? `<div class="track-meta"><i class="bi bi-file-earmark-music"></i>${dup.track_1_info.format}</div>` : ''}
                     ${dup.track_1_info?.file_path ? `<div class="track-path">${escapeHtml(dup.track_1_info.file_path)}</div>` : ''}
                 </div>
                 <div class="vs-divider">VS</div>
                 <div class="track-side" onclick="selectTrack(this, 'second')">
                     <div class="track-title">${escapeHtml(dup.track_2_info?.title || 'Unknown')}</div>
-                    <div class="track-meta"><i class="fa-solid fa-user"></i>${escapeHtml(dup.track_2_info?.artist || 'Unknown')}</div>
-                    <div class="track-meta"><i class="fa-solid fa-compact-disc"></i>${escapeHtml(dup.track_2_info?.album || 'Unknown')}</div>
-                    <div class="track-meta"><i class="fa-solid fa-clock"></i>${formatDuration(dup.track_2_info?.duration_ms)}</div>
-                    ${dup.track_2_info?.bitrate ? `<div class="track-meta"><i class="fa-solid fa-signal"></i>${dup.track_2_info.bitrate} kbps</div>` : ''}
-                    ${dup.track_2_info?.format ? `<div class="track-meta"><i class="fa-solid fa-file-audio"></i>${dup.track_2_info.format}</div>` : ''}
+                    <div class="track-meta"><i class="bi bi-person"></i>${escapeHtml(dup.track_2_info?.artist || 'Unknown')}</div>
+                    <div class="track-meta"><i class="bi bi-disc"></i>${escapeHtml(dup.track_2_info?.album || 'Unknown')}</div>
+                    <div class="track-meta"><i class="bi bi-clock"></i>${formatDuration(dup.track_2_info?.duration_ms)}</div>
+                    ${dup.track_2_info?.bitrate ? `<div class="track-meta"><i class="bi bi-soundwave"></i>${dup.track_2_info.bitrate} kbps</div>` : ''}
+                    ${dup.track_2_info?.format ? `<div class="track-meta"><i class="bi bi-file-earmark-music"></i>${dup.track_2_info.format}</div>` : ''}
                     ${dup.track_2_info?.file_path ? `<div class="track-path">${escapeHtml(dup.track_2_info.file_path)}</div>` : ''}
                 </div>
             </div>
             <div class="duplicate-actions">
                 <button class="btn btn-keep" onclick="resolveDuplicate('${dup.id}', 'keep_first')">
-                    <i class="fa-solid fa-arrow-left"></i> Keep First
+                    <i class="bi bi-arrow-left"></i> Keep First
                 </button>
                 <button class="btn btn-keep" onclick="resolveDuplicate('${dup.id}', 'keep_second')">
-                    Keep Second <i class="fa-solid fa-arrow-right"></i>
+                    Keep Second <i class="bi bi-arrow-right"></i>
                 </button>
                 <button class="btn btn-outline" onclick="resolveDuplicate('${dup.id}', 'keep_both')">
-                    <i class="fa-solid fa-check-double"></i> Keep Both
+                    <i class="bi bi-check2-all"></i> Keep Both
                 </button>
                 <button class="btn btn-dismiss" onclick="dismissDuplicate('${dup.id}')">
-                    <i class="fa-solid fa-eye-slash"></i> Dismiss
+                    <i class="bi bi-eye-slash"></i> Dismiss
                 </button>
             </div>
         </div>

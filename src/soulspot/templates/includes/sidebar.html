@@ -8,6 +8,8 @@
    - Local Library: Alles was heruntergeladen/lokal ist
    - Downloads: Queue, aktive Transfers
    - System: Settings, Dev-Tools
+   
+   ICONS: Bootstrap Icons (bi-*) - https://icons.getbootstrap.com/
 #}
 
 <!-- Sidebar -->
@@ -15,7 +17,7 @@
     <!-- Sidebar Header -->
     <div class="sidebar-header">
         <a href="/" class="sidebar-logo">
-            <i class="fa-solid fa-music sidebar-logo-icon"></i>
+            <i class="bi bi-music-note-beamed sidebar-logo-icon"></i>
             <span class="sidebar-logo-text">SoulSpot</span>
         </a>
     </div>
@@ -26,11 +28,11 @@
         <div class="sidebar-section">
             <div class="sidebar-section-title">Main</div>
             <a href="/" class="sidebar-item {% if request.url.path == '/' or request.url.path == '/dashboard' %}active{% endif %}">
-                <i class="fa-solid fa-home sidebar-item-icon"></i>
+                <i class="bi bi-house sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Dashboard</span>
             </a>
             <a href="/search" class="sidebar-item {% if request.url.path == '/search' %}active{% endif %}">
-                <i class="fa-solid fa-search sidebar-item-icon"></i>
+                <i class="bi bi-search sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Search</span>
             </a>
         </div>
@@ -38,18 +40,18 @@
         <!-- Spotify Section (Online/Cloud) -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">
-                <i class="fa-brands fa-spotify" style="color: #1DB954; margin-right: 6px;"></i>Spotify
+                <i class="bi bi-spotify" style="color: #1DB954; margin-right: 6px;"></i>Spotify
             </div>
             <a href="/playlists" class="sidebar-item {% if '/playlists' in request.url.path and '/import' not in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-list sidebar-item-icon"></i>
+                <i class="bi bi-list-ul sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Playlists</span>
             </a>
             <a href="/spotify/artists" class="sidebar-item {% if '/spotify/artists' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-heart sidebar-item-icon"></i>
+                <i class="bi bi-heart sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Followed Artists</span>
             </a>
             <a href="/playlists/import" class="sidebar-item {% if '/playlists/import' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-cloud-arrow-down sidebar-item-icon"></i>
+                <i class="bi bi-cloud-arrow-down sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Import</span>
             </a>
         </div>
@@ -57,22 +59,22 @@
         <!-- Local Library Section -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">
-                <i class="fa-solid fa-folder-open" style="color: var(--accent-primary); margin-right: 6px;"></i>Library
+                <i class="bi bi-folder2-open" style="color: var(--accent-primary); margin-right: 6px;"></i>Library
             </div>
             <a href="/library/import" class="sidebar-item {% if '/library/import' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-upload sidebar-item-icon"></i>
+                <i class="bi bi-upload sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Import</span>
             </a>
             <a href="/library/artists" class="sidebar-item {% if '/library/artists' in request.url.path and '/import' not in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-user sidebar-item-icon"></i>
+                <i class="bi bi-person sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Artists</span>
             </a>
             <a href="/library/albums" class="sidebar-item {% if '/library/albums' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-compact-disc sidebar-item-icon"></i>
+                <i class="bi bi-disc sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Albums</span>
             </a>
             <a href="/library/tracks" class="sidebar-item {% if '/library/tracks' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-music sidebar-item-icon"></i>
+                <i class="bi bi-music-note sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Tracks</span>
             </a>
         </div>
@@ -81,7 +83,7 @@
         <div class="sidebar-section">
             <div class="sidebar-section-title">Downloads</div>
             <a href="/downloads" class="sidebar-item {% if '/downloads' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-clock sidebar-item-icon"></i>
+                <i class="bi bi-clock-history sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Queue</span>
                 {% if queue_count is defined and queue_count and queue_count > 0 %}
                 <span class="sidebar-item-badge">{{ queue_count }}</span>
@@ -93,11 +95,11 @@
         <div class="sidebar-section">
             <div class="sidebar-section-title">System</div>
             <a href="/settings" class="sidebar-item {% if '/settings' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-cog sidebar-item-icon"></i>
+                <i class="bi bi-gear sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Settings</span>
             </a>
             <a href="/styleguide" class="sidebar-item {% if '/styleguide' in request.url.path %}active{% endif %}">
-                <i class="fa-solid fa-palette sidebar-item-icon"></i>
+                <i class="bi bi-palette sidebar-item-icon"></i>
                 <span class="sidebar-item-text">Styleguide</span>
             </a>
         </div>
@@ -124,7 +126,7 @@
             <!-- Fallback bis HTMX lädt -->
             <div class="worker-indicator-single" tabindex="0">
                 <a href="/settings?tab=spotify" class="worker-icon" data-status="idle" aria-label="Background Workers Status">
-                    <i class="fa-solid fa-compact-disc"></i>
+                    <i class="bi bi-disc"></i>
                 </a>
             </div>
         </div>

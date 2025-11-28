@@ -26,7 +26,7 @@
                                  style="width: 64px; height: 64px; border-radius: var(--radius-lg); object-fit: cover; flex-shrink: 0; box-shadow: var(--shadow-md);">
                         {% else %}
                             <div style="width: 64px; height: 64px; border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: var(--shadow-md);">
-                                <i class="fa-solid fa-music" style="font-size: 24px; color: white;"></i>
+                                <i class="bi bi-music-note" style="font-size: 24px; color: white;"></i>
                             </div>
                         {% endif %}
                     </div>
@@ -62,7 +62,7 @@
             placeholder.style.cssText = 'width: 64px; height: 64px; border-radius: var(--radius-lg); background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: var(--shadow-md);';
             
             const icon = document.createElement('i');
-            icon.className = 'fa-solid fa-music';
+            icon.className = 'bi bi-music-note';
             icon.style.cssText = 'font-size: 24px; color: white;';
             
             placeholder.appendChild(icon);
@@ -86,7 +86,7 @@
     </script>
 {% else %}
     <div style="grid-column: 1 / -1; text-align: center; padding: var(--space-12);">
-        <i class="fa-solid fa-inbox" style="font-size: 48px; color: var(--text-muted); margin-bottom: var(--space-4); display: block;"></i>
+        <i class="bi bi-inbox" style="font-size: 48px; color: var(--text-muted); margin-bottom: var(--space-4); display: block;"></i>
         <p style="color: var(--text-muted);">No followed artists found</p>
     </div>
 {% endif %}

@@ -12,7 +12,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
     <div style="display: flex; align-items: center; gap: var(--space-4);">
         <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent-secondary), #7c3aed); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-cog" style="color: white; font-size: 1.25rem;"></i>
+            <i class="bi bi-gear" style="color: white; font-size: 1.25rem;"></i>
         </div>
         <div>
             <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Settings</h1>
@@ -21,11 +21,11 @@
     </div>
     <div class="flex gap-3">
         <button class="btn btn-outline" onclick="confirmReset()">
-            <i class="fa-solid fa-rotate-left"></i>
+            <i class="bi bi-arrow-counterclockwise"></i>
             Reset to Defaults
         </button>
         <button class="btn btn-primary" onclick="saveSettings()">
-            <i class="fa-solid fa-save"></i>
+            <i class="bi bi-floppy"></i>
             Save Changes
         </button>
     </div>
@@ -35,35 +35,35 @@
 <div class="card" style="margin-bottom: var(--space-6);">
     <div class="tabs-nav" style="display: flex; border-bottom: 1px solid var(--border-primary); overflow-x: auto;">
         <button class="tab-btn active" data-tab="general" onclick="switchTab('general')">
-            <i class="fa-solid fa-sliders"></i>
+            <i class="bi bi-sliders"></i>
             General
         </button>
         <button class="tab-btn" data-tab="spotify-sync" onclick="switchTab('spotify-sync')">
-            <i class="fa-brands fa-spotify" style="color: #1DB954;"></i>
+            <i class="bi bi-spotify" style="color: #1DB954;"></i>
             Spotify Sync
         </button>
         <button class="tab-btn" data-tab="integration" onclick="switchTab('integration')">
-            <i class="fa-solid fa-plug"></i>
+            <i class="bi bi-plug"></i>
             Integration
         </button>
         <button class="tab-btn" data-tab="download" onclick="switchTab('download')">
-            <i class="fa-solid fa-download"></i>
+            <i class="bi bi-download"></i>
             Downloads
         </button>
         <button class="tab-btn" data-tab="library" onclick="switchTab('library')">
-            <i class="fa-solid fa-folder-tree"></i>
+            <i class="bi bi-folder-symlink"></i>
             Library
         </button>
         <button class="tab-btn" data-tab="appearance" onclick="switchTab('appearance')">
-            <i class="fa-solid fa-palette"></i>
+            <i class="bi bi-palette"></i>
             Appearance
         </button>
         <button class="tab-btn" data-tab="automation" onclick="switchTab('automation')">
-            <i class="fa-solid fa-robot"></i>
+            <i class="bi bi-robot"></i>
             Automation
         </button>
         <button class="tab-btn" data-tab="advanced" onclick="switchTab('advanced')">
-            <i class="fa-solid fa-gear"></i>
+            <i class="bi bi-gear"></i>
             Advanced
         </button>
     </div>
@@ -112,7 +112,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border-primary);">
                 <div>
                     <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-1);">
-                        <i class="fa-brands fa-spotify" style="color: #1DB954; margin-right: var(--space-2);"></i>
+                        <i class="bi bi-spotify" style="color: #1DB954; margin-right: var(--space-2);"></i>
                         Spotify Auto-Sync
                     </h2>
                     <p style="color: var(--text-muted); font-size: var(--font-size-sm);">Automatically sync data from your Spotify account</p>
@@ -130,7 +130,7 @@
                 <div class="sync-option-card">
                     <div class="sync-option-info">
                         <div class="sync-option-icon" style="background: linear-gradient(135deg, #1DB954, #169c46);">
-                            <i class="fa-solid fa-users"></i>
+                            <i class="bi bi-people"></i>
                         </div>
                         <div>
                             <div class="sync-option-title">Followed Artists</div>
@@ -146,7 +146,7 @@
                 <div class="sync-option-card">
                     <div class="sync-option-info">
                         <div class="sync-option-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
-                            <i class="fa-solid fa-list-music"></i>
+                            <i class="bi bi-music-note-list"></i>
                         </div>
                         <div>
                             <div class="sync-option-title">Playlists</div>
@@ -162,7 +162,7 @@
                 <div class="sync-option-card">
                     <div class="sync-option-info">
                         <div class="sync-option-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
-                            <i class="fa-solid fa-heart"></i>
+                            <i class="bi bi-heart"></i>
                         </div>
                         <div>
                             <div class="sync-option-title">Liked Songs</div>
@@ -178,7 +178,7 @@
                 <div class="sync-option-card">
                     <div class="sync-option-info">
                         <div class="sync-option-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                            <i class="fa-solid fa-compact-disc"></i>
+                            <i class="bi bi-disc"></i>
                         </div>
                         <div>
                             <div class="sync-option-title">Saved Albums</div>
@@ -222,7 +222,7 @@
                 <div class="sync-option-card">
                     <div class="sync-option-info">
                         <div class="sync-option-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
-                            <i class="fa-solid fa-images"></i>
+                            <i class="bi bi-images"></i>
                         </div>
                         <div>
                             <div class="sync-option-title">Download Images Locally</div>
@@ -238,7 +238,7 @@
                 <!-- Disk Usage Stats -->
                 <div id="image-stats-container" class="stats-container" style="margin-top: var(--space-4);">
                     <div class="stat-box">
-                        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-icon"><i class="bi bi-people"></i></div>
                         <div class="stat-content">
                             <div class="stat-value" id="stat-artists-count">-</div>
                             <div class="stat-label">Artist Images</div>
@@ -246,7 +246,7 @@
                         </div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-icon"><i class="fa-solid fa-compact-disc"></i></div>
+                        <div class="stat-icon"><i class="bi bi-disc"></i></div>
                         <div class="stat-content">
                             <div class="stat-value" id="stat-albums-count">-</div>
                             <div class="stat-label">Album Covers</div>
@@ -254,7 +254,7 @@
                         </div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-icon"><i class="fa-solid fa-list-music"></i></div>
+                        <div class="stat-icon"><i class="bi bi-music-note-list"></i></div>
                         <div class="stat-content">
                             <div class="stat-value" id="stat-playlists-count">-</div>
                             <div class="stat-label">Playlist Covers</div>
@@ -262,7 +262,7 @@
                         </div>
                     </div>
                     <div class="stat-box stat-total">
-                        <div class="stat-icon"><i class="fa-solid fa-hard-drive"></i></div>
+                        <div class="stat-icon"><i class="bi bi-hdd"></i></div>
                         <div class="stat-content">
                             <div class="stat-value" id="stat-total-count">-</div>
                             <div class="stat-label">Total Images</div>
@@ -279,7 +279,7 @@
                 <div class="sync-option-card">
                     <div class="sync-option-info">
                         <div class="sync-option-icon" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">
-                            <i class="fa-solid fa-user-minus"></i>
+                            <i class="bi bi-person-dash"></i>
                         </div>
                         <div>
                             <div class="sync-option-title">Remove Unfollowed Artists</div>
@@ -295,7 +295,7 @@
                 <div class="sync-option-card" style="margin-top: var(--space-3);">
                     <div class="sync-option-info">
                         <div class="sync-option-icon" style="background: linear-gradient(135deg, #f59e0b, #b45309);">
-                            <i class="fa-solid fa-list-xmark"></i>
+                            <i class="bi bi-list-ul"></i>
                         </div>
                         <div>
                             <div class="sync-option-title">Remove Deleted Playlists</div>
@@ -309,7 +309,7 @@
                 </div>
 
                 <div class="alert alert-info" style="margin-top: var(--space-4);">
-                    <i class="fa-solid fa-info-circle"></i>
+                    <i class="bi bi-info-circle"></i>
                     <span>Downloaded tracks are never automatically removed. Only metadata and images are affected by these settings.</span>
                 </div>
             </div>
@@ -317,7 +317,7 @@
             <!-- Save Button for Intervals -->
             <div style="margin-top: var(--space-6); display: flex; justify-content: flex-end;">
                 <button class="btn btn-primary" onclick="saveSpotifySyncSettings()">
-                    <i class="fa-solid fa-save"></i>
+                    <i class="bi bi-floppy"></i>
                     Save Sync Settings
                 </button>
             </div>
@@ -330,7 +330,7 @@
             <!-- Spotify -->
             <div style="margin-bottom: var(--space-8);">
                 <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
-                    <i class="fa-brands fa-spotify" style="color: #1DB954;"></i>
+                    <i class="bi bi-spotify" style="color: #1DB954;"></i>
                     Spotify Configuration
                 </h2>
                 <div class="form-stack">
@@ -345,7 +345,7 @@
                         <div class="input-with-toggle">
                             <input type="password" id="spotify-client-secret" name="integration.spotify_client_secret" class="form-input" placeholder="Your Spotify Client Secret">
                             <button type="button" class="btn-icon" onclick="togglePassword('spotify-client-secret')" title="Toggle visibility">
-                                <i class="fa-solid fa-eye"></i>
+                                <i class="bi bi-eye"></i>
                             </button>
                         </div>
                     </div>
@@ -360,7 +360,7 @@
             <!-- slskd -->
             <div style="padding-top: var(--space-6); border-top: 1px solid var(--border-primary); margin-bottom: var(--space-8);">
                 <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
-                    <i class="fa-solid fa-server" style="color: #3b82f6;"></i>
+                    <i class="bi bi-server" style="color: #3b82f6;"></i>
                     slskd Configuration
                 </h2>
                 <div class="form-stack">
@@ -391,7 +391,7 @@
                         <div class="input-with-toggle">
                             <input type="password" id="slskd-api-key" name="integration.slskd_api_key" class="form-input" placeholder="Optional API key">
                             <button type="button" class="btn-icon" onclick="togglePassword('slskd-api-key')" title="Toggle visibility">
-                                <i class="fa-solid fa-eye"></i>
+                                <i class="bi bi-eye"></i>
                             </button>
                         </div>
                     </div>
@@ -401,7 +401,7 @@
             <!-- MusicBrainz -->
             <div style="padding-top: var(--space-6); border-top: 1px solid var(--border-primary);">
                 <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
-                    <i class="fa-solid fa-music" style="color: #ba478f;"></i>
+                    <i class="bi bi-music-note" style="color: #ba478f;"></i>
                     MusicBrainz Configuration
                 </h2>
                 <div class="form-stack">
@@ -460,21 +460,21 @@
                     <label class="theme-option">
                         <input type="radio" name="appearance.theme" value="dark" checked onclick="applyTheme('dark')">
                         <div class="theme-card">
-                            <i class="fa-solid fa-moon" style="font-size: 2rem; margin-bottom: var(--space-2);"></i>
+                            <i class="bi bi-moon" style="font-size: 2rem; margin-bottom: var(--space-2);"></i>
                             <span>Dark</span>
                         </div>
                     </label>
                     <label class="theme-option">
                         <input type="radio" name="appearance.theme" value="light" onclick="applyTheme('light')">
                         <div class="theme-card">
-                            <i class="fa-solid fa-sun" style="font-size: 2rem; margin-bottom: var(--space-2);"></i>
+                            <i class="bi bi-sun" style="font-size: 2rem; margin-bottom: var(--space-2);"></i>
                             <span>Light</span>
                         </div>
                     </label>
                     <label class="theme-option">
                         <input type="radio" name="appearance.theme" value="auto" onclick="applyTheme('auto')">
                         <div class="theme-card">
-                            <i class="fa-solid fa-circle-half-stroke" style="font-size: 2rem; margin-bottom: var(--space-2);"></i>
+                            <i class="bi bi-circle-half" style="font-size: 2rem; margin-bottom: var(--space-2);"></i>
                             <span>Auto</span>
                         </div>
                     </label>
@@ -483,7 +483,7 @@
             </div>
 
             <div class="alert alert-info" style="margin-top: var(--space-6);">
-                <i class="fa-solid fa-info-circle"></i>
+                <i class="bi bi-info-circle"></i>
                 <span><strong>Theme Persistence:</strong> Your theme preference is saved in your browser and will be remembered on future visits.</span>
             </div>
         </div>
@@ -496,7 +496,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-6); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border-primary);">
                 <div>
                     <h2 style="font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-1);">
-                        <i class="fa-solid fa-folder-tree" style="color: var(--accent-primary); margin-right: var(--space-2);"></i>
+                        <i class="bi bi-folder-symlink" style="color: var(--accent-primary); margin-right: var(--space-2);"></i>
                         Library File Naming
                     </h2>
                     <p style="color: var(--text-muted); font-size: var(--font-size-sm);">Configure how files and folders are named. Compatible with Lidarr.</p>
@@ -1315,9 +1315,51 @@
     }
 
     // Theme Management
+    // Hey future me - this ACTUALLY applies the theme now, not just saves it!
+    // Sets data-theme attribute on <html>, saves to localStorage, updates meta theme-color,
+    // and handles "auto" mode with system preference detection + live listener.
     function applyTheme(theme) {
         localStorage.setItem('theme', theme);
+        
+        let appliedTheme = theme;
+        if (theme === 'auto') {
+            // Detect system preference
+            appliedTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+            
+            // Listen for system theme changes (only in auto mode)
+            window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+                if (localStorage.getItem('theme') === 'auto') {
+                    const newTheme = e.matches ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    updateThemeColor(newTheme);
+                }
+            });
+        }
+        
+        // Apply theme to DOM
+        document.documentElement.setAttribute('data-theme', appliedTheme);
+        
+        // Update meta theme-color for PWA
+        updateThemeColor(appliedTheme);
+        
         SoulSpot.showNotification(`Theme set to ${theme}`, 'success');
+    }
+    
+    // Helper to update PWA theme-color meta tag
+    function updateThemeColor(theme) {
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+            metaTheme.content = theme === 'light' ? '#ffffff' : '#0f0f0f';
+        }
+    }
+    
+    // Initialize theme selection on page load
+    function initThemeSelection() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        const themeRadios = document.querySelectorAll('input[name="appearance.theme"]');
+        themeRadios.forEach(radio => {
+            radio.checked = radio.value === savedTheme;
+        });
     }
 
     // Load Settings from API
@@ -1841,6 +1883,7 @@
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
+        initThemeSelection();
         loadSettings();
         loadSpotifySyncSettings();
         loadAutomationSettings();

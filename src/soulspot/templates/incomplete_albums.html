@@ -14,7 +14,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
     <div style="display: flex; align-items: center; gap: var(--space-4);">
         <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-list-check" style="color: white; font-size: 1.25rem;"></i>
+            <i class="bi bi-list-check" style="color: white; font-size: 1.25rem;"></i>
         </div>
         <div>
             <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Incomplete Albums</h1>
@@ -22,7 +22,7 @@
         </div>
     </div>
     <a href="/library" class="btn btn-ghost">
-        <i class="fa-solid fa-arrow-left"></i>
+        <i class="bi bi-arrow-left"></i>
         Back to Library
     </a>
 </div>
@@ -65,7 +65,7 @@
 <!-- Albums Grid -->
 <div id="albums-container" class="albums-grid">
     <div class="loading-state">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--text-muted);"></i>
+        <i class="bi bi-arrow-repeat bi-spin" style="font-size: 2rem; color: var(--text-muted);"></i>
         <p>Loading albums...</p>
     </div>
 </div>
@@ -74,7 +74,7 @@
 <template id="empty-state">
     <div class="empty-state">
         <div class="empty-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
-            <i class="fa-solid fa-check-circle"></i>
+            <i class="bi bi-check-circle"></i>
         </div>
         <h3>All Albums Complete</h3>
         <p>Your library has all tracks for the checked albums!</p>
@@ -85,12 +85,12 @@
 <template id="no-data-state">
     <div class="empty-state">
         <div class="empty-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-            <i class="fa-solid fa-info-circle"></i>
+            <i class="bi bi-info-circle"></i>
         </div>
         <h3>No Album Data</h3>
         <p>Album completeness checking requires Spotify connection.<br>Please connect Spotify in Settings first.</p>
         <a href="/settings" class="btn btn-primary" style="margin-top: var(--space-4);">
-            <i class="fa-solid fa-cog"></i> Go to Settings
+            <i class="bi bi-gear"></i> Go to Settings
         </a>
     </div>
 </template>
@@ -295,7 +295,7 @@ async function loadAlbums() {
     const container = document.getElementById('albums-container');
     container.innerHTML = `
         <div class="loading-state">
-            <i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem; color: var(--text-muted);"></i>
+            <i class="bi bi-arrow-repeat bi-spin" style="font-size: 2rem; color: var(--text-muted);"></i>
             <p>Loading albums...</p>
         </div>
     `;
@@ -328,7 +328,7 @@ async function loadAlbums() {
         container.innerHTML = `
             <div class="empty-state">
                 <div class="empty-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
-                    <i class="fa-solid fa-exclamation-circle"></i>
+                    <i class="bi bi-exclamation-circle"></i>
                 </div>
                 <h3>Error Loading Albums</h3>
                 <p>${escapeHtml(error.message)}</p>
@@ -375,7 +375,7 @@ function renderAlbums(albumsList) {
                     <div class="album-cover">
                         ${album.artwork_url 
                             ? `<img src="${escapeHtml(album.artwork_url)}" alt="Album cover" loading="lazy">` 
-                            : '<i class="fa-solid fa-compact-disc"></i>'}
+                            : '<i class="bi bi-disc"></i>'}
                     </div>
                     <div class="album-info">
                         <div class="album-title" title="${escapeHtml(album.title || 'Unknown Album')}">${escapeHtml(album.title || 'Unknown Album')}</div>

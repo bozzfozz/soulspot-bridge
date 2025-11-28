@@ -13,7 +13,7 @@
 <nav style="margin-bottom: var(--space-4);">
     <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
         <li><a href="/ui/library" style="color: var(--accent-primary);">Library</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>Tracks</li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>Tracks</li>
     </ol>
 </nav>
 
@@ -21,7 +21,7 @@
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-6); flex-wrap: wrap; gap: var(--space-4);">
     <div style="display: flex; align-items: center; gap: var(--space-4);">
         <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent-primary), #d6364a); border-radius: var(--radius-xl); display: flex; align-items: center; justify-content: center;">
-            <i class="fa-solid fa-music" style="color: white; font-size: 1.25rem;"></i>
+            <i class="bi bi-music-note" style="color: white; font-size: 1.25rem;"></i>
         </div>
         <div>
             <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-1);">Tracks</h1>
@@ -51,13 +51,13 @@
             <thead>
                 <tr>
                     <th data-sort="title" style="cursor: pointer;">
-                        Title <i class="fa-solid fa-sort" style="margin-left: var(--space-1); opacity: 0.5;"></i>
+                        Title <i class="bi bi-arrow-down-up" style="margin-left: var(--space-1); opacity: 0.5;"></i>
                     </th>
                     <th data-sort="artist" style="cursor: pointer;">
-                        Artist <i class="fa-solid fa-sort" style="margin-left: var(--space-1); opacity: 0.5;"></i>
+                        Artist <i class="bi bi-arrow-down-up" style="margin-left: var(--space-1); opacity: 0.5;"></i>
                     </th>
                     <th data-sort="album" style="cursor: pointer;">
-                        Album <i class="fa-solid fa-sort" style="margin-left: var(--space-1); opacity: 0.5;"></i>
+                        Album <i class="bi bi-arrow-down-up" style="margin-left: var(--space-1); opacity: 0.5;"></i>
                     </th>
                     <th>Duration</th>
                     <th>Status</th>
@@ -120,12 +120,12 @@
     {% else %}
     <div class="empty-state" style="padding: var(--space-12);">
         <div class="empty-icon">
-            <i class="fa-solid fa-music"></i>
+            <i class="bi bi-music-note"></i>
         </div>
         <h3>No tracks found</h3>
         <p>Your library does not contain any tracks yet. Import some playlists to get started!</p>
         <a href="/ui/playlists/import" class="btn btn-primary">
-            <i class="fa-solid fa-plus"></i>
+            <i class="bi bi-plus-lg"></i>
             Import Playlist
         </a>
     </div>

@@ -13,28 +13,28 @@
 <nav style="margin-bottom: var(--space-4);">
     <ol style="display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm);">
         <li><a href="/ui/library" style="color: var(--accent-primary);">Library</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i></li>
         <li><a href="/ui/library/albums" style="color: var(--accent-primary);">Albums</a></li>
-        <li style="color: var(--text-muted);"><i class="fa-solid fa-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>{{ album.title }}</li>
+        <li style="color: var(--text-muted);"><i class="bi bi-chevron-right" style="font-size: 0.6rem; margin: 0 var(--space-2);"></i>{{ album.title }}</li>
     </ol>
 </nav>
 
 <!-- Album Header -->
 <div style="display: flex; flex-wrap: wrap; gap: var(--space-6); margin-bottom: var(--space-8);">
     <div class="album-cover-large">
-        <i class="fa-solid fa-compact-disc"></i>
+        <i class="bi bi-disc"></i>
     </div>
     <div style="flex: 1; min-width: 200px;">
         <h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-2);">{{ album.title }}</h1>
         <a href="/ui/library/artists/{{ album.artist_slug }}" style="color: var(--accent-primary); font-size: var(--font-size-lg); font-weight: var(--font-weight-medium);">{{ album.artist }}</a>
         <div style="display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-3); color: var(--text-muted); font-size: var(--font-size-sm);">
             {% if album.year %}
-            <span><i class="fa-solid fa-calendar" style="margin-right: var(--space-2);"></i>{{ album.year }}</span>
+            <span><i class="bi bi-calendar" style="margin-right: var(--space-2);"></i>{{ album.year }}</span>
             {% endif %}
-            <span><i class="fa-solid fa-music" style="margin-right: var(--space-2);"></i>{{ album.tracks|length }} track{{ 's' if album.tracks|length != 1 else '' }}</span>
+            <span><i class="bi bi-music-note" style="margin-right: var(--space-2);"></i>{{ album.tracks|length }} track{{ 's' if album.tracks|length != 1 else '' }}</span>
             {% if album.total_duration_ms %}
                 {% set total_minutes = (album.total_duration_ms / 60000) | int %}
-            <span><i class="fa-solid fa-clock" style="margin-right: var(--space-2);"></i>{{ total_minutes }} min</span>
+            <span><i class="bi bi-clock" style="margin-right: var(--space-2);"></i>{{ total_minutes }} min</span>
             {% endif %}
         </div>
         {% if album.is_complete is defined %}
@@ -59,7 +59,7 @@
 <div class="stats-grid" style="margin-bottom: var(--space-6);">
     <div class="stat-card">
         <div class="stat-icon" style="background: rgba(var(--accent-primary-rgb), 0.1); color: var(--accent-primary);">
-            <i class="fa-solid fa-music"></i>
+            <i class="bi bi-music-note"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value">{{ album.tracks|length }}</div>
@@ -68,7 +68,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
-            <i class="fa-solid fa-check"></i>
+            <i class="bi bi-check"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value" style="color: #22c55e;">{{ downloaded_count }}</div>
@@ -77,7 +77,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: rgba(234, 179, 8, 0.1); color: #eab308;">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+            <i class="bi bi-exclamation-triangle"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value" style="color: #eab308;">{{ missing_count }}</div>
@@ -86,7 +86,7 @@
     </div>
     <div class="stat-card">
         <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
-            <i class="fa-solid fa-circle-xmark"></i>
+            <i class="bi bi-x-circle"></i>
         </div>
         <div class="stat-content">
             <div class="stat-value" style="color: #ef4444;">{{ broken_count }}</div>
@@ -109,14 +109,14 @@
             <button id="download-all-missing-btn" 
                     class="btn btn-primary"
                     onclick="downloadAllMissing()">
-                <i class="fa-solid fa-download"></i>
+                <i class="bi bi-download"></i>
                 Download All Missing ({{ missing_count + broken_count }})
             </button>
             {% endif %}
             <button id="bulk-download-btn" 
                     class="btn btn-outline hidden"
                     onclick="bulkDownloadSelected()">
-                <i class="fa-solid fa-download"></i>
+                <i class="bi bi-download"></i>
                 Download Selected (<span id="selected-count">0</span>)
             </button>
         </div>
@@ -197,7 +197,7 @@
     {% else %}
     <div class="empty-state" style="padding: var(--space-12);">
         <div class="empty-icon">
-            <i class="fa-solid fa-music"></i>
+            <i class="bi bi-music-note"></i>
         </div>
         <h3>No tracks found</h3>
         <p>This album does not have any tracks in your library.</p>
