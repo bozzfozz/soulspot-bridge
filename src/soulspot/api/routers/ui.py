@@ -1168,46 +1168,46 @@ async def spotify_artists_page(
     error = None
 
     try:
-        # Hey future me - get token from SHARED DatabaseTokenManager, not per-session!
-        # This is the key fix: any device can access Spotify data without its own OAuth session.
+        # Hey future me - ALWAYS load from DB first! Token only needed for sync, not display.
+        # This is Database-First architecture: Spotify syncs data → DB stores it → Frontend shows DB data.
+        
+        # Get artists from DB (regardless of token status)
+        artist_models = await sync_service.get_artists(limit=500)
+
+        # Convert to template-friendly format
+        for artist in artist_models:
+            genres = []
+            if artist.genres:
+                try:
+                    genres = (
+                        json.loads(artist.genres)
+                        if isinstance(artist.genres, str)
+                        else artist.genres
+                    )
+                except (json.JSONDecodeError, TypeError):
+                    genres = []
+
+            artists.append(
+                {
+                    "spotify_id": artist.spotify_id,
+                    "name": artist.name,
+                    "image_url": artist.image_url,
+                    "genres": genres[:3],  # Max 3 genres for display
+                    "genres_count": len(genres),
+                    "popularity": artist.popularity,
+                    "follower_count": artist.follower_count,
+                }
+            )
+
+        # OPTIONAL: Try to sync if token available (respects cooldown)
         access_token = None
         if hasattr(request.app.state, "db_token_manager"):
             db_token_manager: DatabaseTokenManager = request.app.state.db_token_manager
             access_token = await db_token_manager.get_token_for_background()
 
         if access_token:
-            # Auto-sync (respects cooldown)
+            # Auto-sync (respects cooldown) - updates DB in background
             sync_stats = await sync_service.sync_followed_artists(access_token)
-
-            # Get artists from DB
-            artist_models = await sync_service.get_artists(limit=500)
-
-            # Convert to template-friendly format
-            for artist in artist_models:
-                genres = []
-                if artist.genres:
-                    try:
-                        genres = (
-                            json.loads(artist.genres)
-                            if isinstance(artist.genres, str)
-                            else artist.genres
-                        )
-                    except (json.JSONDecodeError, TypeError):
-                        genres = []
-
-                artists.append(
-                    {
-                        "spotify_id": artist.spotify_id,
-                        "name": artist.name,
-                        "image_url": artist.image_url,
-                        "genres": genres[:3],  # Max 3 genres for display
-                        "genres_count": len(genres),
-                        "popularity": artist.popularity,
-                        "follower_count": artist.follower_count,
-                    }
-                )
-        else:
-            error = "Nicht mit Spotify verbunden. Bitte zuerst einloggen."
 
     except Exception as e:
         error = str(e)

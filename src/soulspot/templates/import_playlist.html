@@ -137,10 +137,10 @@ function getNotConnectedHTML() {
                 <i class="bi bi-info-circle" style="color: white;"></i>
             </div>
             <div style="flex: 1;">
-                <p style="font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Spotify nicht verbunden</p>
-                <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Verbinde Spotify zuerst über das Dashboard</p>
+                <p style="font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Spotify Sync nicht konfiguriert</p>
+                <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Aktiviere Spotify Sync in den Einstellungen um Playlists zu importieren</p>
             </div>
-            <a href="/" class="btn btn-primary">Zum Dashboard</a>
+            <a href="/settings" class="btn btn-primary">Zu den Einstellungen</a>
         </div>
     `;
 }
@@ -160,8 +160,8 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
                             <i class="bi bi-check" style="color: white;"></i>
                         </div>
                         <div style="flex: 1;">
-                            <p style="font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Spotify Connected</p>
-                            <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Ready to import playlists and download tracks</p>
+                            <p style="font-weight: var(--font-weight-bold); margin-bottom: var(--space-1);">Spotify Sync aktiv</p>
+                            <p style="font-size: var(--font-size-sm); color: var(--text-muted);">Daten werden synchronisiert - Playlists können importiert werden</p>
                         </div>
                         <a href="/api/auth/logout" class="btn btn-outline btn-sm">Disconnect</a>
                     </div>
