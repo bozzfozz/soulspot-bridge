@@ -17,10 +17,15 @@ This makes the architecture crystal clear:
 
 All foreign keys are automatically updated by SQLite's RENAME TABLE.
 Indexes are recreated with new names to match the new table names.
+
+IMPORTANT: This migration uses DROP INDEX IF EXISTS / CREATE INDEX IF NOT EXISTS
+patterns via raw SQL to handle edge cases like:
+- Index might not exist (e.g., ix_artists_name_lower was never created)
+- Migration might be re-run after partial completion
 """
 
 from alembic import op
-
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision = "ll25009ooq57"
@@ -29,151 +34,391 @@ branch_labels = None
 depends_on = None
 
 
+def _drop_index_if_exists(index_name: str) -> None:
+    """Drop an index if it exists (SQLite compatible)."""
+    op.execute(text(f"DROP INDEX IF EXISTS {index_name}"))
+
+
+def _table_exists(table_name: str) -> bool:
+    """Check if a table exists in SQLite."""
+    conn = op.get_bind()
+    result = conn.execute(
+        text(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=:name"
+        ).bindparams(name=table_name)
+    )
+    return result.fetchone() is not None
+
+
 def upgrade() -> None:
     """Rename local library tables from generic names to soulspot_ prefix."""
-    # Rename the three core local library tables
-    # SQLite handles foreign key updates automatically with RENAME TABLE
-    op.rename_table("artists", "soulspot_artists")
-    op.rename_table("albums", "soulspot_albums")
-    op.rename_table("tracks", "soulspot_tracks")
+    # Hey future me - SQLite RENAME TABLE automatically updates FK references!
+    # But we need to handle the case where tables might already be renamed
+    # (e.g., migration interrupted and re-run).
 
-    # Drop old indexes and recreate with new names
+    # Only rename if old table exists (handles idempotent re-runs)
+    if _table_exists("artists"):
+        op.rename_table("artists", "soulspot_artists")
+    if _table_exists("albums"):
+        op.rename_table("albums", "soulspot_albums")
+    if _table_exists("tracks"):
+        op.rename_table("tracks", "soulspot_tracks")
+
+    # Drop old indexes (use IF EXISTS to handle missing indexes safely)
+    # Artists indexes from initial migration (259d78cbdfef)
+    _drop_index_if_exists("ix_artists_name")
+    _drop_index_if_exists("ix_artists_spotify_uri")
+    _drop_index_if_exists("ix_artists_musicbrainz_id")
+    # Note: ix_artists_name_lower was defined in model but NEVER created in migrations
+    _drop_index_if_exists("ix_artists_name_lower")
+    # Performance indexes from cc17880fff37
+    _drop_index_if_exists("ix_artists_updated_at")
+
+    # Albums indexes from initial migration
+    _drop_index_if_exists("ix_albums_title")
+    _drop_index_if_exists("ix_albums_release_year")
+    _drop_index_if_exists("ix_albums_spotify_uri")
+    _drop_index_if_exists("ix_albums_musicbrainz_id")
+    _drop_index_if_exists("ix_albums_title_artist")
+    # Performance indexes from cc17880fff37
+    _drop_index_if_exists("ix_albums_artist_id")
+    _drop_index_if_exists("ix_albums_updated_at")
+
+    # Tracks indexes from initial migration
+    _drop_index_if_exists("ix_tracks_title")
+    _drop_index_if_exists("ix_tracks_spotify_uri")
+    _drop_index_if_exists("ix_tracks_musicbrainz_id")
+    _drop_index_if_exists("ix_tracks_isrc")
+    _drop_index_if_exists("ix_tracks_title_artist")
+    # From 0372f0c937d1
+    _drop_index_if_exists("ix_tracks_genre")
+    # From aa15670cdf15
+    _drop_index_if_exists("ix_tracks_file_hash")
+    _drop_index_if_exists("ix_tracks_is_broken")
+    # Performance indexes from cc17880fff37
+    _drop_index_if_exists("ix_tracks_album_track_number")
+    _drop_index_if_exists("ix_tracks_album_disc_track")
+    _drop_index_if_exists("ix_tracks_updated_at")
+    _drop_index_if_exists("ix_tracks_file_path")
+    _drop_index_if_exists("ix_tracks_last_scanned_at")
+    _drop_index_if_exists("ix_tracks_broken_updated")
+
+    # Create new indexes with soulspot_ prefix
+    # Use IF NOT EXISTS to handle idempotent re-runs
+
     # Artists indexes
-    op.drop_index("ix_artists_name", table_name="soulspot_artists")
-    op.drop_index("ix_artists_spotify_uri", table_name="soulspot_artists")
-    op.drop_index("ix_artists_musicbrainz_id", table_name="soulspot_artists")
-    op.drop_index("ix_artists_name_lower", table_name="soulspot_artists")
-
-    op.create_index("ix_soulspot_artists_name", "soulspot_artists", ["name"])
-    op.create_index(
-        "ix_soulspot_artists_spotify_uri",
-        "soulspot_artists",
-        ["spotify_uri"],
-        unique=True,
-    )
-    op.create_index(
-        "ix_soulspot_artists_musicbrainz_id",
-        "soulspot_artists",
-        ["musicbrainz_id"],
-        unique=True,
-    )
-    # Note: func.lower() index needs raw SQL in SQLite
     op.execute(
-        "CREATE INDEX ix_soulspot_artists_name_lower ON soulspot_artists (lower(name))"
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_artists_name "
+            "ON soulspot_artists (name)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_soulspot_artists_spotify_uri "
+            "ON soulspot_artists (spotify_uri)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_soulspot_artists_musicbrainz_id "
+            "ON soulspot_artists (musicbrainz_id)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_artists_name_lower "
+            "ON soulspot_artists (lower(name))"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_artists_updated_at "
+            "ON soulspot_artists (updated_at)"
+        )
     )
 
     # Albums indexes
-    op.drop_index("ix_albums_title", table_name="soulspot_albums")
-    op.drop_index("ix_albums_release_year", table_name="soulspot_albums")
-    op.drop_index("ix_albums_spotify_uri", table_name="soulspot_albums")
-    op.drop_index("ix_albums_musicbrainz_id", table_name="soulspot_albums")
-    op.drop_index("ix_albums_title_artist", table_name="soulspot_albums")
-
-    op.create_index("ix_soulspot_albums_title", "soulspot_albums", ["title"])
-    op.create_index(
-        "ix_soulspot_albums_release_year", "soulspot_albums", ["release_year"]
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_albums_title "
+            "ON soulspot_albums (title)"
+        )
     )
-    op.create_index(
-        "ix_soulspot_albums_spotify_uri",
-        "soulspot_albums",
-        ["spotify_uri"],
-        unique=True,
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_albums_release_year "
+            "ON soulspot_albums (release_year)"
+        )
     )
-    op.create_index(
-        "ix_soulspot_albums_musicbrainz_id",
-        "soulspot_albums",
-        ["musicbrainz_id"],
-        unique=True,
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_soulspot_albums_spotify_uri "
+            "ON soulspot_albums (spotify_uri)"
+        )
     )
-    op.create_index(
-        "ix_soulspot_albums_title_artist", "soulspot_albums", ["title", "artist_id"]
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_soulspot_albums_musicbrainz_id "
+            "ON soulspot_albums (musicbrainz_id)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_albums_title_artist "
+            "ON soulspot_albums (title, artist_id)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_albums_artist_id "
+            "ON soulspot_albums (artist_id)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_albums_updated_at "
+            "ON soulspot_albums (updated_at)"
+        )
     )
 
     # Tracks indexes
-    op.drop_index("ix_tracks_title", table_name="soulspot_tracks")
-    op.drop_index("ix_tracks_spotify_uri", table_name="soulspot_tracks")
-    op.drop_index("ix_tracks_musicbrainz_id", table_name="soulspot_tracks")
-    op.drop_index("ix_tracks_isrc", table_name="soulspot_tracks")
-    op.drop_index("ix_tracks_genre", table_name="soulspot_tracks")
-    op.drop_index("ix_tracks_file_hash", table_name="soulspot_tracks")
-    op.drop_index("ix_tracks_is_broken", table_name="soulspot_tracks")
-    op.drop_index("ix_tracks_title_artist", table_name="soulspot_tracks")
-
-    op.create_index("ix_soulspot_tracks_title", "soulspot_tracks", ["title"])
-    op.create_index(
-        "ix_soulspot_tracks_spotify_uri",
-        "soulspot_tracks",
-        ["spotify_uri"],
-        unique=True,
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_title "
+            "ON soulspot_tracks (title)"
+        )
     )
-    op.create_index(
-        "ix_soulspot_tracks_musicbrainz_id",
-        "soulspot_tracks",
-        ["musicbrainz_id"],
-        unique=True,
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_soulspot_tracks_spotify_uri "
+            "ON soulspot_tracks (spotify_uri)"
+        )
     )
-    op.create_index(
-        "ix_soulspot_tracks_isrc", "soulspot_tracks", ["isrc"], unique=True
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_soulspot_tracks_musicbrainz_id "
+            "ON soulspot_tracks (musicbrainz_id)"
+        )
     )
-    op.create_index("ix_soulspot_tracks_genre", "soulspot_tracks", ["genre"])
-    op.create_index("ix_soulspot_tracks_file_hash", "soulspot_tracks", ["file_hash"])
-    op.create_index("ix_soulspot_tracks_is_broken", "soulspot_tracks", ["is_broken"])
-    op.create_index(
-        "ix_soulspot_tracks_title_artist", "soulspot_tracks", ["title", "artist_id"]
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_soulspot_tracks_isrc "
+            "ON soulspot_tracks (isrc)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_title_artist "
+            "ON soulspot_tracks (title, artist_id)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_genre "
+            "ON soulspot_tracks (genre)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_file_hash "
+            "ON soulspot_tracks (file_hash)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_is_broken "
+            "ON soulspot_tracks (is_broken)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_album_track_number "
+            "ON soulspot_tracks (album_id, track_number)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_album_disc_track "
+            "ON soulspot_tracks (album_id, disc_number, track_number)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_updated_at "
+            "ON soulspot_tracks (updated_at)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_file_path "
+            "ON soulspot_tracks (file_path)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_last_scanned_at "
+            "ON soulspot_tracks (last_scanned_at)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_soulspot_tracks_broken_updated "
+            "ON soulspot_tracks (is_broken, updated_at)"
+        )
     )
 
 
 def downgrade() -> None:
     """Revert table names back to generic artists/albums/tracks."""
-    # Drop new indexes
-    op.drop_index("ix_soulspot_artists_name", table_name="soulspot_artists")
-    op.drop_index("ix_soulspot_artists_spotify_uri", table_name="soulspot_artists")
-    op.drop_index("ix_soulspot_artists_musicbrainz_id", table_name="soulspot_artists")
-    op.drop_index("ix_soulspot_artists_name_lower", table_name="soulspot_artists")
+    # Drop new indexes (using IF EXISTS for safety)
+    _drop_index_if_exists("ix_soulspot_artists_name")
+    _drop_index_if_exists("ix_soulspot_artists_spotify_uri")
+    _drop_index_if_exists("ix_soulspot_artists_musicbrainz_id")
+    _drop_index_if_exists("ix_soulspot_artists_name_lower")
+    _drop_index_if_exists("ix_soulspot_artists_updated_at")
 
-    op.drop_index("ix_soulspot_albums_title", table_name="soulspot_albums")
-    op.drop_index("ix_soulspot_albums_release_year", table_name="soulspot_albums")
-    op.drop_index("ix_soulspot_albums_spotify_uri", table_name="soulspot_albums")
-    op.drop_index("ix_soulspot_albums_musicbrainz_id", table_name="soulspot_albums")
-    op.drop_index("ix_soulspot_albums_title_artist", table_name="soulspot_albums")
+    _drop_index_if_exists("ix_soulspot_albums_title")
+    _drop_index_if_exists("ix_soulspot_albums_release_year")
+    _drop_index_if_exists("ix_soulspot_albums_spotify_uri")
+    _drop_index_if_exists("ix_soulspot_albums_musicbrainz_id")
+    _drop_index_if_exists("ix_soulspot_albums_title_artist")
+    _drop_index_if_exists("ix_soulspot_albums_artist_id")
+    _drop_index_if_exists("ix_soulspot_albums_updated_at")
 
-    op.drop_index("ix_soulspot_tracks_title", table_name="soulspot_tracks")
-    op.drop_index("ix_soulspot_tracks_spotify_uri", table_name="soulspot_tracks")
-    op.drop_index("ix_soulspot_tracks_musicbrainz_id", table_name="soulspot_tracks")
-    op.drop_index("ix_soulspot_tracks_isrc", table_name="soulspot_tracks")
-    op.drop_index("ix_soulspot_tracks_genre", table_name="soulspot_tracks")
-    op.drop_index("ix_soulspot_tracks_file_hash", table_name="soulspot_tracks")
-    op.drop_index("ix_soulspot_tracks_is_broken", table_name="soulspot_tracks")
-    op.drop_index("ix_soulspot_tracks_title_artist", table_name="soulspot_tracks")
+    _drop_index_if_exists("ix_soulspot_tracks_title")
+    _drop_index_if_exists("ix_soulspot_tracks_spotify_uri")
+    _drop_index_if_exists("ix_soulspot_tracks_musicbrainz_id")
+    _drop_index_if_exists("ix_soulspot_tracks_isrc")
+    _drop_index_if_exists("ix_soulspot_tracks_title_artist")
+    _drop_index_if_exists("ix_soulspot_tracks_genre")
+    _drop_index_if_exists("ix_soulspot_tracks_file_hash")
+    _drop_index_if_exists("ix_soulspot_tracks_is_broken")
+    _drop_index_if_exists("ix_soulspot_tracks_album_track_number")
+    _drop_index_if_exists("ix_soulspot_tracks_album_disc_track")
+    _drop_index_if_exists("ix_soulspot_tracks_updated_at")
+    _drop_index_if_exists("ix_soulspot_tracks_file_path")
+    _drop_index_if_exists("ix_soulspot_tracks_last_scanned_at")
+    _drop_index_if_exists("ix_soulspot_tracks_broken_updated")
 
-    # Rename tables back
-    op.rename_table("soulspot_tracks", "tracks")
-    op.rename_table("soulspot_albums", "albums")
-    op.rename_table("soulspot_artists", "artists")
+    # Rename tables back (only if new names exist)
+    if _table_exists("soulspot_tracks"):
+        op.rename_table("soulspot_tracks", "tracks")
+    if _table_exists("soulspot_albums"):
+        op.rename_table("soulspot_albums", "albums")
+    if _table_exists("soulspot_artists"):
+        op.rename_table("soulspot_artists", "artists")
 
     # Recreate old indexes
-    op.create_index("ix_artists_name", "artists", ["name"])
-    op.create_index("ix_artists_spotify_uri", "artists", ["spotify_uri"], unique=True)
-    op.create_index(
-        "ix_artists_musicbrainz_id", "artists", ["musicbrainz_id"], unique=True
+    op.execute(text("CREATE INDEX IF NOT EXISTS ix_artists_name ON artists (name)"))
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_artists_spotify_uri "
+            "ON artists (spotify_uri)"
+        )
     )
-    op.execute("CREATE INDEX ix_artists_name_lower ON artists (lower(name))")
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_artists_musicbrainz_id "
+            "ON artists (musicbrainz_id)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_artists_name_lower ON artists (lower(name))"
+        )
+    )
+    op.execute(
+        text("CREATE INDEX IF NOT EXISTS ix_artists_updated_at ON artists (updated_at)")
+    )
 
-    op.create_index("ix_albums_title", "albums", ["title"])
-    op.create_index("ix_albums_release_year", "albums", ["release_year"])
-    op.create_index("ix_albums_spotify_uri", "albums", ["spotify_uri"], unique=True)
-    op.create_index(
-        "ix_albums_musicbrainz_id", "albums", ["musicbrainz_id"], unique=True
+    op.execute(text("CREATE INDEX IF NOT EXISTS ix_albums_title ON albums (title)"))
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_albums_release_year ON albums (release_year)"
+        )
     )
-    op.create_index("ix_albums_title_artist", "albums", ["title", "artist_id"])
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_albums_spotify_uri "
+            "ON albums (spotify_uri)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_albums_musicbrainz_id "
+            "ON albums (musicbrainz_id)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_albums_title_artist "
+            "ON albums (title, artist_id)"
+        )
+    )
+    op.execute(
+        text("CREATE INDEX IF NOT EXISTS ix_albums_artist_id ON albums (artist_id)")
+    )
+    op.execute(
+        text("CREATE INDEX IF NOT EXISTS ix_albums_updated_at ON albums (updated_at)")
+    )
 
-    op.create_index("ix_tracks_title", "tracks", ["title"])
-    op.create_index("ix_tracks_spotify_uri", "tracks", ["spotify_uri"], unique=True)
-    op.create_index(
-        "ix_tracks_musicbrainz_id", "tracks", ["musicbrainz_id"], unique=True
+    op.execute(text("CREATE INDEX IF NOT EXISTS ix_tracks_title ON tracks (title)"))
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_tracks_spotify_uri "
+            "ON tracks (spotify_uri)"
+        )
     )
-    op.create_index("ix_tracks_isrc", "tracks", ["isrc"], unique=True)
-    op.create_index("ix_tracks_genre", "tracks", ["genre"])
-    op.create_index("ix_tracks_file_hash", "tracks", ["file_hash"])
-    op.create_index("ix_tracks_is_broken", "tracks", ["is_broken"])
-    op.create_index("ix_tracks_title_artist", "tracks", ["title", "artist_id"])
+    op.execute(
+        text(
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_tracks_musicbrainz_id "
+            "ON tracks (musicbrainz_id)"
+        )
+    )
+    op.execute(
+        text("CREATE UNIQUE INDEX IF NOT EXISTS ix_tracks_isrc ON tracks (isrc)")
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_tracks_title_artist "
+            "ON tracks (title, artist_id)"
+        )
+    )
+    op.execute(text("CREATE INDEX IF NOT EXISTS ix_tracks_genre ON tracks (genre)"))
+    op.execute(
+        text("CREATE INDEX IF NOT EXISTS ix_tracks_file_hash ON tracks (file_hash)")
+    )
+    op.execute(
+        text("CREATE INDEX IF NOT EXISTS ix_tracks_is_broken ON tracks (is_broken)")
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_tracks_album_track_number "
+            "ON tracks (album_id, track_number)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_tracks_album_disc_track "
+            "ON tracks (album_id, disc_number, track_number)"
+        )
+    )
+    op.execute(
+        text("CREATE INDEX IF NOT EXISTS ix_tracks_updated_at ON tracks (updated_at)")
+    )
+    op.execute(
+        text("CREATE INDEX IF NOT EXISTS ix_tracks_file_path ON tracks (file_path)")
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_tracks_last_scanned_at "
+            "ON tracks (last_scanned_at)"
+        )
+    )
+    op.execute(
+        text(
+            "CREATE INDEX IF NOT EXISTS ix_tracks_broken_updated "
+            "ON tracks (is_broken, updated_at)"
+        )
+    )
