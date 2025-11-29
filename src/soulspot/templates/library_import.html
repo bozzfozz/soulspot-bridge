@@ -276,28 +276,83 @@ document.body.addEventListener('htmx:afterRequest', function(evt) {
         try {
             const response = JSON.parse(evt.detail.xhr.responseText);
             if (response.job_id) {
-                // Show job status and start polling
+                // Show clean scan status card
                 const statusDiv = document.getElementById('scan-status');
+                const stats = response.stats || {};
+                const isCompleted = response.status === 'completed';
+                
                 statusDiv.innerHTML = `
                     <div class="card">
                         <div class="card-header">
-                            <h3><i class="bi bi-list-task"></i> Scan Started</h3>
+                            <h3>
+                                <i class="bi bi-${isCompleted ? 'check-circle text-success' : 'hourglass-split'}"></i> 
+                                ${isCompleted ? 'Scan Completed' : 'Scan Started'}
+                            </h3>
                         </div>
                         <div class="card-body"
-                             hx-get="/api/library/import/status/${response.job_id}"
-                             hx-trigger="load, every 2s"
-                             hx-swap="innerHTML">
-                            <p>Job ID: ${response.job_id}</p>
-                            <p>Status: ${response.status}</p>
+                             ${!isCompleted ? `hx-get="/api/library/import/status/${response.job_id}" hx-trigger="load, every 2s" hx-swap="innerHTML"` : ''}>
+                            ${isCompleted ? `
+                                <div class="scan-stats" style="margin-bottom: 1rem;">
+                                    <span><i class="bi bi-file-earmark"></i> Files Scanned: <strong>${stats.scanned || 0}</strong></span>
+                                    <span><i class="bi bi-check text-success"></i> Imported: <strong>${stats.imported || 0}</strong></span>
+                                    <span><i class="bi bi-skip-forward"></i> Skipped: <strong>${stats.skipped || 0}</strong></span>
+                                    ${stats.errors > 0 ? `<span><i class="bi bi-exclamation-triangle text-warning"></i> Errors: <strong>${stats.errors}</strong></span>` : ''}
+                                </div>
+                                ${stats.new_artists > 0 || stats.new_albums > 0 || stats.new_tracks > 0 ? `
+                                <div class="scan-stats" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+                                    ${stats.new_artists > 0 ? `<span><i class="bi bi-person-plus"></i> New Artists: <strong>${stats.new_artists}</strong></span>` : ''}
+                                    ${stats.new_albums > 0 ? `<span><i class="bi bi-disc"></i> New Albums: <strong>${stats.new_albums}</strong></span>` : ''}
+                                    ${stats.new_tracks > 0 ? `<span><i class="bi bi-music-note-beamed"></i> New Tracks: <strong>${stats.new_tracks}</strong></span>` : ''}
+                                </div>
+                                ` : ''}
+                                <p class="text-muted" style="margin-top: 1rem; margin-bottom: 0; font-size: 0.85rem;">
+                                    <i class="bi bi-clock"></i> Completed in ${stats.completed_at && stats.started_at ? calculateDuration(stats.started_at, stats.completed_at) : 'N/A'}
+                                </p>
+                            ` : `
+                                <div class="progress-container">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: 0%;"></div>
+                                    </div>
+                                    <span class="progress-text">Starting...</span>
+                                </div>
+                                <p class="text-muted" style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                    Job ID: <code>${response.job_id}</code>
+                                </p>
+                            `}
                         </div>
                     </div>
                 `;
                 htmx.process(statusDiv);
+                
+                // Reload summary stats after completion
+                if (isCompleted && stats.imported > 0) {
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
             }
         } catch (e) {
             console.error('Error parsing scan response:', e);
+            document.getElementById('scan-status').innerHTML = `
+                <div class="card">
+                    <div class="card-body">
+                        <p class="text-danger"><i class="bi bi-exclamation-triangle"></i> Error starting scan. Check console for details.</p>
+                    </div>
+                </div>
+            `;
         }
     }
 });
+
+// Helper function to calculate duration
+function calculateDuration(start, end) {
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+    const durationMs = endTime - startTime;
+    
+    if (durationMs < 1000) return `${durationMs}ms`;
+    if (durationMs < 60000) return `${(durationMs / 1000).toFixed(1)}s`;
+    return `${Math.floor(durationMs / 60000)}m ${Math.floor((durationMs % 60000) / 1000)}s`;
+}
 </script>
 {% endblock %}
