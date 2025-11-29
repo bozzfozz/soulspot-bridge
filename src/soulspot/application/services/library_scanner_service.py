@@ -3,6 +3,7 @@
 # 1. JOB QUEUE integration - runs as background job (use JobQueue for async scanning)
 # 2. FUZZY MATCHING - finds existing artists/albums with 85% similarity (rapidfuzz)
 # 3. INCREMENTAL SCAN - only processes new/changed files based on mtime
+# 4. COMPILATION DETECTION - reads TPE2 (Album Artist) tag, detects "Various Artists"
 # The goal: import existing music collection, avoid re-downloading already owned tracks!
 """Library scanner service for importing local music files into database."""
 
@@ -21,6 +22,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from soulspot.config import Settings
 from soulspot.domain.entities import Album, Artist, Track
 from soulspot.domain.value_objects import AlbumId, ArtistId, FilePath, TrackId
+from soulspot.domain.value_objects.album_types import (
+    SecondaryAlbumType,
+    detect_compilation_from_track_artists,
+    is_various_artists,
+)
 from soulspot.infrastructure.persistence.models import (
     AlbumModel,
     ArtistModel,
@@ -286,6 +292,11 @@ class LibraryScannerService:
         artist_name = metadata.get("artist", "Unknown Artist")
         album_name = metadata.get("album")
         track_title = metadata.get("title") or file_path.stem
+        
+        # Hey future me - album_artist (TPE2) is crucial for compilation detection!
+        # If TPE2 is "Various Artists" but artist is different, it's a compilation.
+        album_artist = metadata.get("album_artist")
+        is_compilation = metadata.get("compilation", False)
 
         # Find or create artist (fuzzy matching)
         artist_id, is_new_artist, is_matched = await self._find_or_create_artist(
@@ -295,10 +306,15 @@ class LibraryScannerService:
         result["matched_artist"] = is_matched
 
         # Find or create album (if present)
+        # Now passes album_artist and compilation flag for proper type detection!
         album_id = None
         if album_name:
             album_id, is_new_album, is_matched_album = await self._find_or_create_album(
-                album_name, artist_id, metadata.get("year")
+                album_name,
+                artist_id,
+                release_year=metadata.get("year"),
+                album_artist=album_artist,
+                is_compilation=is_compilation,
             )
             result["new_album"] = is_new_album
             result["matched_album"] = is_matched_album
@@ -410,36 +426,49 @@ class LibraryScannerService:
         """Extract common tags from audio file.
 
         Handles different tag formats (ID3, Vorbis, MP4).
+        Now also extracts album_artist (TPE2) for compilation detection!
         """
         tags: dict[str, Any] = {}
 
+        # Hey future me - TPE2 (Album Artist) is crucial for compilation detection!
+        # If TPE2 is "Various Artists" but TPE1 (track artist) is different, it's likely
+        # a compilation. Common patterns:
+        # - Various Artists / VA / V.A. -> compilation
+        # - Same as album title (like "Soundtrack") -> compilation
         # Try common tag mappings
         tag_mappings = {
             # ID3 (MP3)
             "TIT2": "title",
             "TPE1": "artist",
+            "TPE2": "album_artist",  # Album Artist - crucial for compilations!
             "TALB": "album",
             "TRCK": "track_number",
             "TPOS": "disc_number",
             "TYER": "year",
             "TDRC": "year",
             "TCON": "genre",
+            "TCMP": "compilation",  # iTunes compilation flag (1 = compilation)
             # Vorbis (FLAC, OGG)
             "title": "title",
             "artist": "artist",
+            "albumartist": "album_artist",  # Album artist for Vorbis
+            "album artist": "album_artist",  # Alternative spelling
             "album": "album",
             "tracknumber": "track_number",
             "discnumber": "disc_number",
             "date": "year",
             "genre": "genre",
+            "compilation": "compilation",  # Vorbis compilation flag
             # MP4 (M4A)
             "©nam": "title",
             "©ART": "artist",
+            "aART": "album_artist",  # MP4 Album Artist
             "©alb": "album",
             "©day": "year",
             "©gen": "genre",
             "trkn": "track_number",
             "disk": "disc_number",
+            "cpil": "compilation",  # MP4 compilation flag
         }
 
         audio_tags = audio.tags
@@ -475,6 +504,17 @@ class LibraryScannerService:
                         value = int(str(value)[:4])
                     except (ValueError, TypeError):
                         value = None
+
+                # Parse compilation flag (can be "1", "true", True, etc.)
+                if field_name == "compilation" and value:
+                    if isinstance(value, bool):
+                        value = value
+                    elif isinstance(value, (int, float)):
+                        value = bool(value)
+                    elif isinstance(value, str):
+                        value = value.lower() in ("1", "true", "yes")
+                    else:
+                        value = False
 
                 if value is not None:
                     tags[field_name] = value
@@ -568,13 +608,19 @@ class LibraryScannerService:
         title: str,
         artist_id: ArtistId,
         release_year: int | None = None,
+        album_artist: str | None = None,
+        is_compilation: bool = False,
     ) -> tuple[AlbumId, bool, bool]:
         """Find existing album by fuzzy matching or create new.
 
+        Now supports album_artist (TPE2) and compilation detection!
+
         Args:
             title: Album title from metadata
-            artist_id: Artist ID
+            artist_id: Artist ID (track-level artist)
             release_year: Optional release year
+            album_artist: Album-level artist (TPE2 tag) - often "Various Artists" for compilations
+            is_compilation: True if compilation flag is set in metadata
 
         Returns:
             Tuple of (album_id, is_new, is_fuzzy_matched)
@@ -606,6 +652,15 @@ class LibraryScannerService:
             logger.debug(f"Fuzzy matched album '{title}' (score: {best_score})")
             return self._album_cache[best_match_key], False, True
 
+        # Determine secondary_types (compilation detection)
+        # Hey future me - compilation is detected if:
+        # 1. compilation flag is True in metadata (TCMP, cpil tags)
+        # 2. album_artist matches "Various Artists" patterns
+        secondary_types: list[str] = []
+        if is_compilation or (album_artist and is_various_artists(album_artist)):
+            secondary_types.append(SecondaryAlbumType.COMPILATION.value)
+            logger.debug(f"Album '{title}' detected as compilation (album_artist={album_artist})")
+
         # Create new album
         album = Album(
             id=AlbumId.generate(),
@@ -615,7 +670,17 @@ class LibraryScannerService:
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
         )
+        
+        # Add album via repository, then update model directly for new fields
         await self.album_repo.add(album)
+        
+        # Get the model and set the new fields (album_artist, secondary_types)
+        # Hey - we need to update the model directly because Album entity doesn't have these yet
+        stmt = select(AlbumModel).where(AlbumModel.id == str(album.id.value))
+        result = await self.session.execute(stmt)
+        album_model = result.scalar_one()
+        album_model.album_artist = album_artist
+        album_model.secondary_types = secondary_types
 
         # Add to cache
         self._album_cache[cache_key] = album.id

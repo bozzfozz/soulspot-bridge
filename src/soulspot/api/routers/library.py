@@ -1318,3 +1318,391 @@ async def execute_batch_rename(
         failed=failed,
         results=results,
     )
+
+
+# =============================================================================
+# LIBRARY ENRICHMENT ENDPOINTS
+# =============================================================================
+# Hey future me - these endpoints handle Spotify enrichment for local library!
+# Enrichment matches local items with Spotify to add artwork, genres, URIs.
+# =============================================================================
+
+
+class EnrichmentStatusResponse(BaseModel):
+    """Status of library enrichment."""
+
+    artists_unenriched: int
+    albums_unenriched: int
+    pending_candidates: int
+    is_enrichment_needed: bool
+
+
+class EnrichmentTriggerResponse(BaseModel):
+    """Response after triggering enrichment job."""
+
+    job_id: str
+    message: str
+
+
+class EnrichmentCandidateResponse(BaseModel):
+    """A potential Spotify match for review."""
+
+    id: str
+    entity_type: str  # 'artist' or 'album'
+    entity_id: str
+    entity_name: str  # Local entity name (for display)
+    spotify_uri: str
+    spotify_name: str
+    spotify_image_url: str | None
+    confidence_score: float
+    extra_info: dict[str, Any]
+
+
+class EnrichmentCandidatesListResponse(BaseModel):
+    """List of enrichment candidates."""
+
+    candidates: list[EnrichmentCandidateResponse]
+    total: int
+
+
+class ApplyCandidateRequest(BaseModel):
+    """Request to apply a selected candidate."""
+
+    candidate_id: str
+
+
+@router.get(
+    "/enrichment/status",
+    response_model=EnrichmentStatusResponse,
+    summary="Get library enrichment status",
+)
+async def get_enrichment_status(
+    db: AsyncSession = Depends(get_db_session),
+) -> EnrichmentStatusResponse:
+    """Get current status of library enrichment.
+
+    Returns counts of:
+    - Unenriched artists (have local files but no Spotify URI)
+    - Unenriched albums (have local files but no Spotify URI)
+    - Pending candidates (ambiguous matches waiting for user review)
+    """
+    from sqlalchemy import func, select
+
+    from soulspot.infrastructure.persistence.models import (
+        AlbumModel,
+        ArtistModel,
+        EnrichmentCandidateModel,
+        TrackModel,
+    )
+
+    # Count unenriched artists (with local tracks)
+    has_local_artist_tracks = (
+        select(TrackModel.id)
+        .where(TrackModel.artist_id == ArtistModel.id)
+        .where(TrackModel.file_path.isnot(None))
+        .exists()
+    )
+    artists_stmt = (
+        select(func.count(ArtistModel.id))
+        .where(ArtistModel.spotify_uri.is_(None))
+        .where(has_local_artist_tracks)
+    )
+    artists_result = await db.execute(artists_stmt)
+    artists_unenriched = artists_result.scalar() or 0
+
+    # Count unenriched albums (with local tracks)
+    has_local_album_tracks = (
+        select(TrackModel.id)
+        .where(TrackModel.album_id == AlbumModel.id)
+        .where(TrackModel.file_path.isnot(None))
+        .exists()
+    )
+    albums_stmt = (
+        select(func.count(AlbumModel.id))
+        .where(AlbumModel.spotify_uri.is_(None))
+        .where(has_local_album_tracks)
+    )
+    albums_result = await db.execute(albums_stmt)
+    albums_unenriched = albums_result.scalar() or 0
+
+    # Count pending candidates
+    candidates_stmt = select(func.count(EnrichmentCandidateModel.id)).where(
+        EnrichmentCandidateModel.is_selected == False,  # noqa: E712
+        EnrichmentCandidateModel.is_rejected == False,  # noqa: E712
+    )
+    candidates_result = await db.execute(candidates_stmt)
+    pending_candidates = candidates_result.scalar() or 0
+
+    return EnrichmentStatusResponse(
+        artists_unenriched=artists_unenriched,
+        albums_unenriched=albums_unenriched,
+        pending_candidates=pending_candidates,
+        is_enrichment_needed=(artists_unenriched + albums_unenriched) > 0,
+    )
+
+
+@router.post(
+    "/enrichment/trigger",
+    response_model=EnrichmentTriggerResponse,
+    summary="Trigger library enrichment job",
+)
+async def trigger_enrichment(
+    job_queue: JobQueue = Depends(get_job_queue),
+) -> EnrichmentTriggerResponse:
+    """Manually trigger a library enrichment job.
+
+    This queues a background job that will:
+    1. Find unenriched artists and albums
+    2. Search Spotify for matches
+    3. Apply high-confidence matches automatically
+    4. Create candidates for ambiguous matches (user review needed)
+    """
+    job = await job_queue.enqueue(
+        job_type=JobType.LIBRARY_SPOTIFY_ENRICHMENT,
+        payload={"triggered_by": "manual_api"},
+    )
+
+    return EnrichmentTriggerResponse(
+        job_id=str(job.id),
+        message="Enrichment job queued successfully",
+    )
+
+
+@router.get(
+    "/enrichment/candidates",
+    response_model=EnrichmentCandidatesListResponse,
+    summary="Get enrichment candidates for review",
+)
+async def get_enrichment_candidates(
+    entity_type: str | None = Query(None, description="Filter by 'artist' or 'album'"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db_session),
+) -> EnrichmentCandidatesListResponse:
+    """Get pending enrichment candidates for user review.
+
+    Returns candidates where multiple Spotify matches were found
+    and user needs to select the correct one.
+    """
+    from sqlalchemy import func, select
+
+    from soulspot.infrastructure.persistence.models import (
+        AlbumModel,
+        ArtistModel,
+        EnrichmentCandidateModel,
+    )
+
+    # Build query for pending candidates
+    stmt = (
+        select(EnrichmentCandidateModel)
+        .where(EnrichmentCandidateModel.is_selected == False)  # noqa: E712
+        .where(EnrichmentCandidateModel.is_rejected == False)  # noqa: E712
+        .order_by(EnrichmentCandidateModel.confidence_score.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+
+    if entity_type:
+        stmt = stmt.where(EnrichmentCandidateModel.entity_type == entity_type)
+
+    result = await db.execute(stmt)
+    candidates = result.scalars().all()
+
+    # Count total
+    count_stmt = select(func.count(EnrichmentCandidateModel.id)).where(
+        EnrichmentCandidateModel.is_selected == False,  # noqa: E712
+        EnrichmentCandidateModel.is_rejected == False,  # noqa: E712
+    )
+    if entity_type:
+        count_stmt = count_stmt.where(EnrichmentCandidateModel.entity_type == entity_type)
+
+    count_result = await db.execute(count_stmt)
+    total = count_result.scalar() or 0
+
+    # Get entity names for display
+    response_candidates = []
+    for candidate in candidates:
+        # Get entity name
+        if candidate.entity_type == "artist":
+            entity_stmt = select(ArtistModel.name).where(
+                ArtistModel.id == candidate.entity_id
+            )
+        else:
+            entity_stmt = select(AlbumModel.title).where(
+                AlbumModel.id == candidate.entity_id
+            )
+
+        entity_result = await db.execute(entity_stmt)
+        entity_name = entity_result.scalar() or "Unknown"
+
+        response_candidates.append(
+            EnrichmentCandidateResponse(
+                id=candidate.id,
+                entity_type=candidate.entity_type,
+                entity_id=candidate.entity_id,
+                entity_name=entity_name,
+                spotify_uri=candidate.spotify_uri,
+                spotify_name=candidate.spotify_name,
+                spotify_image_url=candidate.spotify_image_url,
+                confidence_score=candidate.confidence_score,
+                extra_info=candidate.extra_info or {},
+            )
+        )
+
+    return EnrichmentCandidatesListResponse(
+        candidates=response_candidates,
+        total=total,
+    )
+
+
+@router.post(
+    "/enrichment/candidates/{candidate_id}/apply",
+    summary="Apply selected enrichment candidate",
+)
+async def apply_enrichment_candidate(
+    candidate_id: str,
+    db: AsyncSession = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
+) -> dict[str, Any]:
+    """Apply a user-selected enrichment candidate.
+
+    This will:
+    1. Mark the candidate as selected
+    2. Update the entity (artist/album) with Spotify URI and image
+    3. Reject other candidates for the same entity
+    """
+    from datetime import UTC, datetime
+
+    from sqlalchemy import select, update
+
+    from soulspot.application.services.spotify_image_service import SpotifyImageService
+    from soulspot.infrastructure.persistence.models import (
+        AlbumModel,
+        ArtistModel,
+        EnrichmentCandidateModel,
+    )
+
+    # Get candidate
+    stmt = select(EnrichmentCandidateModel).where(
+        EnrichmentCandidateModel.id == candidate_id
+    )
+    result = await db.execute(stmt)
+    candidate = result.scalar_one_or_none()
+
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    if candidate.is_selected or candidate.is_rejected:
+        raise HTTPException(status_code=400, detail="Candidate already processed")
+
+    # Update entity with Spotify data
+    image_service = SpotifyImageService(settings)
+    image_downloaded = False
+
+    if candidate.entity_type == "artist":
+        model_stmt = select(ArtistModel).where(ArtistModel.id == candidate.entity_id)
+        model_result = await db.execute(model_stmt)
+        model = model_result.scalar_one_or_none()
+
+        if model:
+            model.spotify_uri = candidate.spotify_uri
+            model.image_url = candidate.spotify_image_url
+            model.updated_at = datetime.now(UTC)
+
+            # Download image
+            if candidate.spotify_image_url:
+                try:
+                    spotify_id = candidate.spotify_uri.split(":")[-1]
+                    await image_service.download_artist_image(
+                        spotify_id, candidate.spotify_image_url
+                    )
+                    image_downloaded = True
+                except Exception as e:
+                    logger.warning(f"Failed to download artist image: {e}")
+
+    else:  # album
+        model_stmt = select(AlbumModel).where(AlbumModel.id == candidate.entity_id)
+        model_result = await db.execute(model_stmt)
+        model = model_result.scalar_one_or_none()
+
+        if model:
+            model.spotify_uri = candidate.spotify_uri
+            model.artwork_url = candidate.spotify_image_url
+            model.updated_at = datetime.now(UTC)
+
+            # Download image
+            if candidate.spotify_image_url:
+                try:
+                    spotify_id = candidate.spotify_uri.split(":")[-1]
+                    local_path = await image_service.download_album_image(
+                        spotify_id, candidate.spotify_image_url
+                    )
+                    model.artwork_path = str(local_path)
+                    image_downloaded = True
+                except Exception as e:
+                    logger.warning(f"Failed to download album image: {e}")
+
+    # Mark candidate as selected
+    candidate.is_selected = True
+    candidate.updated_at = datetime.now(UTC)
+
+    # Reject other candidates for same entity
+    reject_stmt = (
+        update(EnrichmentCandidateModel)
+        .where(EnrichmentCandidateModel.entity_type == candidate.entity_type)
+        .where(EnrichmentCandidateModel.entity_id == candidate.entity_id)
+        .where(EnrichmentCandidateModel.id != candidate_id)
+        .where(EnrichmentCandidateModel.is_selected == False)  # noqa: E712
+        .values(is_rejected=True, updated_at=datetime.now(UTC))
+    )
+    await db.execute(reject_stmt)
+
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": f"Applied enrichment for {candidate.entity_type}",
+        "spotify_uri": candidate.spotify_uri,
+        "image_downloaded": image_downloaded,
+    }
+
+
+@router.post(
+    "/enrichment/candidates/{candidate_id}/reject",
+    summary="Reject an enrichment candidate",
+)
+async def reject_enrichment_candidate(
+    candidate_id: str,
+    db: AsyncSession = Depends(get_db_session),
+) -> dict[str, Any]:
+    """Reject an enrichment candidate.
+
+    Use this when the suggested Spotify match is incorrect.
+    """
+    from datetime import UTC, datetime
+
+    from sqlalchemy import select
+
+    from soulspot.infrastructure.persistence.models import EnrichmentCandidateModel
+
+    stmt = select(EnrichmentCandidateModel).where(
+        EnrichmentCandidateModel.id == candidate_id
+    )
+    result = await db.execute(stmt)
+    candidate = result.scalar_one_or_none()
+
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+
+    if candidate.is_selected or candidate.is_rejected:
+        raise HTTPException(status_code=400, detail="Candidate already processed")
+
+    candidate.is_rejected = True
+    candidate.updated_at = datetime.now(UTC)
+    await db.commit()
+
+    return {
+        "success": True,
+        "message": "Candidate rejected",
+    }
+

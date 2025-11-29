@@ -37,6 +37,12 @@ class JobType(str, Enum):
     # File management
     AUTO_IMPORT = "auto_import"
 
+    # Library enrichment - enriches local library with Spotify data (artwork, URIs, etc.)
+    # Hey future me - this job runs AFTER library scan completes! It searches Spotify for
+    # artists/albums that don't have spotify_uri yet, downloads artwork, and saves matches.
+    # Multiple matches create enrichment_candidates for user selection.
+    LIBRARY_SPOTIFY_ENRICHMENT = "library_spotify_enrichment"
+
 
 class JobStatus(str, Enum):
     """Status of a background job."""

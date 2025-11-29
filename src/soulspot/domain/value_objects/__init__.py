@@ -7,6 +7,15 @@ from uuid import UUID, uuid4
 
 from soulspot.domain.exceptions import ValidationException
 
+# Album type exports
+from soulspot.domain.value_objects.album_types import (
+    PrimaryAlbumType,
+    SecondaryAlbumType,
+    VARIOUS_ARTISTS_PATTERNS,
+    is_various_artists,
+    detect_compilation_from_track_artists,
+)
+
 
 # Hey future me, ArtistId is a VALUE OBJECT (Domain-Driven Design)! It's NOT just a UUID - it's a
 # type-safe wrapper that ensures IDs are always valid UUIDs. The @dataclass(frozen=True) makes it

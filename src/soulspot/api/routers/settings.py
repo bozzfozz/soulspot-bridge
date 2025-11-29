@@ -1410,3 +1410,72 @@ async def get_naming_variables() -> dict[str, list[dict[str, str]]]:
             {"variable": "{disc}", "description": "Disc number (legacy)"},
         ],
     }
+
+
+# =============================================================================
+# LIBRARY ENRICHMENT SETTINGS
+# =============================================================================
+# Hey future me – dieser Endpoint kontrolliert das Auto-Enrichment der Local Library!
+# Wenn enabled, wird nach jedem Library Scan automatisch Spotify nach Metadaten durchsucht.
+# Super simpel - nur ein Boolean Toggle. Defaults, Batch Size etc. sind hardcoded in
+# AppSettingsService weil der User damit nicht rumspielen muss.
+# =============================================================================
+
+
+class LibraryEnrichmentSettings(BaseModel):
+    """Library enrichment configuration.
+
+    Just a simple toggle - enrichment runs automatically after library scans.
+    Advanced settings (batch size, rate limit, etc.) use sensible defaults.
+    """
+
+    auto_enrichment_enabled: bool = Field(
+        default=True,
+        description="Auto-enrich local library with Spotify metadata after scans",
+    )
+
+
+@router.get("/library/enrichment")
+async def get_library_enrichment_settings(
+    db: AsyncSession = Depends(get_db_session),
+) -> LibraryEnrichmentSettings:
+    """Get library enrichment settings.
+
+    Returns current enrichment configuration from database.
+
+    Returns:
+        Current enrichment settings (just the auto toggle)
+    """
+    settings_service = AppSettingsService(db)
+    enabled = await settings_service.is_library_auto_enrichment_enabled()
+
+    return LibraryEnrichmentSettings(auto_enrichment_enabled=enabled)
+
+
+@router.put("/library/enrichment")
+async def update_library_enrichment_settings(
+    settings_update: LibraryEnrichmentSettings,
+    db: AsyncSession = Depends(get_db_session),
+) -> LibraryEnrichmentSettings:
+    """Update library enrichment settings.
+
+    Toggle takes effect immediately - no restart required.
+
+    Args:
+        settings_update: New settings (just auto_enrichment_enabled)
+
+    Returns:
+        Updated settings
+    """
+    settings_service = AppSettingsService(db)
+
+    await settings_service.set(
+        "library.auto_enrichment_enabled",
+        settings_update.auto_enrichment_enabled,
+        value_type="boolean",
+        category="library",
+    )
+
+    await db.commit()
+
+    return settings_update

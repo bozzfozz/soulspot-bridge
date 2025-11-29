@@ -252,6 +252,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             app.state.library_scan_worker = library_scan_worker
             logger.info("Library scan worker registered")
 
+            # Initialize library enrichment worker
+            # Hey future me - this worker enriches local library items with Spotify data!
+            # It runs automatically after library scans (if auto_enrichment_enabled)
+            from soulspot.application.workers.library_enrichment_worker import (
+                LibraryEnrichmentWorker,
+            )
+
+            library_enrichment_worker = LibraryEnrichmentWorker(
+                job_queue=job_queue,
+                db=db,
+                settings=settings,
+            )
+            library_enrichment_worker.register()
+            app.state.library_enrichment_worker = library_enrichment_worker
+            logger.info("Library enrichment worker registered")
+
             # Start job queue workers
             await job_queue.start(num_workers=settings.download.num_workers)
             logger.info(

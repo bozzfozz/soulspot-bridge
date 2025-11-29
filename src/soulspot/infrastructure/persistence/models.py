@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 import sqlalchemy as sa
 from sqlalchemy import (
@@ -9,6 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     String,
     Text,
     func,
@@ -127,6 +129,25 @@ class AlbumModel(Base):
     # from Spotify. UI can show artwork_url immediately while downloading, then switch to
     # artwork_path once local file exists. Nullable because not all albums have covers!
     artwork_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    
+    # Hey future me - Lidarr-style dual album type system! This allows proper handling of
+    # compilations, soundtracks, live albums etc. An album can be "album" (primary) AND
+    # "compilation" + "live" (secondary). Examples:
+    # - Normal studio album: primary_type="album", secondary_types=[]
+    # - Live compilation: primary_type="album", secondary_types=["live", "compilation"]
+    # - Movie soundtrack: primary_type="album", secondary_types=["soundtrack"]
+    # - EP with remixes: primary_type="ep", secondary_types=["remix"]
+    # The album_artist field stores the album-level artist (can differ from track artists).
+    # For compilations, this is typically "Various Artists" while individual tracks have
+    # their own artist_id. This matches ID3v2 TPE2 (Album Artist) tag convention.
+    album_artist: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    primary_type: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="album", server_default="album", index=True
+    )
+    secondary_types: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list, server_default="[]"
+    )
+    
     created_at: Mapped[datetime] = mapped_column(default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         default=utc_now, onupdate=utc_now, nullable=False
@@ -137,8 +158,17 @@ class AlbumModel(Base):
     tracks: Mapped[list["TrackModel"]] = relationship(
         "TrackModel", back_populates="album", cascade="all, delete-orphan"
     )
+    
+    # Hey future me - helper property to check if this is a compilation
+    @property
+    def is_compilation(self) -> bool:
+        """Check if album is a compilation (Various Artists, etc.)."""
+        return "compilation" in (self.secondary_types or [])
 
-    __table_args__ = (Index("ix_albums_title_artist", "title", "artist_id"),)
+    __table_args__ = (
+        Index("ix_albums_title_artist", "title", "artist_id"),
+        Index("ix_albums_primary_type", "primary_type"),
+    )
 
 
 # Hey future me, TrackModel is the BUSIEST table - queries hit it constantly! The file_*
@@ -1073,4 +1103,64 @@ class OrphanedFileModel(Base):
     __table_args__ = (
         Index("ix_orphaned_files_status", "status"),
         Index("ix_orphaned_files_type", "orphan_type"),
+    )
+
+
+# =============================================================================
+# ENRICHMENT CANDIDATES
+# =============================================================================
+# Hey future me - this stores potential Spotify matches for local library items!
+# When enriching local library, if we find multiple Spotify results that could match,
+# we store them here for user review. This avoids auto-matching "Pink Floyd" to
+# some random tribute band. User picks the correct one in UI, we apply that match.
+#
+# entity_type: 'artist' or 'album'
+# entity_id: FK to soulspot_artists or soulspot_albums (polymorphic reference)
+# confidence_score: 0.0 - 1.0, how confident we are this is the right match
+# is_selected: User chose this candidate as correct
+# is_rejected: User explicitly rejected this candidate
+# =============================================================================
+
+
+class EnrichmentCandidateModel(Base):
+    """Potential Spotify matches for local library entities.
+
+    Stores candidates when enrichment finds multiple possible matches
+    so users can review and select the correct one.
+    """
+
+    __tablename__ = "enrichment_candidates"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    # Entity type: 'artist' or 'album'
+    entity_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Polymorphic FK - points to soulspot_artists or soulspot_albums based on entity_type
+    entity_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    # Spotify URI of this candidate (e.g., spotify:artist:XXXXX)
+    spotify_uri: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Name from Spotify (for display in UI)
+    spotify_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Image URL from Spotify (for preview in UI)
+    spotify_image_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Match confidence 0.0-1.0 (higher = better match)
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    # User selected this candidate as correct
+    is_selected: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
+    # User explicitly rejected this candidate
+    is_rejected: Mapped[bool] = mapped_column(sa.Boolean, nullable=False, default=False)
+    # Additional info (genres, followers, etc.) stored as JSON
+    extra_info: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_enrichment_entity", "entity_type", "entity_id"),
+        Index("ix_enrichment_spotify_uri", "spotify_uri"),
+        Index("ix_enrichment_confidence", "confidence_score"),
     )

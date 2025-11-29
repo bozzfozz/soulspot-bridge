@@ -732,6 +732,33 @@
                 </div>
             </div>
 
+            <!-- Spotify Enrichment Section -->
+            <!-- Hey future me - Simplified! Just a single toggle. Auto-enrichment runs automatically
+                 after every library scan when enabled. No manual buttons, no extra options.
+                 Artwork download, confidence threshold etc. use sensible defaults. -->
+            <div style="margin-bottom: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-primary);">
+                <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4); display: flex; align-items: center; gap: var(--space-2);">
+                    <i class="bi bi-spotify" style="color: #1DB954;"></i>
+                    Spotify Enrichment
+                </h3>
+                
+                <div class="sync-option-card">
+                    <div class="sync-option-info">
+                        <div class="sync-option-icon" style="background: linear-gradient(135deg, #1DB954, #169c46);">
+                            <i class="bi bi-magic"></i>
+                        </div>
+                        <div>
+                            <div class="sync-option-title">Auto-Enrich Local Library</div>
+                            <div class="sync-option-desc">Automatically enrich local files with Spotify metadata &amp; artwork after each library scan</div>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="enrichment-auto-enabled" checked onchange="toggleEnrichmentSetting('auto_enrichment_enabled')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
             <!-- Save Button -->
             <div style="margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--border-primary); display: flex; justify-content: flex-end;">
                 <button type="button" class="btn btn-primary" onclick="saveNamingSettings()">
@@ -1940,8 +1967,29 @@
             // Update preview
             updateNamingPreview();
             
+            // Also load enrichment settings
+            await loadEnrichmentSettings();
+            
         } catch (error) {
             console.error('Failed to load naming settings:', error);
+        }
+    }
+    
+    // Hey future me – Lädt das Enrichment-Setting (nur ein Boolean Toggle).
+    // Separate Funktion damit es auch beim Tab-Wechsel aufgerufen werden kann.
+    async function loadEnrichmentSettings() {
+        try {
+            const response = await fetch('/api/settings/library/enrichment');
+            if (!response.ok) throw new Error('Failed to load enrichment settings');
+            
+            const settings = await response.json();
+            
+            const enrichmentToggle = document.getElementById('enrichment-auto-enabled');
+            if (enrichmentToggle) {
+                enrichmentToggle.checked = settings.auto_enrichment_enabled ?? true;
+            }
+        } catch (error) {
+            console.error('Failed to load enrichment settings:', error);
         }
     }
     
@@ -2250,6 +2298,38 @@
                 batchRenameBtn.disabled = true;
                 batchRenameBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Rename Files';
             }
+        }
+    }
+    
+    // =========================================================================
+    // ENRICHMENT FUNCTION
+    // Hey future me - Simplified! Just one toggle for auto-enrichment.
+    // No manual buttons needed - enrichment runs automatically after library scan.
+    // =========================================================================
+    
+    async function toggleEnrichmentSetting(setting) {
+        // Get current value from checkbox
+        const checkbox = document.getElementById('enrichment-auto-enabled');
+        if (!checkbox) return;
+        
+        const value = checkbox.checked;
+        
+        try {
+            const response = await fetch('/api/settings/library/enrichment', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auto_enrichment_enabled: value })
+            });
+            
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const status = value ? 'enabled' : 'disabled';
+            SoulSpot.showNotification(`Auto-enrichment ${status}`, 'success');
+        } catch (error) {
+            console.error('Failed to update enrichment setting:', error);
+            SoulSpot.showNotification('Failed to update setting', 'error');
+            // Revert checkbox on error
+            checkbox.checked = !value;
         }
     }
 </script>

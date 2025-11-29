@@ -61,6 +61,28 @@ class IArtistRepository(ABC):
         """List all artists with pagination."""
         pass
 
+    @abstractmethod
+    async def get_unenriched(self, limit: int = 50) -> list[Artist]:
+        """Get artists that have local files but no Spotify enrichment yet.
+
+        Returns artists where:
+        - spotify_uri is NULL (not linked to Spotify yet)
+        - Artist has at least one track with file_path (local file exists)
+        - Artist name is NOT "Various Artists" etc (those can't be enriched)
+
+        Args:
+            limit: Maximum number of artists to return
+
+        Returns:
+            List of Artist entities needing enrichment
+        """
+        pass
+
+    @abstractmethod
+    async def count_unenriched(self) -> int:
+        """Count artists that need enrichment."""
+        pass
+
 
 class IAlbumRepository(ABC):
     """Repository interface for Album entities."""
@@ -98,6 +120,30 @@ class IAlbumRepository(ABC):
     @abstractmethod
     async def delete(self, album_id: AlbumId) -> None:
         """Delete an album."""
+        pass
+
+    @abstractmethod
+    async def get_unenriched(
+        self, limit: int = 50, include_compilations: bool = True
+    ) -> list[Album]:
+        """Get albums that have local files but no Spotify enrichment yet.
+
+        Returns albums where:
+        - spotify_uri is NULL (not linked to Spotify yet)
+        - Album has at least one track with file_path (local file exists)
+
+        Args:
+            limit: Maximum number of albums to return
+            include_compilations: If False, exclude compilation albums
+
+        Returns:
+            List of Album entities needing enrichment
+        """
+        pass
+
+    @abstractmethod
+    async def count_unenriched(self, include_compilations: bool = True) -> int:
+        """Count albums that need enrichment."""
         pass
 
 

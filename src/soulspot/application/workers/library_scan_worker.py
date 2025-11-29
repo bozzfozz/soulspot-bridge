@@ -103,8 +103,60 @@ class LibraryScanWorker:
                     f"{stats['imported']} imported, {stats['errors']} errors"
                 )
 
+                # Hey future me - trigger enrichment job if enabled!
+                # This runs AFTER library scan to enrich newly imported items
+                # with Spotify metadata (artwork, genres, etc.)
+                await self._trigger_enrichment_if_enabled(session, stats)
+
                 return stats
 
             except Exception as e:
                 logger.error(f"Library scan job {job.id} failed: {e}")
                 raise
+
+    async def _trigger_enrichment_if_enabled(
+        self,
+        session: Any,
+        scan_stats: dict[str, Any],
+    ) -> None:
+        """Trigger enrichment job if auto-enrichment is enabled and items were imported.
+
+        Only triggers if:
+        1. auto_enrichment_enabled setting is True
+        2. At least one new artist or album was imported
+
+        Args:
+            session: Database session
+            scan_stats: Stats from the completed scan
+        """
+        from soulspot.application.services.app_settings_service import (
+            AppSettingsService,
+        )
+
+        # Check if auto-enrichment is enabled
+        settings_service = AppSettingsService(session)
+        if not await settings_service.is_library_auto_enrichment_enabled():
+            logger.debug("Auto-enrichment disabled, skipping")
+            return
+
+        # Check if anything was imported that needs enrichment
+        new_artists = scan_stats.get("new_artists", 0)
+        new_albums = scan_stats.get("new_albums", 0)
+
+        if new_artists == 0 and new_albums == 0:
+            logger.debug("No new items imported, skipping enrichment")
+            return
+
+        # Queue enrichment job
+        logger.info(
+            f"Queuing enrichment job for {new_artists} artists, {new_albums} albums"
+        )
+
+        await self._job_queue.enqueue(
+            job_type=JobType.LIBRARY_SPOTIFY_ENRICHMENT,
+            payload={
+                "triggered_by": "library_scan",
+                "new_artists": new_artists,
+                "new_albums": new_albums,
+            },
+        )

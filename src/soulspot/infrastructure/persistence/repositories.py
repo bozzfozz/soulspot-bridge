@@ -260,6 +260,92 @@ class ArtistRepository(IArtistRepository):
         result = await self.session.execute(stmt)
         return result.scalar() or 0
 
+    # =========================================================================
+    # ENRICHMENT METHODS
+    # =========================================================================
+    # Hey future me - these methods are for Spotify enrichment of local library!
+    # They find artists that have a local file (file_path in tracks) but no Spotify data yet.
+    # This allows enriching local library with Spotify metadata (artwork, genres, etc.)
+    # =========================================================================
+
+    async def get_unenriched(self, limit: int = 50) -> list[Artist]:
+        """Get artists that have local files but no Spotify enrichment yet.
+
+        Returns artists where:
+        - spotify_uri is NULL (not linked to Spotify yet)
+        - Artist has at least one track with file_path (local file exists)
+        - Artist name is NOT "Various Artists" etc (those can't be enriched)
+
+        Args:
+            limit: Maximum number of artists to return (default 50 for batch processing)
+
+        Returns:
+            List of Artist entities needing enrichment
+        """
+        from soulspot.domain.value_objects.album_types import VARIOUS_ARTISTS_PATTERNS
+
+        # Hey - we use EXISTS subquery to only get artists with local files
+        # This avoids enriching artists that only exist from Spotify imports
+        has_local_tracks = (
+            select(TrackModel.id)
+            .where(TrackModel.artist_id == ArtistModel.id)
+            .where(TrackModel.file_path.isnot(None))
+            .exists()
+        )
+
+        stmt = (
+            select(ArtistModel)
+            .where(ArtistModel.spotify_uri.is_(None))  # Not enriched yet
+            .where(has_local_tracks)  # Has local files
+            .order_by(ArtistModel.name)
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        models = result.scalars().all()
+
+        # Filter out Various Artists patterns in Python (more flexible than SQL LIKE)
+        enrichable = []
+        for model in models:
+            name_lower = model.name.lower()
+            # Skip if name matches Various Artists patterns
+            if any(pattern in name_lower for pattern in VARIOUS_ARTISTS_PATTERNS):
+                continue
+            enrichable.append(
+                Artist(
+                    id=ArtistId.from_string(model.id),
+                    name=model.name,
+                    spotify_uri=None,
+                    musicbrainz_id=model.musicbrainz_id,
+                    image_url=model.image_url,
+                    genres=json.loads(model.genres) if model.genres else [],
+                    tags=json.loads(model.tags) if model.tags else [],
+                    created_at=model.created_at,
+                    updated_at=model.updated_at,
+                )
+            )
+
+        return enrichable
+
+    async def count_unenriched(self) -> int:
+        """Count artists that need enrichment.
+
+        Returns count of artists with local files but no Spotify URI.
+        """
+        has_local_tracks = (
+            select(TrackModel.id)
+            .where(TrackModel.artist_id == ArtistModel.id)
+            .where(TrackModel.file_path.isnot(None))
+            .exists()
+        )
+
+        stmt = (
+            select(func.count(ArtistModel.id))
+            .where(ArtistModel.spotify_uri.is_(None))
+            .where(has_local_tracks)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
 
 class AlbumRepository(IAlbumRepository):
     """SQLAlchemy implementation of Album repository."""
@@ -428,6 +514,103 @@ class AlbumRepository(IAlbumRepository):
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
+
+    # =========================================================================
+    # ENRICHMENT METHODS
+    # =========================================================================
+    # Hey future me - these methods are for Spotify enrichment of local library!
+    # They find albums that have local tracks but no Spotify data yet.
+    # =========================================================================
+
+    async def get_unenriched(
+        self,
+        limit: int = 50,
+        include_compilations: bool = True,
+    ) -> list[Album]:
+        """Get albums that have local files but no Spotify enrichment yet.
+
+        Returns albums where:
+        - spotify_uri is NULL (not linked to Spotify yet)
+        - Album has at least one track with file_path (local file exists)
+
+        Args:
+            limit: Maximum number of albums to return (default 50 for batch processing)
+            include_compilations: If False, exclude compilation albums
+
+        Returns:
+            List of Album entities needing enrichment
+        """
+        # Hey - we use EXISTS subquery to only get albums with local files
+        has_local_tracks = (
+            select(TrackModel.id)
+            .where(TrackModel.album_id == AlbumModel.id)
+            .where(TrackModel.file_path.isnot(None))
+            .exists()
+        )
+
+        stmt = (
+            select(AlbumModel)
+            .where(AlbumModel.spotify_uri.is_(None))  # Not enriched yet
+            .where(has_local_tracks)  # Has local files
+            .order_by(AlbumModel.title)
+            .limit(limit)
+        )
+
+        # Filter out compilations if requested
+        if not include_compilations:
+            # Hey - secondary_types is JSON array, we check if 'compilation' is NOT in it
+            # SQLite JSON functions: json_each() to unnest, or check string contains
+            # Simpler approach: exclude where secondary_types contains "compilation"
+            stmt = stmt.where(
+                ~AlbumModel.secondary_types.contains('"compilation"')
+            )
+
+        result = await self.session.execute(stmt)
+        models = result.scalars().all()
+
+        return [
+            Album(
+                id=AlbumId.from_string(model.id),
+                title=model.title,
+                artist_id=ArtistId.from_string(model.artist_id),
+                release_year=model.release_year,
+                spotify_uri=None,
+                musicbrainz_id=model.musicbrainz_id,
+                artwork_path=FilePath.from_string(model.artwork_path)
+                if model.artwork_path
+                else None,
+                artwork_url=model.artwork_url if hasattr(model, "artwork_url") else None,
+                created_at=model.created_at,
+                updated_at=model.updated_at,
+            )
+            for model in models
+        ]
+
+    async def count_unenriched(self, include_compilations: bool = True) -> int:
+        """Count albums that need enrichment.
+
+        Returns count of albums with local files but no Spotify URI.
+        """
+        has_local_tracks = (
+            select(TrackModel.id)
+            .where(TrackModel.album_id == AlbumModel.id)
+            .where(TrackModel.file_path.isnot(None))
+            .exists()
+        )
+
+        stmt = (
+            select(func.count(AlbumModel.id))
+            .where(AlbumModel.spotify_uri.is_(None))
+            .where(has_local_tracks)
+        )
+
+        if not include_compilations:
+            stmt = stmt.where(
+                ~AlbumModel.secondary_types.contains('"compilation"')
+            )
+
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
 
 
 class TrackRepository(ITrackRepository):

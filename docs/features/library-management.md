@@ -39,6 +39,19 @@ Scanne deine Musikbibliothek um:
 - **Fehlende Tracks**: Zeigt, welche Tracks eines Albums fehlen
 - **Bulk-Download**: Fehlende Tracks in einem Schritt herunterladen
 
+### Spotify Enrichment
+
+Nach jedem Library Scan kann SoulSpot automatisch lokale Dateien mit Spotify-Metadaten anreichern:
+
+- **Automatisches Matching**: Findet Spotify-URIs für lokale Artists und Alben
+- **Artwork-Download**: Holt Album-Cover und Artist-Bilder
+- **Genre-Enrichment**: Fügt Spotify-Genres hinzu
+- **Album Types**: Erkennt Compilations, EPs, Singles, Live-Alben etc.
+
+Aktiviere das Feature unter **Settings → Library → Auto-Enrich Local Library**.
+
+Siehe [Local Library Enrichment](./local-library-enrichment.md) für Details.
+
 ### Statistiken
 
 - **Bibliotheksgröße**: Gesamtgröße aller Dateien

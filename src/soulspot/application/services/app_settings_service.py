@@ -813,3 +813,91 @@ class AppSettingsService:
             "default_max_retries": await self.get_default_max_retries(),
             "enable_priority_queue": await self.is_priority_queue_enabled(),
         }
+
+    # =========================================================================
+    # LIBRARY ENRICHMENT SETTINGS
+    # =========================================================================
+    # Hey future me - these settings control Spotify enrichment for local library!
+    # This feature enriches local library items (artists, albums, tracks) with
+    # Spotify metadata (artwork, genres, spotify_uri) even if user doesn't follow
+    # them on Spotify. Runs automatically after library scans.
+    #
+    # Key features:
+    # - auto_enrichment_enabled: Master toggle (default=True)
+    # - download_artwork: Also download artwork locally (default=True)
+    # - rate_limit_ms: Delay between Spotify API calls (default=50)
+    # - batch_size: Items per enrichment run (default=50)
+    # =========================================================================
+
+    async def is_library_auto_enrichment_enabled(self) -> bool:
+        """Check if automatic Spotify enrichment for local library is enabled.
+
+        Default: True - after each library scan, unenriched items are
+        automatically matched with Spotify and enriched with metadata.
+
+        When disabled, enrichment only runs when manually triggered via API.
+        """
+        return await self.get_bool("library.auto_enrichment_enabled", default=True)
+
+    async def should_download_enrichment_artwork(self) -> bool:
+        """Check if artwork should be downloaded during enrichment.
+
+        Default: True - downloads artwork to local filesystem in addition
+        to storing the Spotify image URL in DB.
+
+        Respects spotify.download_images as master toggle for all image downloads.
+        """
+        # Check master image download toggle first
+        if not await self.should_download_images():
+            return False
+        return await self.get_bool("library.enrichment_download_artwork", default=True)
+
+    async def get_enrichment_rate_limit_ms(self) -> int:
+        """Get delay between Spotify API calls during enrichment in milliseconds.
+
+        Default: 50ms - Spotify rate limit is ~30 req/sec, so 50ms is safe.
+        Higher values = slower enrichment but less risk of rate limiting.
+        Range: 10-1000ms recommended.
+        """
+        return await self.get_int("library.enrichment_rate_limit_ms", default=50)
+
+    async def get_enrichment_batch_size(self) -> int:
+        """Get number of items to enrich per batch run.
+
+        Default: 50 - how many unenriched items to process per enrichment job.
+        Larger batches = faster processing but longer job duration.
+        Range: 10-200 recommended.
+        """
+        return await self.get_int("library.enrichment_batch_size", default=50)
+
+    async def should_enrich_compilation_albums(self) -> bool:
+        """Check if compilation albums should be enriched.
+
+        Default: True - compilations (Various Artists) are also enriched.
+        Set to False if you don't want Spotify metadata on compilations.
+        """
+        return await self.get_bool("library.enrich_compilations", default=True)
+
+    async def get_enrichment_match_threshold(self) -> int:
+        """Get minimum confidence score (0-100) for automatic matching.
+
+        Default: 80 - matches with score >= 80 are auto-applied.
+        Lower scores create enrichment candidates for manual review.
+
+        Score factors: exact artist match, album name similarity, track count.
+        """
+        return await self.get_int("library.enrichment_match_threshold", default=80)
+
+    async def get_library_enrichment_settings_summary(self) -> dict[str, Any]:
+        """Get summary of all library enrichment settings for UI display.
+
+        Returns a dict with all enrichment settings for the Settings page.
+        """
+        return {
+            "auto_enrichment_enabled": await self.is_library_auto_enrichment_enabled(),
+            "download_artwork": await self.should_download_enrichment_artwork(),
+            "rate_limit_ms": await self.get_enrichment_rate_limit_ms(),
+            "batch_size": await self.get_enrichment_batch_size(),
+            "enrich_compilations": await self.should_enrich_compilation_albums(),
+            "match_threshold": await self.get_enrichment_match_threshold(),
+        }
