@@ -1,10 +1,12 @@
 """Library management API endpoints."""
 
 import logging
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,7 +15,6 @@ from soulspot.api.dependencies import (
     get_job_queue,
     get_library_scanner_service,
 )
-from soulspot.api.templates import templates
 from soulspot.application.services.library_scanner_service import LibraryScannerService
 from soulspot.application.use_cases.check_album_completeness import (
     CheckAlbumCompletenessUseCase,
@@ -30,6 +31,10 @@ from soulspot.application.workers.job_queue import JobQueue, JobStatus, JobType
 from soulspot.config import Settings, get_settings
 
 logger = logging.getLogger(__name__)
+
+# Initialize templates (same pattern as ui.py)
+_TEMPLATES_DIR = Path(__file__).parent.parent.parent / "templates"
+templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 
 router = APIRouter(prefix="/library", tags=["library"])
 

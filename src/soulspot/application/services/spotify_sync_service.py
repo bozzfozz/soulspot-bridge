@@ -646,8 +646,8 @@ class SpotifySyncService:
                     )
 
             # Remove playlists that no longer exist on Spotify
+            should_remove = True
             if to_remove:
-                should_remove = True
                 if self._settings_service:
                     should_remove = await self._settings_service.should_remove_unfollowed_playlists()
 
@@ -664,6 +664,8 @@ class SpotifySyncService:
                             await self._image_service.delete_image_async(
                                 f"spotify/playlists/{playlist_id}.webp"
                             )
+            else:
+                should_remove = False  # No playlists to remove
 
             # Update sync status
             await self.repo.update_sync_status(
