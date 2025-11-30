@@ -95,7 +95,7 @@ def _get_token_worker_status(request: Request) -> WorkerStatusInfo:
     if worker is None:
         return WorkerStatusInfo(
             name="Token Refresh",
-            icon="fa-solid fa-key",
+            icon="bi bi-key",
             settings_url="/settings?tab=spotify",
             running=False,
             status="stopped",
@@ -110,7 +110,7 @@ def _get_token_worker_status(request: Request) -> WorkerStatusInfo:
 
     return WorkerStatusInfo(
         name="Token Refresh",
-        icon="fa-solid fa-key",
+        icon="bi bi-key",
         settings_url="/settings?tab=spotify",
         running=raw_status.get("running", False),
         status=status,
@@ -134,7 +134,7 @@ def _get_spotify_sync_worker_status(request: Request) -> WorkerStatusInfo:
     if worker is None:
         return WorkerStatusInfo(
             name="Spotify Sync",
-            icon="fa-brands fa-spotify",
+            icon="bi bi-spotify",
             settings_url="/settings?tab=spotify",
             running=False,
             status="stopped",
@@ -169,7 +169,7 @@ def _get_spotify_sync_worker_status(request: Request) -> WorkerStatusInfo:
 
     return WorkerStatusInfo(
         name="Spotify Sync",
-        icon="fa-brands fa-spotify",
+        icon="bi bi-spotify",
         settings_url="/settings?tab=spotify",
         running=raw_status.get("running", False),
         status=status,
@@ -193,7 +193,7 @@ def _get_download_monitor_worker_status(request: Request) -> WorkerStatusInfo:
     if worker is None:
         return WorkerStatusInfo(
             name="Download Monitor",
-            icon="fa-solid fa-download",
+            icon="bi bi-download",
             settings_url="/settings?tab=downloads",
             running=False,
             status="stopped",
@@ -221,7 +221,7 @@ def _get_download_monitor_worker_status(request: Request) -> WorkerStatusInfo:
 
     return WorkerStatusInfo(
         name="Download Monitor",
-        icon="fa-solid fa-download",
+        icon="bi bi-download",
         settings_url="/settings?tab=downloads",
         running=raw_status.get("running", False),
         status=status,
@@ -250,7 +250,7 @@ def _get_automation_workers_status(request: Request) -> WorkerStatusInfo:
     if manager is None:
         return WorkerStatusInfo(
             name="Automation",
-            icon="fa-solid fa-robot",
+            icon="bi bi-robot",
             settings_url="/settings?tab=automation",
             running=False,
             status="stopped",
@@ -272,7 +272,7 @@ def _get_automation_workers_status(request: Request) -> WorkerStatusInfo:
 
     return WorkerStatusInfo(
         name="Automation",
-        icon="fa-solid fa-robot",
+        icon="bi bi-robot",
         settings_url="/settings?tab=automation",
         running=any_running,
         status=status,
@@ -296,7 +296,7 @@ def _get_cleanup_worker_status(request: Request) -> WorkerStatusInfo:
     if worker is None:
         return WorkerStatusInfo(
             name="Cleanup",
-            icon="fa-solid fa-broom",
+            icon="bi bi-trash3",
             settings_url="/settings?tab=automation",
             running=False,
             status="stopped",
@@ -324,7 +324,7 @@ def _get_cleanup_worker_status(request: Request) -> WorkerStatusInfo:
 
     return WorkerStatusInfo(
         name="Cleanup",
-        icon="fa-solid fa-broom",
+        icon="bi bi-trash3",
         settings_url="/settings?tab=automation",
         running=raw_status.get("running", False),
         status=status,
@@ -350,7 +350,7 @@ def _get_duplicate_detector_worker_status(request: Request) -> WorkerStatusInfo:
     if worker is None:
         return WorkerStatusInfo(
             name="Duplicate Detector",
-            icon="fa-solid fa-clone",
+            icon="bi bi-copy",
             settings_url="/settings?tab=automation",
             running=False,
             status="stopped",
@@ -378,7 +378,7 @@ def _get_duplicate_detector_worker_status(request: Request) -> WorkerStatusInfo:
 
     return WorkerStatusInfo(
         name="Duplicate Detector",
-        icon="fa-solid fa-clone",
+        icon="bi bi-copy",
         settings_url="/settings?tab=automation",
         running=raw_status.get("running", False),
         status=status,
@@ -490,7 +490,7 @@ async def get_workers_status_html(request: Request) -> HTMLResponse:
        data-status="{overall_status}"
        aria-label="Background Workers: {status_text.get(overall_status, overall_status)}"
        title="">
-        <i class="fa-solid fa-compact-disc"></i>
+        <i class="bi bi-disc"></i>
     </a>
 
     <div class="worker-tooltip" role="tooltip">

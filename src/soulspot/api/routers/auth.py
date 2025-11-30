@@ -434,11 +434,16 @@ async def skip_onboarding(
 @router.get("/token-status")
 async def get_token_status(
     request: Request,
+    settings: Settings = Depends(get_settings),
 ) -> Any:
     """Get background token status for UI warning banner.
 
     This endpoint checks if background workers have a valid Spotify token.
     The UI uses this to show a warning banner when re-authentication is needed.
+
+    IMPORTANT: If Spotify is not configured (no client_id), we return needs_reauth=False
+    so the banner doesn't show up. The user hasn't set up Spotify yet, so there's nothing
+    to "re-authenticate".
 
     Content negotiation:
     - Accept: text/html (default for HTMX) → Returns HTML partial
@@ -448,21 +453,37 @@ async def get_token_status(
         Token status including:
         - exists: Whether any token is stored
         - is_valid: Whether token is usable (not revoked/expired)
-        - needs_reauth: Whether user needs to re-authenticate (show banner if true)
+        - needs_reauth: Whether user needs to re-authenticate
         - expires_in_minutes: Minutes until token expires (if valid)
         - last_error: Error message if refresh failed
     """
-    from fastapi.responses import HTMLResponse
+    # Hey future me - if Spotify isn't configured, don't flag needs_reauth!
+    # The user hasn't set up Spotify credentials yet, so there's nothing to re-auth.
+    spotify_configured = bool(
+        settings.spotify.client_id and settings.spotify.client_id.strip()
+    )
 
-    # Check if DatabaseTokenManager is initialized
-    if not hasattr(request.app.state, "db_token_manager"):
+    if not spotify_configured:
+        # Spotify not configured - no banner needed
         status_data: dict[str, Any] = {
+            "exists": False,
+            "is_valid": False,
+            "needs_reauth": False,  # Don't show banner!
+            "expires_in_minutes": None,
+            "last_error": None,
+            "last_error_at": None,
+            "spotify_configured": False,
+        }
+    elif not hasattr(request.app.state, "db_token_manager"):
+        # Token manager not initialized (shouldn't happen in production)
+        status_data = {
             "exists": False,
             "is_valid": False,
             "needs_reauth": True,
             "expires_in_minutes": None,
             "last_error": "Token manager not initialized",
             "last_error_at": None,
+            "spotify_configured": True,
         }
     else:
         db_token_manager: DatabaseTokenManager = request.app.state.db_token_manager
@@ -477,6 +498,7 @@ async def get_token_status(
             "last_error_at": status.last_error_at.isoformat()
             if status.last_error_at
             else None,
+            "spotify_configured": True,
         }
 
     # Check Accept header for content negotiation
@@ -487,61 +509,8 @@ async def get_token_status(
         # Return JSON for API clients
         return status_data
 
-    # Return HTML partial for HTMX polling
-    # Hey future me - this HTML is directly swapped into #token-status-banner via HTMX.
-    # Only show the banner when needs_reauth is true! When token is valid, return empty div
-    # so the banner disappears. The red styling is inline for simplicity - matches the app's
-    # red accent color. The /api/auth/authorize endpoint starts the re-auth flow.
-    if status_data["needs_reauth"]:
-        # Show warning banner
-        error_detail = ""
-        if status_data.get("last_error"):
-            error_detail = f" ({status_data['last_error']})"
-
-        html = f"""
-        <div class="token-warning-banner" style="
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            color: white;
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            border-radius: 8px;
-            margin: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        ">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                </svg>
-                <span style="font-weight: 500;">
-                    Spotify-Verbindung unterbrochen{error_detail}. Hintergrund-Sync ist pausiert.
-                </span>
-            </div>
-            <a href="/api/auth/authorize"
-               style="
-                   background: white;
-                   color: #dc2626;
-                   padding: 8px 16px;
-                   border-radius: 6px;
-                   text-decoration: none;
-                   font-weight: 600;
-                   white-space: nowrap;
-                   transition: background 0.2s;
-               "
-               onmouseover="this.style.background='#f3f4f6'"
-               onmouseout="this.style.background='white'">
-                Erneut anmelden
-            </a>
-        </div>
-        """
-        return HTMLResponse(content=html)
-    else:
-        # Token is valid - return empty div (banner disappears)
-        return HTMLResponse(content="")
+    # Return JSON for all requests now - banner removed, status used by vinyl player & toasts
+    return status_data
 
 
 # Hey - manual token invalidation for disconnect/logout from Spotify
