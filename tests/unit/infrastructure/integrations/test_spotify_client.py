@@ -2,9 +2,11 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 
 from soulspot.config.settings import SpotifySettings
+from soulspot.domain.exceptions import TokenRefreshException
 from soulspot.infrastructure.integrations.spotify_client import SpotifyClient
 
 
@@ -675,8 +677,6 @@ class TestSpotifyClientTokenRefreshErrors:
         This happens when the refresh token has been revoked (user removed
         app access in Spotify settings) or has expired.
         """
-        from soulspot.domain.exceptions import TokenRefreshException
-
         mock_client = AsyncMock()
 
         # Spotify returns 400 with invalid_grant when refresh token is revoked
@@ -704,8 +704,6 @@ class TestSpotifyClientTokenRefreshErrors:
         self, spotify_client: SpotifyClient, mocker: MagicMock
     ) -> None:
         """Test that 401 error raises TokenRefreshException."""
-        from soulspot.domain.exceptions import TokenRefreshException
-
         mock_client = AsyncMock()
 
         mock_response = MagicMock()
@@ -729,8 +727,6 @@ class TestSpotifyClientTokenRefreshErrors:
         self, spotify_client: SpotifyClient, mocker: MagicMock
     ) -> None:
         """Test that 403 error raises TokenRefreshException."""
-        from soulspot.domain.exceptions import TokenRefreshException
-
         mock_client = AsyncMock()
 
         mock_response = MagicMock()
@@ -758,8 +754,6 @@ class TestSpotifyClientTokenRefreshErrors:
         If Spotify returns 400 but it's NOT invalid_grant, we should
         let raise_for_status handle it (might be a temporary issue).
         """
-        import httpx
-
         mock_client = AsyncMock()
 
         mock_response = MagicMock()

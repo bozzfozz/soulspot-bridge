@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from soulspot.application.services.token_manager import TokenInfo, TokenManager
+from soulspot.domain.exceptions import TokenRefreshException
 
 
 @pytest.fixture
@@ -328,8 +329,6 @@ class TestTokenManager:
         The refresh token is dead - spotify_client.refresh_token() raises TokenRefreshException.
         get_valid_token() should return None and mark token as invalid (is_valid=False).
         """
-        from soulspot.domain.exceptions import TokenRefreshException
-
         # Store an expired token (will trigger refresh)
         token_info = TokenInfo(
             access_token="expired-token",
@@ -363,8 +362,6 @@ class TestTokenRefreshException:
 
     def test_exception_with_invalid_grant(self) -> None:
         """Test exception for invalid_grant error."""
-        from soulspot.domain.exceptions import TokenRefreshException
-
         exc = TokenRefreshException(
             message="Refresh token invalid",
             error_code="invalid_grant",
@@ -378,8 +375,6 @@ class TestTokenRefreshException:
 
     def test_exception_with_401_error(self) -> None:
         """Test exception for 401 unauthorized error."""
-        from soulspot.domain.exceptions import TokenRefreshException
-
         exc = TokenRefreshException(
             message="Access denied",
             error_code="access_denied",
@@ -391,8 +386,6 @@ class TestTokenRefreshException:
 
     def test_exception_with_403_error(self) -> None:
         """Test exception for 403 forbidden error."""
-        from soulspot.domain.exceptions import TokenRefreshException
-
         exc = TokenRefreshException(
             message="Forbidden",
             error_code=None,
@@ -404,8 +397,6 @@ class TestTokenRefreshException:
 
     def test_exception_default_values(self) -> None:
         """Test exception with default values."""
-        from soulspot.domain.exceptions import TokenRefreshException
-
         exc = TokenRefreshException()
 
         assert exc.error_code is None
