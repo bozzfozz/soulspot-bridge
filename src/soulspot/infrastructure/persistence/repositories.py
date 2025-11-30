@@ -1280,7 +1280,22 @@ class PlaylistRepository(IPlaylistRepository):
         )
 
     async def add_track(self, playlist_id: PlaylistId, track_id: TrackId) -> None:
-        """Add a track to a playlist."""
+        """Add a track to a playlist (if not already present).
+
+        Hey future me - this now checks for duplicates before adding!
+        If the track is already in the playlist, we just skip it silently.
+        This prevents UNIQUE constraint violations on re-imports.
+        """
+        # Check if track already exists in this playlist
+        check_stmt = select(PlaylistTrackModel).where(
+            PlaylistTrackModel.playlist_id == str(playlist_id.value),
+            PlaylistTrackModel.track_id == str(track_id.value),
+        )
+        check_result = await self.session.execute(check_stmt)
+        if check_result.scalar_one_or_none():
+            # Track already in playlist, skip
+            return
+
         # Get current max position
         stmt = select(PlaylistTrackModel).where(
             PlaylistTrackModel.playlist_id == str(playlist_id.value)
