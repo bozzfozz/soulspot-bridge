@@ -426,6 +426,106 @@ class AppSettingsService:
         }
 
     # =========================================================================
+    # GENERAL SETTINGS (Log Level, Debug Mode, App Name)
+    # =========================================================================
+    # Hey future me - diese Settings erlauben Runtime-Änderungen von Log-Level etc.
+    # Wenn in DB gesetzt, überschreiben sie die Env-Variablen.
+    # Das Log-Level wird SOFORT angewendet via logging.getLogger().setLevel()!
+    # =========================================================================
+
+    async def get_log_level(self, env_default: str = "INFO") -> str:
+        """Get current log level from DB or env fallback.
+
+        Args:
+            env_default: Fallback value if not set in DB (from env vars)
+
+        Returns:
+            Log level string (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        """
+        return await self.get_str("general.log_level", default=env_default)
+
+    async def set_log_level(self, level: str) -> None:
+        """Set log level in DB and apply immediately to all loggers.
+
+        This changes the log level at runtime without restart!
+
+        Args:
+            level: Log level string (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        """
+        # Validate level
+        valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        level_upper = level.upper()
+        if level_upper not in valid_levels:
+            raise ValueError(f"Invalid log level: {level}. Must be one of {valid_levels}")
+
+        # Save to DB
+        await self.set(
+            "general.log_level",
+            level_upper,
+            value_type="string",
+            category="general",
+        )
+
+        # Apply immediately to root logger and all soulspot loggers
+        import logging
+
+        numeric_level = getattr(logging, level_upper)
+
+        # Update root logger
+        logging.getLogger().setLevel(numeric_level)
+
+        # Update all soulspot loggers
+        for name in logging.Logger.manager.loggerDict:
+            if name.startswith("soulspot"):
+                logging.getLogger(name).setLevel(numeric_level)
+
+        logger.info("Log level changed to %s (applied to all loggers)", level_upper)
+
+    async def is_debug_mode(self, env_default: bool = False) -> bool:
+        """Get debug mode status from DB or env fallback.
+
+        Args:
+            env_default: Fallback value if not set in DB
+
+        Returns:
+            True if debug mode is enabled
+        """
+        return await self.get_bool("general.debug", default=env_default)
+
+    async def get_app_name(self, env_default: str = "SoulSpot") -> str:
+        """Get app name from DB or env fallback.
+
+        Args:
+            env_default: Fallback value if not set in DB
+
+        Returns:
+            Application display name
+        """
+        return await self.get_str("general.app_name", default=env_default)
+
+    async def get_general_settings_summary(self, env_settings: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Get summary of all general settings for UI display.
+
+        Args:
+            env_settings: Dict with env defaults (app_name, log_level, debug)
+                         If None, uses hardcoded defaults.
+
+        Returns:
+            Dict with all general settings
+        """
+        defaults = env_settings or {
+            "app_name": "SoulSpot",
+            "log_level": "INFO",
+            "debug": False,
+        }
+
+        return {
+            "app_name": await self.get_str("general.app_name", default=defaults.get("app_name", "SoulSpot")),
+            "log_level": await self.get_str("general.log_level", default=defaults.get("log_level", "INFO")),
+            "debug": await self.get_bool("general.debug", default=defaults.get("debug", False)),
+        }
+
+    # =========================================================================
     # AUTOMATION WORKER SETTINGS
     # =========================================================================
     # Hey future me - diese Settings steuern die Automation Workers!

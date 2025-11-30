@@ -118,12 +118,14 @@ class AllSettings(BaseModel):
 # for passwords and API keys - NEVER return actual secrets in API responses or they'll leak in browser
 # devtools, logs, error tracking, etc. General/Integration/Advanced come from env vars (get_settings()).
 # Download settings are NOW read from DB if set, with env as fallback - this allows runtime changes!
+# UPDATE: General settings (log_level, debug, app_name) now ALSO come from DB with env fallback!
 @router.get("/")
 async def get_all_settings(
     db: AsyncSession = Depends(get_db_session),
 ) -> AllSettings:
     """Get all current settings.
 
+    General settings (log_level, debug, app_name) are read from database (if set) with env as fallback.
     Download settings are read from database (if set) with env as fallback.
     Other settings are read directly from environment variables.
 
@@ -133,14 +135,23 @@ async def get_all_settings(
     settings = get_settings()
     settings_service = AppSettingsService(db)
 
+    # General settings from DB (with env fallback) - allows runtime log level changes!
+    general_summary = await settings_service.get_general_settings_summary(
+        env_settings={
+            "app_name": settings.app_name,
+            "log_level": settings.log_level,
+            "debug": settings.debug,
+        }
+    )
+
     # Download settings from DB (with env fallback)
     download_summary = await settings_service.get_download_settings_summary()
 
     return AllSettings(
         general=GeneralSettings(
-            app_name=settings.app_name,
-            log_level=settings.log_level,
-            debug=settings.debug,
+            app_name=general_summary["app_name"],
+            log_level=general_summary["log_level"],
+            debug=general_summary["debug"],
         ),
         integration=IntegrationSettings(
             spotify_client_id=settings.spotify.client_id,
@@ -172,8 +183,9 @@ async def get_all_settings(
 
 # Hey future me - POST /settings/ now actually persists SOME settings to DB!
 # Download settings are saved to DB (can be changed at runtime).
-# Other settings (General, Integration, Advanced) are env-based and require restart.
-# We still return a message explaining what's persisted vs what needs restart.
+# General settings (log_level!) are ALSO saved to DB and applied immediately!
+# Other settings (Integration, Advanced) are env-based and require restart.
+# Log level change is INSTANT - no restart needed!
 @router.post("/")
 async def update_settings(
     settings_update: AllSettings,
@@ -181,8 +193,10 @@ async def update_settings(
 ) -> dict[str, Any]:
     """Update application settings.
 
+    General settings (log_level, debug, app_name) are persisted to database.
+    Log level changes take effect IMMEDIATELY without restart!
     Download settings are persisted to database and take effect immediately.
-    Other settings (General, Integration, Advanced) are environment-based
+    Other settings (Integration, Advanced) are environment-based
     and require application restart to take effect.
 
     Args:
@@ -195,6 +209,25 @@ async def update_settings(
         HTTPException: If settings validation fails
     """
     settings_service = AppSettingsService(db)
+
+    # Persist General settings to DB - log_level changes apply immediately!
+    try:
+        await settings_service.set_log_level(settings_update.general.log_level)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    await settings_service.set(
+        "general.debug",
+        settings_update.general.debug,
+        value_type="boolean",
+        category="general",
+    )
+    await settings_service.set(
+        "general.app_name",
+        settings_update.general.app_name,
+        value_type="string",
+        category="general",
+    )
 
     # Persist Download settings to DB (these take effect immediately)
     await settings_service.set(
@@ -218,13 +251,20 @@ async def update_settings(
 
     await db.commit()
 
-    # Note: General, Integration, and Advanced settings are env-based
+    logger.info(
+        "Settings updated: log_level=%s, debug=%s",
+        settings_update.general.log_level,
+        settings_update.general.debug,
+    )
+
+    # Note: Integration and Advanced settings are env-based
     # They're validated by Pydantic but not persisted to DB
     return {
         "message": "Settings saved",
-        "persisted": ["download"],
-        "requires_restart": ["general", "integration", "advanced"],
-        "note": "Download settings take effect immediately. Other settings require restart.",
+        "persisted": ["general", "download"],
+        "immediate_effect": ["log_level", "download"],
+        "requires_restart": ["integration", "advanced"],
+        "note": "Log level and download settings take effect immediately. Integration and advanced settings require restart.",
     }
 
 

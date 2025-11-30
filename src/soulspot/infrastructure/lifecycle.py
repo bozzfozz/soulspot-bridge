@@ -123,6 +123,42 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.db = db
         logger.info("Database initialized: %s", settings.database.url)
 
+        # =================================================================
+        # Load runtime settings from DB (log level, etc.)
+        # =================================================================
+        # Hey future me - this is the STARTUP HOOK for dynamic settings!
+        # It reads log_level from DB and applies it before other components start.
+        # If no DB value exists, env default is kept. This ensures user's log_level
+        # choice persists across container restarts!
+        from soulspot.application.services.app_settings_service import (
+            AppSettingsService,
+        )
+
+        async with db.session_scope() as startup_session:
+            startup_settings_service = AppSettingsService(startup_session)
+            try:
+                # Load log level from DB (if set), otherwise keep env default
+                db_log_level = await startup_settings_service.get_str(
+                    "general.log_level", default=None
+                )
+                if db_log_level:
+                    # Apply the DB-stored log level
+                    await startup_settings_service.set_log_level(db_log_level)
+                    logger.info(
+                        "Applied log level from database: %s", db_log_level
+                    )
+                else:
+                    logger.debug(
+                        "No log level in database, using env default: %s",
+                        settings.log_level,
+                    )
+            except Exception as e:
+                # Don't fail startup if settings load fails - just log and continue
+                logger.warning(
+                    "Failed to load runtime settings from DB: %s (using env defaults)",
+                    e,
+                )
+
         # Initialize database-backed session store for OAuth persistence
         from soulspot.application.services.session_store import DatabaseSessionStore
 
