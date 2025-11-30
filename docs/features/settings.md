@@ -1,7 +1,7 @@
 # Settings
 
-> **Version:** 1.1  
-> **Last Updated:** 2025-11-28
+> **Version:** 1.2  
+> **Last Updated:** 2025-11-30
 
 ---
 
@@ -212,6 +212,47 @@ Ruft die Standardwerte aller Einstellungen ab.
     "circuit_breaker_failure_threshold": 5,
     "circuit_breaker_timeout": 60.0
   }
+}
+```
+
+---
+
+## Spotify Database Statistics
+
+Die Spotify Sync Sektion in Settings zeigt zwei Statistik-Bereiche:
+
+### Image Storage (Festplatten-Statistiken)
+
+Zeigt wie viele Bilder auf der Festplatte gespeichert sind:
+
+| Statistik | Beschreibung |
+|-----------|--------------|
+| Artist Images | Anzahl und Größe der Artist-Bilder |
+| Album Covers | Anzahl und Größe der Album-Cover |
+| Playlist Covers | Anzahl und Größe der Playlist-Cover |
+| Total | Gesamtanzahl und -größe aller Bilder |
+
+### Synced Data (Datenbank-Statistiken)
+
+Zeigt wie viele Entities aus Spotify in der Datenbank gespeichert sind:
+
+| Statistik | Beschreibung | Kriterium |
+|-----------|--------------|-----------|
+| Artists | Anzahl Künstler aus Spotify | `spotify_uri IS NOT NULL` |
+| Albums | Anzahl Alben aus Spotify | `spotify_uri IS NOT NULL` |
+| Tracks | Anzahl Songs aus Spotify | `spotify_uri IS NOT NULL` |
+| Playlists | Anzahl Playlists aus Spotify | `source = 'spotify'` |
+
+**API-Endpunkt:** `GET /api/settings/spotify-sync/db-stats`
+
+**Response:**
+```json
+{
+  "artists_count": 125,
+  "albums_count": 487,
+  "tracks_count": 5234,
+  "playlists_count": 12,
+  "total_count": 5858
 }
 ```
 

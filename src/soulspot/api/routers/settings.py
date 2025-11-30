@@ -620,6 +620,65 @@ async def get_spotify_disk_usage() -> SpotifyImageStats:
     return await get_spotify_image_stats()
 
 
+# =============================================================================
+# SPOTIFY DATABASE STATS
+# =============================================================================
+# Hey future me - diese Stats zeigen wieviele Entities aus Spotify in der DB sind!
+# Das ist ANDERS als Image Stats (die zählen Dateien auf der Festplatte).
+# Hier zählen wir Artists/Albums/Tracks mit spotify_uri und Playlists mit source=spotify.
+# =============================================================================
+
+
+class SpotifyDbStats(BaseModel):
+    """Database statistics for Spotify-synced entities."""
+
+    artists_count: int = Field(description="Number of artists synced from Spotify")
+    albums_count: int = Field(description="Number of albums synced from Spotify")
+    tracks_count: int = Field(description="Number of tracks synced from Spotify")
+    playlists_count: int = Field(description="Number of playlists synced from Spotify")
+    total_count: int = Field(description="Total number of entities")
+
+
+@router.get("/spotify-sync/db-stats")
+async def get_spotify_db_stats(
+    db: AsyncSession = Depends(get_db_session),
+) -> SpotifyDbStats:
+    """Get database statistics for Spotify-synced entities.
+
+    Counts how many artists, albums, tracks, and playlists were synced from Spotify.
+    This is different from image stats which counts files on disk.
+
+    Returns:
+        Counts of each entity type with Spotify URI/source
+    """
+    from soulspot.infrastructure.persistence.repositories import (
+        AlbumRepository,
+        ArtistRepository,
+        PlaylistRepository,
+        TrackRepository,
+    )
+
+    artist_repo = ArtistRepository(db)
+    album_repo = AlbumRepository(db)
+    track_repo = TrackRepository(db)
+    playlist_repo = PlaylistRepository(db)
+
+    artists_count = await artist_repo.count_with_spotify_uri()
+    albums_count = await album_repo.count_with_spotify_uri()
+    tracks_count = await track_repo.count_with_spotify_uri()
+    playlists_count = await playlist_repo.count_by_source("spotify")
+
+    total = artists_count + albums_count + tracks_count + playlists_count
+
+    return SpotifyDbStats(
+        artists_count=artists_count,
+        albums_count=albums_count,
+        tracks_count=tracks_count,
+        playlists_count=playlists_count,
+        total_count=total,
+    )
+
+
 class SyncTriggerResponse(BaseModel):
     """Response for manual sync trigger."""
 

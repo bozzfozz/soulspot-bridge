@@ -347,6 +347,21 @@ class ArtistRepository(IArtistRepository):
         result = await self.session.execute(stmt)
         return result.scalar() or 0
 
+    # Hey future me - this counts artists SYNCED FROM SPOTIFY (have spotify_uri).
+    # Used for the Spotify Database Stats in Settings UI to show how many entities
+    # were imported from Spotify. Different from count_unenriched which counts local files!
+    async def count_with_spotify_uri(self) -> int:
+        """Count artists that have a Spotify URI (synced from Spotify).
+
+        Returns:
+            Count of artists with spotify_uri IS NOT NULL
+        """
+        stmt = select(func.count(ArtistModel.id)).where(
+            ArtistModel.spotify_uri.isnot(None)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
 
 class AlbumRepository(IAlbumRepository):
     """SQLAlchemy implementation of Album repository."""
@@ -610,6 +625,20 @@ class AlbumRepository(IAlbumRepository):
                 ~AlbumModel.secondary_types.contains('"compilation"')
             )
 
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    # Hey future me - this counts albums SYNCED FROM SPOTIFY (have spotify_uri).
+    # Used for the Spotify Database Stats in Settings UI.
+    async def count_with_spotify_uri(self) -> int:
+        """Count albums that have a Spotify URI (synced from Spotify).
+
+        Returns:
+            Count of albums with spotify_uri IS NOT NULL
+        """
+        stmt = select(func.count(AlbumModel.id)).where(
+            AlbumModel.spotify_uri.isnot(None)
+        )
         result = await self.session.execute(stmt)
         return result.scalar() or 0
 
@@ -923,6 +952,20 @@ class TrackRepository(ITrackRepository):
     async def count_all(self) -> int:
         """Count total number of tracks."""
         stmt = select(func.count(TrackModel.id))
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
+
+    # Hey future me - this counts tracks SYNCED FROM SPOTIFY (have spotify_uri).
+    # Used for the Spotify Database Stats in Settings UI.
+    async def count_with_spotify_uri(self) -> int:
+        """Count tracks that have a Spotify URI (synced from Spotify).
+
+        Returns:
+            Count of tracks with spotify_uri IS NOT NULL
+        """
+        stmt = select(func.count(TrackModel.id)).where(
+            TrackModel.spotify_uri.isnot(None)
+        )
         result = await self.session.execute(stmt)
         return result.scalar() or 0
 
@@ -1298,6 +1341,25 @@ class PlaylistRepository(IPlaylistRepository):
             )
 
         return playlists
+
+    # Hey future me - this counts playlists by source type (spotify/manual).
+    # Used for the Spotify Database Stats in Settings UI.
+    # DB stores source as uppercase string, but we accept case-insensitive input.
+    async def count_by_source(self, source: str) -> int:
+        """Count playlists by source (e.g., 'spotify', 'manual').
+
+        Args:
+            source: Source to filter by (case-insensitive)
+
+        Returns:
+            Count of playlists with matching source
+        """
+        # DB stores uppercase, so we convert input to uppercase for matching
+        stmt = select(func.count(PlaylistModel.id)).where(
+            func.upper(PlaylistModel.source) == source.upper()
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar() or 0
 
 
 class DownloadRepository(IDownloadRepository):

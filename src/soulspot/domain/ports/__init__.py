@@ -83,6 +83,15 @@ class IArtistRepository(ABC):
         """Count artists that need enrichment."""
         pass
 
+    @abstractmethod
+    async def count_with_spotify_uri(self) -> int:
+        """Count artists that have a Spotify URI (synced from Spotify).
+
+        Returns:
+            Count of artists with spotify_uri IS NOT NULL
+        """
+        pass
+
 
 class IAlbumRepository(ABC):
     """Repository interface for Album entities."""
@@ -146,6 +155,15 @@ class IAlbumRepository(ABC):
         """Count albums that need enrichment."""
         pass
 
+    @abstractmethod
+    async def count_with_spotify_uri(self) -> int:
+        """Count albums that have a Spotify URI (synced from Spotify).
+
+        Returns:
+            Count of albums with spotify_uri IS NOT NULL
+        """
+        pass
+
 
 class ITrackRepository(ABC):
     """Repository interface for Track entities."""
@@ -197,6 +215,15 @@ class ITrackRepository(ABC):
 
         Returns:
             Track entity or None if not found
+        """
+        pass
+
+    @abstractmethod
+    async def count_with_spotify_uri(self) -> int:
+        """Count tracks that have a Spotify URI (synced from Spotify).
+
+        Returns:
+            Count of tracks with spotify_uri IS NOT NULL
         """
         pass
 
@@ -255,6 +282,18 @@ class IPlaylistRepository(ABC):
     @abstractmethod
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[Playlist]:
         """List all playlists with pagination."""
+        pass
+
+    @abstractmethod
+    async def count_by_source(self, source: str) -> int:
+        """Count playlists by source (e.g., 'spotify', 'manual').
+
+        Args:
+            source: Source to filter by (case-insensitive)
+
+        Returns:
+            Count of playlists with matching source
+        """
         pass
 
 

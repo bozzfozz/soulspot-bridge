@@ -272,6 +272,44 @@
                 </div>
             </div>
 
+            <!-- Synced Data Statistics -->
+            <div style="margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-primary);">
+                <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4);">Synced Data</h3>
+                <p style="color: var(--text-secondary); margin-bottom: var(--space-4);">Number of entities synced from Spotify to your database</p>
+                
+                <!-- Database Stats -->
+                <div id="db-stats-container" class="stats-container" style="margin-top: var(--space-4);">
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="bi bi-people"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-db-artists-count">-</div>
+                            <div class="stat-label">Artists</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="bi bi-disc"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-db-albums-count">-</div>
+                            <div class="stat-label">Albums</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="bi bi-music-note-beamed"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-db-tracks-count">-</div>
+                            <div class="stat-label">Tracks</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-icon"><i class="bi bi-music-note-list"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="stat-db-playlists-count">-</div>
+                            <div class="stat-label">Playlists</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Cleanup Behavior -->
             <div style="margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-primary);">
                 <h3 style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); margin-bottom: var(--space-4);">Cleanup Behavior</h3>
@@ -1568,6 +1606,9 @@
                 await loadImageStats();
             }
             
+            // Load database stats (synced entities count)
+            await loadSpotifyDbStats();
+            
         } catch (error) {
             console.error('Failed to load Spotify sync settings:', error);
         }
@@ -1703,6 +1744,44 @@
         } catch (error) {
             console.error('Failed to load image stats:', error);
         }
+    }
+    
+    // Hey future me – diese Funktion lädt die Database Statistics für Spotify-synced Entities.
+    // Zeigt wieviele Artists/Albums/Tracks/Playlists aus Spotify in der DB sind.
+    // Unterschied zu Image Stats: Hier zählen wir DB-Einträge, nicht Dateien auf der Festplatte.
+    async function loadSpotifyDbStats() {
+        try {
+            const response = await fetch('/api/settings/spotify-sync/db-stats');
+            if (!response.ok) throw new Error('Failed to load database stats');
+            
+            const stats = await response.json();
+            updateSpotifyDbStatsDisplay(stats);
+            
+        } catch (error) {
+            console.error('Failed to load database stats:', error);
+        }
+    }
+    
+    // Hey future me – separierte Funktion um die DB Stats anzuzeigen.
+    // Die HTML-IDs folgen dem Muster "stat-db-{type}-count"
+    function updateSpotifyDbStatsDisplay(stats) {
+        const artistsEl = document.getElementById('stat-db-artists-count');
+        if (artistsEl) artistsEl.textContent = formatNumber(stats.artists_count ?? 0);
+        
+        const albumsEl = document.getElementById('stat-db-albums-count');
+        if (albumsEl) albumsEl.textContent = formatNumber(stats.albums_count ?? 0);
+        
+        const tracksEl = document.getElementById('stat-db-tracks-count');
+        if (tracksEl) tracksEl.textContent = formatNumber(stats.tracks_count ?? 0);
+        
+        const playlistsEl = document.getElementById('stat-db-playlists-count');
+        if (playlistsEl) playlistsEl.textContent = formatNumber(stats.playlists_count ?? 0);
+    }
+    
+    // Hey future me – formatiert große Zahlen mit Tausender-Trennzeichen.
+    // z.B. 12345 -> "12,345" für bessere Lesbarkeit bei großen Bibliotheken.
+    function formatNumber(num) {
+        return num.toLocaleString();
     }
     
     // Hey future me – separierte Funktion um die Image Stats anzuzeigen.

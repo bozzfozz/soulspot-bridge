@@ -1,7 +1,7 @@
 # Spotify Auto-Sync
 
-> **Version:** 1.1  
-> **Last Updated:** 2025-11-28
+> **Version:** 1.2  
+> **Last Updated:** 2025-11-30
 
 ---
 
@@ -16,6 +16,7 @@ Das Spotify Auto-Sync Feature synchronisiert automatisch Daten von deinem Spotif
 - ❤️ **Liked Songs** - Synchronisiert deine "Gefällt mir"-Songs
 - 💿 **Saved Albums** - Synchronisiert gespeicherte Alben
 - 🖼️ **Lokale Bilderspeicherung** - Lädt Künstler-, Album- und Playlist-Cover herunter
+- 📊 **Database Statistics** - Zeigt Anzahl synchronisierter Entities ⭐ NEU
 - ⚙️ **Background Worker** - Automatischer Sync ohne manuelles Eingreifen
 
 ---
@@ -26,15 +27,15 @@ Das Spotify Auto-Sync Feature synchronisiert automatisch Daten von deinem Spotif
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Settings UI (settings.html)                │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐   │
-│  │  Master  │ │  Sync    │ │ Interval │ │   Image Stats    │   │
-│  │  Toggle  │ │ Toggles  │ │ Settings │ │   Disk Usage     │   │
+│  │  Master  │ │  Sync    │ │ Interval │ │  Image + DB Stats│   │
+│  │  Toggle  │ │ Toggles  │ │ Settings │ │   (Disk + Count) │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────────────┘   │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   Settings API (settings.py)                    │
-│  GET/PUT /spotify-sync  │  POST /trigger/{type}  │  GET /disk  │
+│  GET/PUT /spotify-sync │ GET /db-stats │ GET /disk-usage │ ... │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -294,6 +295,30 @@ Ruft Speicherstatistiken für Spotify-Bilder ab.
 }
 ```
 
+### GET `/api/settings/spotify-sync/db-stats`
+
+Ruft Datenbank-Statistiken für synchronisierte Spotify-Entities ab. ⭐ NEU
+
+**Response:**
+```json
+{
+  "artists_count": 125,
+  "albums_count": 487,
+  "tracks_count": 5234,
+  "playlists_count": 12,
+  "total_count": 5858
+}
+```
+
+**Hinweis:** Diese Stats zählen **Datenbank-Einträge** mit Spotify-URI, nicht Dateien auf der Festplatte (wie `/disk-usage`).
+
+| Feld | Kriterium |
+|------|-----------|
+| `artists_count` | Artists wo `spotify_uri IS NOT NULL` |
+| `albums_count` | Albums wo `spotify_uri IS NOT NULL` |
+| `tracks_count` | Tracks wo `spotify_uri IS NOT NULL` |
+| `playlists_count` | Playlists wo `source = 'spotify'` |
+
 ### POST `/api/settings/spotify-sync/trigger/{sync_type}`
 
 Triggert einen manuellen Sync.
@@ -339,7 +364,8 @@ Der neue Tab in den Settings zeigt:
 3. **Interval Settings** - Cooldown-Zeiten in Minuten
 4. **Image Storage Toggle** - Aktiviert/deaktiviert lokale Bilderspeicherung
 5. **Disk Usage Stats** - Zeigt Anzahl und Größe der gespeicherten Bilder
-6. **Cleanup Toggles** - Steuert automatisches Entfernen von Daten
+6. **Synced Data Stats** - Zeigt Anzahl synchronisierter Entities in der DB ⭐ NEU
+7. **Cleanup Toggles** - Steuert automatisches Entfernen von Daten
 
 ### Toggle-Farben
 
