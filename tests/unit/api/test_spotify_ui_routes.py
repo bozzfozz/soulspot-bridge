@@ -291,3 +291,59 @@ async def test_sync_adds_new_artists_visible_immediately() -> None:
     assert sync_service.sync_call_order == ["sync", "get_artists"]
     assert len(artists) == 1
     assert artists[0].name == "Newly Synced Artist"
+
+
+@pytest.mark.asyncio
+async def test_sync_failure_does_not_block_database_load() -> None:
+    """Test that sync failures don't prevent loading data from DB.
+
+    This is a KEY TEST for Database-First architecture:
+    Even if the Spotify token is invalid or the sync fails for any reason,
+    the cached data in the database MUST still be displayed to the user.
+
+    The user should never see an empty page just because sync failed.
+    """
+    # Setup: Simulate a database with previously synced data
+    sync_service = MockSpotifySyncService()
+    sync_service.add_artist(
+        MockSpotifyArtist(
+            spotify_id="cached_artist_1",
+            name="Cached Artist One",
+        )
+    )
+    sync_service.add_artist(
+        MockSpotifyArtist(
+            spotify_id="cached_artist_2",
+            name="Cached Artist Two",
+        )
+    )
+
+    # Override sync to simulate a failure (token expired, API error, etc.)
+    async def sync_that_fails(access_token: str, force: bool = False) -> dict[str, Any]:
+        raise Exception("Token expired or API error")
+
+    sync_service.sync_followed_artists = sync_that_fails  # type: ignore[method-assign]
+
+    # Simulate the route logic with sync failure handling
+    token_manager = MockDatabaseTokenManager(token="invalid_or_expired_token")
+    access_token = await token_manager.get_token_for_background()
+
+    # Step 1: Try to sync (will fail)
+    sync_error = None
+    try:
+        if access_token:
+            await sync_service.sync_followed_artists(access_token)
+    except Exception as e:
+        sync_error = str(e)
+
+    # Verify sync failed
+    assert sync_error is not None
+    assert "Token expired" in sync_error or "API error" in sync_error
+
+    # Step 2: MUST still be able to load from DB despite sync failure!
+    artists = await sync_service.get_artists(limit=500)
+
+    # Verify cached data is still accessible
+    assert len(artists) == 2
+    assert artists[0].name == "Cached Artist One"
+    assert artists[1].name == "Cached Artist Two"

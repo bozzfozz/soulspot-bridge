@@ -1,6 +1,7 @@
 """UI routes for serving HTML templates."""
 
 import json
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -29,6 +30,8 @@ from soulspot.infrastructure.persistence.repositories import (
 
 if TYPE_CHECKING:
     from soulspot.application.services.token_manager import DatabaseTokenManager
+
+logger = logging.getLogger(__name__)
 
 # AI-Model: Copilot
 # Hey future me - compute templates directory relative to THIS file so it works both in
@@ -1154,13 +1157,13 @@ async def spotify_artists_page(
     sync_stats = None
     error = None
 
-    try:
-        # Hey future me - Database-First architecture:
-        # 1. Sync to DB first (if token available and cooldown passed)
-        # 2. Then ALWAYS load from DB for display
-        # This ensures fresh data is visible immediately after sync!
+    # Hey future me - Database-First architecture:
+    # 1. TRY to sync to DB (if token available and cooldown passed)
+    # 2. ALWAYS load from DB for display - even if sync fails or token is invalid!
+    # This ensures data is visible even without a valid Spotify token.
 
-        # Step 1: Try to sync if token available (respects cooldown)
+    # Step 1: Try to sync if token available (OPTIONAL - failures don't block DB load)
+    try:
         access_token = None
         if hasattr(request.app.state, "db_token_manager"):
             db_token_manager: DatabaseTokenManager = request.app.state.db_token_manager
@@ -1169,9 +1172,14 @@ async def spotify_artists_page(
         if access_token:
             # Auto-sync (respects cooldown) - updates DB and commits
             sync_stats = await sync_service.sync_followed_artists(access_token)
+    except Exception as sync_error:
+        # Sync failed (token invalid, API error, etc.) - log but don't block
+        # We'll still load existing data from DB below
+        logger.warning(f"Spotify sync failed (will show cached data): {sync_error}")
 
-        # Step 2: ALWAYS load from DB (regardless of token status)
-        # This shows data even if user isn't authenticated - persistence works!
+    # Step 2: ALWAYS load from DB - even if sync failed or token is invalid!
+    # This is the key Database-First principle: cached data must always be available.
+    try:
         artist_models = await sync_service.get_artists(limit=500)
 
         # Convert to template-friendly format
@@ -1198,7 +1206,6 @@ async def spotify_artists_page(
                     "follower_count": artist.follower_count,
                 }
             )
-
     except Exception as e:
         error = str(e)
 
